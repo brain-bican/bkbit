@@ -1,3 +1,3 @@
-# BrainKit
+# bkbit
 
-Brain Knowledge Interaction Toolkit
+Brain Knowledge Base Interaction Toolkit
