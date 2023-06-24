@@ -163,16 +163,13 @@ def gff_to_gene_annotation(gene_csv_dir, output_csv_dir):
             print("GENE NAME: ", gene_name)
             if os.path.isfile(gene_csv_dir + '/' + gene_name + '.csv'):
                 print(f"Data from url is already downloaded and saved here: {gene_csv_dir + '/' + gene_name + '.csv'}")
-                # TODO: add dtype attribute because it is much less memory intensive since pandas doesn't have to guess dtype
                 df = pd.read_csv(gene_csv_dir + '/' + gene_name + '.csv') 
             else:
                 gffcols = ['seqid','source','type','start','end','score','strand','phase','attributes'] # gff columns
-                # TODO: add dtype attribute because it is much less memory intensive since pandas doesn't have to guess dtype
                 df = pd.read_csv(row['url'], sep='\t', comment = "#", header=None, names=gffcols)
                 df.to_csv(gene_csv_dir + '/' + gene_name + '.csv', index=False)
                 print(f"Downloading and saving data from url here: {gene_csv_dir + '/' + gene_name + '.csv'}")
 
-            # TODO: if output dataframe exists then skip this step
             fname = 'gene_annotation_%s-%s-%s.csv' % (row['authority'], str(row['taxon_local_unique_identifier']), str(row['version']))
             file = os.path.join(output_csv_dir, fname)
             if not os.path.isfile(file):
