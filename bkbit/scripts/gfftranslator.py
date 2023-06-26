@@ -4,8 +4,10 @@ import os
 import sys
 import csv
 import json
-sys.path.append('../../models_py-autogen')
-from kbmodel import GeneAnnotation, AnnotationCollection, OrganismTaxon
+#sys.path.append('../models')
+
+from models import kbmodel
+#.GeneAnnotation, AnnotationCollection, OrganismTaxon
 
 ## FUNCTIONS ##
 
@@ -154,7 +156,7 @@ def gff_to_gene_annotation(input_fname, data_dir, output_dir):
     output_dir (str): path to output directory
 
     """
-    with open(data_dir + input_fname, newline='') as csvfile:
+    with open(os.path.join(data_dir,input_fname), newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             print(f"AUTHORITY: {row['authority']}, LABEL: {row['label']}, TAXON_LOCAL_UNIQUE_ID: {row['taxon_local_unique_identifier']}, VERSION: {row['version']}, GENE_ID_PREFIX: {row['gene_identifier_prefix']}, URL: {row['url']}")
@@ -164,10 +166,10 @@ def gff_to_gene_annotation(input_fname, data_dir, output_dir):
                 print(f"Data from url is already downloaded and saved here: {data_dir + '/' + gene_name + '.csv'}")
                 df = pd.read_csv(data_dir + '/' + gene_name + '.csv') 
             else:
+                print(f"Downloading and saving data from url here: {data_dir + '/' + gene_name + '.csv'}")
                 gffcols = ['seqid','source','type','start','end','score','strand','phase','attributes'] # gff columns
                 df = pd.read_csv(row['url'], sep='\t', comment = "#", header=None, names=gffcols)
                 df.to_csv(data_dir + '/' + gene_name + '.csv', index=False)
-                print(f"Downloading and saving data from url here: {data_dir + '/' + gene_name + '.csv'}")
 
             fname = 'gene_annotation_%s-%s-%s.csv' % (row['authority'], str(row['taxon_local_unique_identifier']), str(row['version']))
             file = os.path.join(output_dir, fname)
