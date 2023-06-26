@@ -3194,7 +3194,7 @@ class GeneAnnotation(Gene):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two  NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or  gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     has_biological_sequence: Optional[str] = Field(None, description="""connects a genomic feature to its sequence""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
-    in_taxon: Optional[List[str]] = Field(None, description="""connects an entity to its taxonomic classification. Only certain kinds of entities can be taxonomically classified; see 'thing with taxon'""")
+    in_taxon: Optional[List[OrganismTaxon]] = Field(None, description="""connects an entity to its taxonomic classification. Only certain kinds of entities can be taxonomically classified; see 'thing with taxon'""")
     in_taxon_label: Optional[str] = Field(None, description="""The human readable scientific name for the taxon of the entity.""")
     provided_by: Optional[List[str]] = Field(None, description="""The value in this node property represents the knowledge provider that created or assembled the node and all of its attributes.  Used internally to represent how a particular node made its way into a knowledge provider or graph.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
