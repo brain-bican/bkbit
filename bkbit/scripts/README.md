@@ -1,17 +1,17 @@
 # gfftranslator.py
 
-gfftranslator.py is a Python script that generates GeneAnnotation objects from data stored in .gff files.  
+gfftranslator.py is a Python script that generates GeneAnnotation objects from data stored in gff files.  
 
 ## Usage
 
 ```python
 from gfftranslator import gff_to_gene_annotation
 
-# input_fname is the name of the input .csv file 
+# input_fname is the name of the input csv file 
 # Note: example input data can be found on Allen Teams under Knowledge Graph files. "20230412_subset_genome_annotation.csv" 
 input_fname = 'XXX.csv'
 
-# data_dir is the directory path where the input .csv file exists
+# data_dir is the directory path where the input csv file exists
 data_dir = ' XXX/XXX/'
 
 # output_dir is the directory path where all of the generated output files will be saved 

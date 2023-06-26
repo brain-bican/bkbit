@@ -1,5 +1,4 @@
 ## IMPORTS ##
-
 import pandas as pd
 import os
 import sys
@@ -10,7 +9,7 @@ from kbmodel import GeneAnnotation, AnnotationCollection, OrganismTaxon
 
 ## FUNCTIONS ##
 
-def parse_data(df, authority, label, taxon_local_unique_id, version, gene_id_prefix, output_csv_dir):
+def parse_data(df, authority, label, taxon_local_unique_id, version, gene_id_prefix, output_dir):
     """Generates a .csv file in which the columns are a subset of the GeneAnnotation class attributes. 
     Parameters: 
     df (pandas.DataFrame): 
@@ -97,7 +96,7 @@ def parse_data(df, authority, label, taxon_local_unique_id, version, gene_id_pre
     out_df.columns = cols
 
     fname = 'gene_annotation_%s-%s-%s.csv' % (authority, str(taxon_local_unique_id), str(version))
-    file = os.path.join(output_csv_dir, fname)
+    file = os.path.join(output_dir, fname)
     out_df.to_csv(file, index=False)
 
 
@@ -147,52 +146,55 @@ def serialize_annotation_collection(annotations, outfile):
         print(f'Serialized AnnotationCollection object saved here: {outfile}')
 
 
-def gff_to_gene_annotation(gene_csv_dir, output_csv_dir):
+def gff_to_gene_annotation(input_fname, data_dir, output_dir):
     """Converts GFF file(s) to GeneAnnotation objects and serializes them to a JSON file.
 
     Parameters:
     gff_files_path (str): path .csv that contains GFF file(s)
-    output_csv_dir (str): path to output directory
+    output_dir (str): path to output directory
 
     """
-    with open(gene_csv_dir + '.csv', newline='') as csvfile:
+    with open(data_dir + input_fname, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             print(f"AUTHORITY: {row['authority']}, LABEL: {row['label']}, TAXON_LOCAL_UNIQUE_ID: {row['taxon_local_unique_identifier']}, VERSION: {row['version']}, GENE_ID_PREFIX: {row['gene_identifier_prefix']}, URL: {row['url']}")
             gene_name = ''.join(row['url'].split('/')[-1].split('.')[0:-2])
             print("GENE NAME: ", gene_name)
-            if os.path.isfile(gene_csv_dir + '/' + gene_name + '.csv'):
-                print(f"Data from url is already downloaded and saved here: {gene_csv_dir + '/' + gene_name + '.csv'}")
-                df = pd.read_csv(gene_csv_dir + '/' + gene_name + '.csv') 
+            if os.path.isfile(data_dir + '/' + gene_name + '.csv'):
+                print(f"Data from url is already downloaded and saved here: {data_dir + '/' + gene_name + '.csv'}")
+                df = pd.read_csv(data_dir + '/' + gene_name + '.csv') 
             else:
                 gffcols = ['seqid','source','type','start','end','score','strand','phase','attributes'] # gff columns
                 df = pd.read_csv(row['url'], sep='\t', comment = "#", header=None, names=gffcols)
-                df.to_csv(gene_csv_dir + '/' + gene_name + '.csv', index=False)
-                print(f"Downloading and saving data from url here: {gene_csv_dir + '/' + gene_name + '.csv'}")
+                df.to_csv(data_dir + '/' + gene_name + '.csv', index=False)
+                print(f"Downloading and saving data from url here: {data_dir + '/' + gene_name + '.csv'}")
 
             fname = 'gene_annotation_%s-%s-%s.csv' % (row['authority'], str(row['taxon_local_unique_identifier']), str(row['version']))
-            file = os.path.join(output_csv_dir, fname)
+            file = os.path.join(output_dir, fname)
             if not os.path.isfile(file):
-                parse_data(df, row['authority'], row['label'], row['taxon_local_unique_identifier'], row['version'], row['gene_identifier_prefix'], output_csv_dir)
+                parse_data(df, row['authority'], row['label'], row['taxon_local_unique_identifier'], row['version'], row['gene_identifier_prefix'], output_dir)
         
             print(f'Parsed DF containing GeneAnnotation class attribute values is saved here: {file}')
             annotations = create_gene_annotation_objects(file)
-            output_ser = os.path.join(output_csv_dir, gene_name +'.json')
+            output_ser = os.path.join(output_dir, gene_name +'.json')
             serialize_annotation_collection(annotations, output_ser)
 
 if __name__ == '__main__':
     rev = '20230412_subset_genome_annotation'
 
     # check if directories exist and create them if they don't
-    gene_csv_dir = '../source-data/' + rev 
-    if not os.path.exists(gene_csv_dir):
-        os.makedirs(gene_csv_dir)
 
-    output_csv_dir = '../source-data/' + rev + '/output'
-    if not os.path.exists(output_csv_dir):
-        os.makedirs(output_csv_dir)
+    # data_dir is the path where the .csv containing the .gff files exists
+    data_dir = '../source-data/' + rev 
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
 
-    gff_to_gene_annotation(gene_csv_dir, output_csv_dir)
+    # output_dir is the path where all the generated files will be saved
+    output_dir = '../source-data/' + rev + '/output'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    gff_to_gene_annotation(data_dir, output_dir)
 
 
 
