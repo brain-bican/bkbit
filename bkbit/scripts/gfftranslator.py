@@ -1,13 +1,9 @@
 ## IMPORTS ##
 import pandas as pd
 import os
-import sys
 import csv
 import json
-#sys.path.append('../models')
-
-from models import kbmodel
-#.GeneAnnotation, AnnotationCollection, OrganismTaxon
+from bkbit.models import kbmodel
 
 ## FUNCTIONS ##
 
@@ -118,18 +114,18 @@ def create_gene_annotation_objects(file):
         reader = csv.DictReader(csvfile)
         translatedannots = []
         for row in reader:
-            myannotation = GeneAnnotation(id = row['gene_identifier_prefix'].upper().replace('ENE', 'ene') + ':' + row['gene_local_unique_identifier'],
+            myannotation = kbmodel.GeneAnnotation(id = row['gene_identifier_prefix'].upper().replace('ENE', 'ene') + ':' + row['gene_local_unique_identifier'],
                                         symbol = row['name'],
                                         name = row['name'],
                                         description = row['description'],
                                         referenced_in = row['genome_annotation_label'],
                                         molecular_type = row['gene_biotype'] if row['gene_biotype'] == 'protein_coding' else 'noncoding', #TODO: confirm if noncoding for the rest of the values or parse them as new enum values)
                                         source_id = row['gene_local_unique_identifier'],
-                                        in_taxon = [OrganismTaxon(id=taxon_uri[row['taxon_unique_identifier']])],
+                                        in_taxon = [kbmodel.OrganismTaxon(id=taxon_uri[row['taxon_unique_identifier']])],
                                         in_taxon_label = taxon_name[row['taxon_unique_identifier']]
                                         )
             translatedannots.append(myannotation)
-    return AnnotationCollection(annotations=translatedannots)
+    return kbmodel.AnnotationCollection(annotations=translatedannots)
 
 
 def serialize_annotation_collection(annotations, outfile):
@@ -175,8 +171,8 @@ def gff_to_gene_annotation(input_fname, data_dir, output_dir):
             file = os.path.join(output_dir, fname)
             if not os.path.isfile(file):
                 parse_data(df, row['authority'], row['label'], row['taxon_local_unique_identifier'], row['version'], row['gene_identifier_prefix'], output_dir)
-        
             print(f'Parsed DF containing GeneAnnotation class attribute values is saved here: {file}')
+            
             annotations = create_gene_annotation_objects(file)
             output_ser = os.path.join(output_dir, gene_name +'.json')
             serialize_annotation_collection(annotations, output_ser)

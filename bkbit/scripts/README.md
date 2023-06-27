@@ -5,7 +5,7 @@ gfftranslator.py is a Python script that generates GeneAnnotation objects from d
 ## Usage
 
 ```python
-from gfftranslator import gff_to_gene_annotation
+from bkbit.scripts.gfftranslator import gff_to_gene_annotation
 
 # input_fname is the name of the input csv file 
 # Note: example input data can be found on Allen Teams under Knowledge Graph files. "20230412_subset_genome_annotation.csv" 
