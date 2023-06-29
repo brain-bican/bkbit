@@ -1,4 +1,5 @@
 ## IMPORTS ##
+
 import pandas as pd
 import os
 import csv
@@ -98,17 +99,18 @@ def parse_data(df, authority, label, taxon_local_unique_id, version, gene_id_pre
     out_df.to_csv(file, index=False)
 
 
-def create_gene_annotation_objects(file):
+def create_gene_annotation_objects(file, genomeAnnot, orgTaxon):
     """Initializes GeneAnnotation objects using data from .csv file.
 
     Parameters:
     file (str): path to .csv file containing gene data.
+    orgTaxon (OrganismTaxon): reference to organism taxon object.
+    genomeAnn (GenomeAnnotation): reference to genome annotation object.
 
     Returns:
     AnnotationCollection: AnnotationCollection object containing list of initialized GeneAnnotation objects.
     
     """
-    taxon_uri = {'9606': 'NCBITaxon:9606', '10090': 'NCBITaxon:10090'}
     taxon_name = {'9606': 'Homo sapiens', '10090': 'Mus musculus'}
     with open(file=file, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -118,10 +120,13 @@ def create_gene_annotation_objects(file):
                                         symbol = row['name'],
                                         name = row['name'],
                                         description = row['description'],
-                                        referenced_in = row['genome_annotation_label'],
+                                        #referenced_in = row['genome_annotation_label'],
+                                        #referenced_in = kbmodel.GenomeAnnotation(id = 'bican:assembly-' + row['genome_annotation_label']),
+                                        referenced_in = genomeAnnot,
                                         molecular_type = row['gene_biotype'] if row['gene_biotype'] == 'protein_coding' else 'noncoding', #TODO: confirm if noncoding for the rest of the values or parse them as new enum values)
                                         source_id = row['gene_local_unique_identifier'],
-                                        in_taxon = [kbmodel.OrganismTaxon(id=taxon_uri[row['taxon_unique_identifier']])],
+                                        #in_taxon = [kbmodel.OrganismTaxon(id=taxon_uri[row['taxon_unique_identifier']])],
+                                        in_taxon = [orgTaxon],
                                         in_taxon_label = taxon_name[row['taxon_unique_identifier']]
                                         )
             translatedannots.append(myannotation)
@@ -132,17 +137,16 @@ def serialize_annotation_collection(annotations, outfile):
     """Serializes the annotation collection object to a JSON file.
 
     Parameters:  
-    annotations (AnnotationCollection): AnnotationCollection object containing list of initialized GeneAnnotation objects.
+    annotations (list): list of initialized classes from kbmodel
     outfile (str): path to output file
 
     """
     with open(outfile, 'w') as f:
         output_arr = []
-        for g in annotations.annotations:
+        #for g in annotations.annotations:
+        for g in annotations:
             output_arr.append(g.dict(exclude_none=True))
         f.write(json.dumps(output_arr, indent=2))
-        print(f'Serialized AnnotationCollection object saved here: {outfile}')
-
 
 def gff_to_gene_annotation(input_fname, data_dir, output_dir):
     """Converts GFF file(s) to GeneAnnotation objects and serializes them to a JSON file.
@@ -152,6 +156,10 @@ def gff_to_gene_annotation(input_fname, data_dir, output_dir):
     output_dir (str): path to output directory
 
     """
+    orgTaxonObjects = {}
+    genomeAnnotObjects = {}
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     with open(os.path.join(data_dir,input_fname), newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -167,32 +175,29 @@ def gff_to_gene_annotation(input_fname, data_dir, output_dir):
                 df = pd.read_csv(row['url'], sep='\t', comment = "#", header=None, names=gffcols)
                 df.to_csv(data_dir + '/' + gene_name + '.csv', index=False)
 
+            if row['label'] not in genomeAnnotObjects:
+                genomeAnnotObjects[row['label']] = kbmodel.GenomeAnnotation(id = 'bican:assembly-' + row['label'])
+
+            if row['taxon_local_unique_identifier'] not in orgTaxonObjects:
+                orgTaxonObjects[row['taxon_local_unique_identifier']] = kbmodel.OrganismTaxon(id = 'NCBITaxon:' + str(row['taxon_local_unique_identifier']))
+
             fname = 'gene_annotation_%s-%s-%s.csv' % (row['authority'], str(row['taxon_local_unique_identifier']), str(row['version']))
             file = os.path.join(output_dir, fname)
             if not os.path.isfile(file):
                 parse_data(df, row['authority'], row['label'], row['taxon_local_unique_identifier'], row['version'], row['gene_identifier_prefix'], output_dir)
             print(f'Parsed DF containing GeneAnnotation class attribute values is saved here: {file}')
             
-            annotations = create_gene_annotation_objects(file)
+            annotations = create_gene_annotation_objects(file, genomeAnnotObjects[row['label']], orgTaxonObjects[row['taxon_local_unique_identifier']])
             output_ser = os.path.join(output_dir, gene_name +'.json')
-            serialize_annotation_collection(annotations, output_ser)
+            serialize_annotation_collection(annotations.annotations, output_ser)
+            print(f'Serialized GeneAnnotation objects saved here: {output_ser}')
+            
+    orgTaxon_genomeAnnot_file = os.path.join(output_dir, 'orgTaxon_genomeAnnot.json')
+    annotations = []
+    annotations.extend(list(orgTaxonObjects.values()))
+    annotations.extend(list(genomeAnnotObjects.values()))
+    serialize_annotation_collection(annotations, orgTaxon_genomeAnnot_file)
+    print(f'Serialized OrganismTaxon and GenomeAnnotation objects saved here: {orgTaxon_genomeAnnot_file}')
 
 if __name__ == '__main__':
-    rev = '20230412_subset_genome_annotation'
-
-    # check if directories exist and create them if they don't
-
-    # data_dir is the path where the .csv containing the .gff files exists
-    data_dir = '../source-data/' + rev 
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-
-    # output_dir is the path where all the generated files will be saved
-    output_dir = '../source-data/' + rev + '/output'
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    gff_to_gene_annotation(data_dir, output_dir)
-
-
-
+    pass
