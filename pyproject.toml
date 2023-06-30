@@ -5,7 +5,6 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = "bkbit"
-version = "0.0.1"
 authors = [
   { name="atlaskb developers"},
 ]
@@ -19,7 +18,10 @@ classifiers = [
 license = {text = "Apache 2.0"}
 dependencies = [
     "linkml>=1.5",
+    "pandas"
 ]
+dynamic = ["version"]
+
 
 [project.optional-dependencies]
 test = [
@@ -31,3 +33,6 @@ docs = [
 
 [project.urls]
 "Homepage" = "https://github.com/atlaskb/bkbit"
+
+[tool.setuptools_scm]
+write_to = "bkbit/_version.py"
