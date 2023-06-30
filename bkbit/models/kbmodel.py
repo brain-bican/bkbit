@@ -3186,7 +3186,7 @@ class GeneAnnotation(Gene):
     """
     An annotation describing the location, boundaries, and functions of  individual genes within a genome annotation.
     """
-    referenced_in: Optional[str] = Field(None)
+    referenced_in: Optional[GenomeAnnotation] = Field(None)
     molecular_type: Optional[BioType] = Field(None)
     source_id: Optional[str] = Field(None, description="""The authority specific identifier.""")
     symbol: Optional[str] = Field(None, description="""Symbol for a particular thing""")
