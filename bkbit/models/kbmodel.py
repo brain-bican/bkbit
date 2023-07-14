@@ -28,13 +28,7 @@ class ConfiguredBaseModel(WeakRefShimBaseModel,
 
 
 class DigestType(str, Enum):
-    
-    
-    # SHA1 = "sha1"
-    
-    # MD5 = "md5"
-    
-    # SHA256 = "sha256"
+
     SHA1 = "spdx:checksumAlgorithm_sha1"
     
     MD5 = "spdx:checksumAlgorithm_md5"
@@ -430,20 +424,6 @@ class FDAIDAAdverseEventEnum(str, Enum):
     unexpected_adverse_event = "unexpected_adverse_event"
     
     
-
-class GenomeAssembly(ConfiguredBaseModel):
-    """
-    Genome assembly to contain version and label information
-    """
-    id: Optional[str] = Field(None)
-    #taxon: Optional[OrganismTa] = Field(None)
-    version: Optional[str] = Field(None)
-    label: Optional[str] = Field(None)
-    description: Optional[str] = Field(None)
-    in_taxon: Optional[List[OrganismTaxon]] = Field(None, description="""connects an entity to its taxonomic classification. Only certain kinds of entities can be taxonomically classified; see 'thing with taxon'""")
-    in_taxon_label: Optional[str] = Field(None, description="""The human readable scientific name for the taxon of the entity.""")
-    
-
 
 class Mapping(ConfiguredBaseModel):
     """
@@ -1948,6 +1928,32 @@ class ThingWithTaxon(ConfiguredBaseModel):
     
 
 
+class GenomeAssembly(ThingWithTaxon, NamedThing):
+    """
+    Genome assembly to contain version and label information
+    """
+    version: Optional[str] = Field(None)
+    label: Optional[str] = Field(None)
+    strain: Optional[str] = Field(None)
+    in_taxon: Optional[List[OrganismTaxon]] = Field(None, description="""connects an entity to its taxonomic classification. Only certain kinds of entities can be taxonomically classified; see 'thing with taxon'""")
+    in_taxon_label: Optional[str] = Field(None, description="""The human readable scientific name for the taxon of the entity.""")
+    provided_by: Optional[List[str]] = Field(None, description="""The value in this node property represents the knowledge provider that created or assembled the node and all of its attributes.  Used internally to represent how a particular node made its way into a knowledge provider or graph.""")
+    xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two  NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or  gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
+    full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
+    id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
+    iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/GenomeAssembly","bican:GenomeAssembly"]] = Field(["bican:GenomeAssembly"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class.
+ * In a neo4j database this MAY correspond to the neo4j label tag.
+ * In an RDF database it should be a biolink model class URI.
+This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`, ...
+In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
+    type: Optional[List[str]] = Field(default_factory=list)
+    name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
+    description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
+    has_attribute: Optional[List[str]] = Field(None, description="""connects any entity to an attribute""")
+    
+
+
 class BiologicalEntity(ThingWithTaxon, NamedThing):
     
     in_taxon: Optional[List[str]] = Field(None, description="""connects an entity to its taxonomic classification. Only certain kinds of entities can be taxonomically classified; see 'thing with taxon'""")
@@ -3195,7 +3201,7 @@ class GeneAnnotation(Gene):
     """
     referenced_in: Optional[GenomeAnnotation] = Field(None)
     molecular_type: Optional[BioType] = Field(None)
-    source_id: Optional[str] = Field(None, description="""The authority specific identifier.""")
+    source_id: Optional[str] = Field(None, description="""the authority's identifier""")
     symbol: Optional[str] = Field(None, description="""Symbol for a particular thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two  NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or  gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
@@ -3318,6 +3324,7 @@ class GenomeAnnotation(Genome):
     version: Optional[str] = Field(None)
     digest: List[Checksum] = Field(default_factory=list)
     content_url: Optional[List[str]] = Field(default_factory=list)
+    authority: Optional[str] = Field(None)
     has_biological_sequence: Optional[str] = Field(None, description="""connects a genomic feature to its sequence""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     in_taxon: Optional[List[OrganismTaxon]] = Field(None, description="""connects an entity to its taxonomic classification. Only certain kinds of entities can be taxonomically classified; see 'thing with taxon'""")
@@ -8692,7 +8699,6 @@ In an RDF database, nodes will typically have an rdf:type triples. This can be t
 
 # Update forward refs
 # see https://pydantic-docs.helpmanual.io/usage/postponed_annotations/
-GenomeAssembly.update_forward_refs()
 Mapping.update_forward_refs()
 Mappings.update_forward_refs()
 AnnotationCollection.update_forward_refs()
@@ -8768,6 +8774,7 @@ EnvironmentalFeature.update_forward_refs()
 GeographicLocation.update_forward_refs()
 GeographicLocationAtTime.update_forward_refs()
 ThingWithTaxon.update_forward_refs()
+GenomeAssembly.update_forward_refs()
 BiologicalEntity.update_forward_refs()
 GenomicEntity.update_forward_refs()
 EpigenomicEntity.update_forward_refs()
