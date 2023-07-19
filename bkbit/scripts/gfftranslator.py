@@ -10,14 +10,16 @@ import urllib.parse
 from bkbit.models import kbmodel
 
 ## GLOBAL VARIABLES ##
-taxon_scientific_name = {'9606': 'Homo sapiens', '10090': 'Mus musculus'}
-taxon_common_name = {'9606': 'human', '10090': 'house mouse'}
 
+taxon_scientific_name = {'9606': 'Homo sapiens', '10090': 'Mus musculus', '9544': 'Macaca mulatta', '9483': 'Callithrix jacchus'}
+taxon_common_name = {'9606': 'human', '10090': 'mouse', '9544': 'rhesus macaque', '9483': 'common marmoset'}
 prefix_map = {"NCBITaxon": "http://purl.obolibrary.org/obo/NCBITaxon_", "NCBIGene": "http://identifiers.org/ncbigene/", "ENSEMBL": "http://identifiers.org/ensembl/", "NCBIAssembly": "https://www.ncbi.nlm.nih.gov/assembly/"}
+
 ## FUNCTIONS ##
 
 def parse_data(df, authority, label, taxon_local_unique_id, version, gene_id_prefix, output_dir):
     """Generates a .csv file in which the columns are a subset of the GeneAnnotation class attributes. 
+    
     Parameters: 
     df (pandas.DataFrame): 
     label (str):
@@ -93,12 +95,15 @@ def parse_data(df, authority, label, taxon_local_unique_id, version, gene_id_pre
     # authority specific mapping and transforms
     if authority == 'NCBI' :
         out_cols = ['genome_annotation_label','gene_identifier_prefix','GeneID','Name','description','gene_biotype', 'taxon_unique_identifier']
-    elif authority == 'Ensembl':
-        #out_cols = ['genome_annotation_label','gene_identifier_prefix','gene_id','Name','description','biotype', 'taxon_unique_identifier']
-        out_cols = ['genome_annotation_label','gene_identifier_prefix','gene_id','Name','description','biotype', 'taxon_unique_identifier']
+        cols = ['genome_annotation_label','gene_identifier_prefix','gene_local_unique_identifier','name','description', 'gene_biotype', 'taxon_unique_identifier']
 
-    # ATTRIBUTES FOR GENE ANNOTATION OBJECT:
-    cols = ['genome_annotation_label','gene_identifier_prefix','gene_local_unique_identifier','name','description', 'gene_biotype', 'taxon_unique_identifier']
+    elif authority == 'Ensembl':
+        out_cols = ['genome_annotation_label','gene_identifier_prefix','gene_id','Name','description','biotype', 'taxon_unique_identifier']
+        cols = ['genome_annotation_label','gene_identifier_prefix','gene_local_unique_identifier','name','description', 'gene_biotype', 'taxon_unique_identifier']
+
+    elif authority == 'GENCODE':
+        out_cols = ['genome_annotation_label','gene_identifier_prefix','gene_id','gene_name','gene_type', 'taxon_unique_identifier']
+        cols = ['genome_annotation_label','gene_identifier_prefix','gene_local_unique_identifier','name', 'gene_biotype', 'taxon_unique_identifier']
 
     # create output dataframe
     out_df = df_gene[out_cols]
@@ -118,27 +123,29 @@ def create_gene_annotation_objects(file, genomeAnnot, orgTaxon):
     genomeAnn (GenomeAnnotation): reference to genome annotation object.
 
     Returns:
-    AnnotationCollection: AnnotationCollection object containing list of initialized GeneAnnotation objects.
+    [GeneAnnotation]: list of created GeneAnnotation objects using data from .csv file.
     
     """
     with open(file=file, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
+        header = reader.fieldnames
+        has_description = False
+        if 'description' in header:
+            has_description = True
         translatedannots = []
         for row in reader:
-            #print(f'***GENEID: {row["gene_local_unique_identifier"]}')
-            myannotation = kbmodel.GeneAnnotation(id = row['gene_identifier_prefix'].upper().replace('ENE', 'ene') + ':' + row['gene_local_unique_identifier'],
+            myannotation = kbmodel.GeneAnnotation(id = row['gene_identifier_prefix'].upper().replace('ENE', 'ene') + ':' + row['gene_local_unique_identifier'].split('.')[0],
                                         symbol = row['name'],
                                         name = row['name'],
-                                        description = f'"{urllib.parse.unquote(row["description"])}"',
-                                        referenced_in = genomeAnnot, # referenced_in:[GenomeAnnotation]
+                                        referenced_in = genomeAnnot,
                                         molecular_type = kbmodel.BioType.protein_coding if row['gene_biotype'] == 'protein_coding' else kbmodel.BioType.noncoding, 
-                                        source_id = row['gene_local_unique_identifier'],
-                                        in_taxon = [orgTaxon], # in_taxon:[OrganismTaxon]
+                                        source_id = row['gene_local_unique_identifier'].split('.')[0],
+                                        in_taxon = [orgTaxon], 
                                         in_taxon_label = taxon_scientific_name[row['taxon_unique_identifier']]
                                         )
-            #print(f'GeneAnnotation: {myannotation}')
+            if has_description:
+                myannotation.description = urllib.parse.unquote(row["description"])
             translatedannots.append(myannotation)
-    #return kbmodel.AnnotationCollection(annotations=translatedannots)
     return translatedannots
 
 
@@ -152,7 +159,6 @@ def serialize_annotation_collection(annotations, outfile):
     """
     with open(outfile, 'w') as f:
         output_arr = []
-        #for g in annotations.annotations:
         for g in annotations:
             #output_arr.append(g.dict(exclude_none=True))
             output_arr.append(g.dict())
@@ -162,25 +168,29 @@ def gff_to_gene_annotation(input_fname, data_dir, output_dir, genome_assembly_fn
     """Converts GFF file(s) to GeneAnnotation objects and serializes them to a JSON file.
 
     Parameters:
-    gff_files_path (str): path .csv that contains GFF file(s)
-    output_dir (str): path to output directory
+    input_fname (str): name of csv file containing gff files
+    data_dir (str): path to directory containing input file
+    output_dir (str): path to output directory where generated files will be saved
+    genome_assembly_fname (str): name of csv file containing genome assembly data
 
     """
 
-    genomeAssemblyObjects = generate_genome_assembly(os.path.join(data_dir,genome_assembly_fname))
-    orgTaxonObjects = {}
-    genomeAnnotObjects = []
-    geneAnnotObjects = []
-    checkSumObjects = []
-    
-    # GENERATE GENOME ASSEMBLY OBJECT #
-    genomeAssemblyObjects = generate_genome_assembly(os.path.join(data_dir,genome_assembly_fname))
 
+    # orgTaxonObjects = {}
+    # genomeAnnotObjects = []
+    # geneAnnotObjects = []
+    # checkSumObjects = []
+
+    # GENERATE GENOME ASSEMBLY OBJECTS #
+    genomeAssemblyObjects = generate_genome_assembly(os.path.join(data_dir,genome_assembly_fname)) 
+
+    # ITERATE THROUGH GFF FILES #
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     with open(os.path.join(data_dir,input_fname), newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
+            fileObjects = []
             print(f"AUTHORITY: {row['authority']}, LABEL: {row['label']}, TAXON_LOCAL_UNIQUE_ID: {row['taxon_local_unique_identifier']}, VERSION: {row['version']}, GENE_ID_PREFIX: {row['gene_identifier_prefix']}, URL: {row['url']}")
             gene_name = ''.join(row['url'].split('/')[-1].split('.')[0:-2])
             print("GENE NAME: ", gene_name)
@@ -201,59 +211,88 @@ def gff_to_gene_annotation(input_fname, data_dir, output_dir, genome_assembly_fn
             print(f'Parsed DF containing GeneAnnotation class attribute values is saved here: {file}')
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-                        
+
+
             # GENERATE ORGANISM TAXON OBJECT #
-            if row['taxon_local_unique_identifier'] not in orgTaxonObjects:
-                orgTaxonObjects[row['taxon_local_unique_identifier']] = kbmodel.OrganismTaxon(id = 'NCBITaxon:' + str(row['taxon_local_unique_identifier']), full_name = taxon_scientific_name[row['taxon_local_unique_identifier']], name = taxon_common_name[row['taxon_local_unique_identifier']],  iri = prefix_map['NCBITaxon'] + row['taxon_local_unique_identifier'])
-            curr_org_taxon = orgTaxonObjects[row['taxon_local_unique_identifier']]
+            # if row['taxon_local_unique_identifier'] not in orgTaxonObjects:
+            #     orgTaxonObjects[row['taxon_local_unique_identifier']] = kbmodel.OrganismTaxon(id = 'NCBITaxon:' + str(row['taxon_local_unique_identifier']), full_name = taxon_scientific_name[row['taxon_local_unique_identifier']], name = taxon_common_name[row['taxon_local_unique_identifier']],  iri = prefix_map['NCBITaxon'] + row['taxon_local_unique_identifier'])
+            # curr_org_taxon = orgTaxonObjects[row['taxon_local_unique_identifier']]
+            curr_org_taxon = kbmodel.OrganismTaxon(id = 'NCBITaxon:' + str(row['taxon_local_unique_identifier']), full_name = taxon_scientific_name[row['taxon_local_unique_identifier']], name = taxon_common_name[row['taxon_local_unique_identifier']],  iri = prefix_map['NCBITaxon'] + row['taxon_local_unique_identifier'])
+
+            # GENERATE CHECKCSUM OBJECT #
+            curr_digest_256 = generate_digest('sha256', df)
+            #checkSumObjects.append(curr_digest_256)
 
             # GENERATE GENOME ANNOTATION OBJECT #
-            curr_digest_256 = generate_digest('sha256', df)
-            checkSumObjects.append(curr_digest_256)
-            curr_genome_annot = kbmodel.GenomeAnnotation(id = 'bican:annotation-' + row['label'].upper(), digest=[curr_digest_256], content_url = [row['url']], reference_assembly = genomeAssemblyObjects[row['assembly_local_unique_identifier'].strip()], version = row['version'], in_taxon = [curr_org_taxon], in_taxon_label = taxon_scientific_name[row['taxon_local_unique_identifier']], description = row['description'])
+            curr_genome_annot = kbmodel.GenomeAnnotation(id = 'bican:annotation-' + row['label'].upper(), digest=[curr_digest_256], content_url = [row['url']], reference_assembly = genomeAssemblyObjects[row['assembly_local_unique_identifier'].strip()], version = row['version'], in_taxon = [curr_org_taxon], in_taxon_label = taxon_scientific_name[row['taxon_local_unique_identifier']], description = row['description'], authority = row['authority'].upper())
             #print(f'GenomeAnnotation object is created: {curr_genome_annot}')
-            genomeAnnotObjects.append(curr_genome_annot)
-
+            #genomeAnnotObjects.append(curr_genome_annot)
+            
+            # GENERATE GENE ANNOTATION OBJECT #
             annotations = create_gene_annotation_objects(file, curr_genome_annot, curr_org_taxon)
-            geneAnnotObjects.extend(annotations)
-            # output_ser = os.path.join(output_dir, gene_name +'.json')
-            # serialize_annotation_collection(annotations.annotations, output_ser)
-            # print(f'Serialized GeneAnnotation objects saved here: {output_ser}')
+            #geneAnnotObjects.extend(annotations)
+
+            # COMBINE ALL GENERATED OBJECTS RELATED TO THIS GFF FILE:
+            fileObjects.append(genomeAssemblyObjects[row['assembly_local_unique_identifier'].strip()])
+            fileObjects.append(curr_genome_annot)
+            fileObjects.append(curr_org_taxon)
+            fileObjects.append(curr_digest_256) 
+            fileObjects.extend(annotations)
+            output_ser = os.path.join(output_dir, gene_name +'.json')
+            serialize_annotation_collection(fileObjects, output_ser)
+            print(f'Serialized GeneAnnotation objects saved here: {output_ser}')
+
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
             
-    orgTaxon_file = os.path.join(output_dir, 'organismTaxon.json')
-    genomeAnnot_file = os.path.join(output_dir, 'genomeAnnotation.json')
-    genomeAssem_file = os.path.join(output_dir, 'genomeAssembly.json')
-    geneAnnot_file = os.path.join(output_dir, 'geneAnnotation.json')
-    checkSum_file = os.path.join(output_dir, 'checksum.json')
+    # orgTaxon_file = os.path.join(output_dir, 'organismTaxon.json')
+    # genomeAnnot_file = os.path.join(output_dir, 'genomeAnnotation.json')
+    # genomeAssem_file = os.path.join(output_dir, 'genomeAssembly.json')
+    # geneAnnot_file = os.path.join(output_dir, 'geneAnnotation.json')
+    # checkSum_file = os.path.join(output_dir, 'checksum.json')
 
-    serialize_annotation_collection(list(orgTaxonObjects.values()), orgTaxon_file)
-    serialize_annotation_collection(genomeAnnotObjects, genomeAnnot_file)
-    serialize_annotation_collection(list(genomeAssemblyObjects.values()), genomeAssem_file)
-    serialize_annotation_collection(checkSumObjects, checkSum_file)
-    serialize_annotation_collection(geneAnnotObjects, geneAnnot_file)
+    # serialize_annotation_collection(list(orgTaxonObjects.values()), orgTaxon_file)
+    # serialize_annotation_collection(genomeAnnotObjects, genomeAnnot_file)
+    # serialize_annotation_collection(list(genomeAssemblyObjects.values()), genomeAssem_file)
+    # serialize_annotation_collection(checkSumObjects, checkSum_file)
+    # serialize_annotation_collection(geneAnnotObjects, geneAnnot_file)
     
     
 
 
 def generate_genome_assembly(file_path):
-    if not os.path.isfile(file_path):
-        print(f"{file_path} does not exist.")
-    # cols = identifier_prefix, local_unique_identifier, taxon_identifier_prefix, taxon_local_unique_identifier, version, label, description
+    ''' Creates GenomeAssembly objects from the given file path. 
+    Parameters:
+    file_path (str): Path to the file containing the genome assembly data.
+
+    Returns: 
+    [GeneomeAssembly]: list of GenomeAssembly objects created from the given file path
+
+    '''
     df = pd.read_csv(file_path) 
     genomeAssemblyObjects = {}
     for row in df.itertuples(index=False):
         id = row.local_unique_identifier.strip()
         if row.local_unique_identifier not in genomeAssemblyObjects:
             currOrgTaxon = kbmodel.OrganismTaxon(id = 'NCBITaxon:' + str(row.taxon_local_unique_identifier), full_name = taxon_scientific_name[str(row.taxon_local_unique_identifier)], name = taxon_common_name[str(row.taxon_local_unique_identifier)],  iri = prefix_map['NCBITaxon'] + str(row.taxon_local_unique_identifier))
-
-            genomeAssemblyObjects[id] = kbmodel.GenomeAssembly(id = "NCBIAssembly:" + id, in_taxon = [currOrgTaxon], in_taxon_label = taxon_scientific_name[str(row.taxon_local_unique_identifier)],  version = row.version, label = row.label, description = row.description)
-    print(f"GenomeAssembly objects are created: {genomeAssemblyObjects}")
+            currGenomeAssem = kbmodel.GenomeAssembly(id = "NCBIAssembly:" + id, in_taxon = [currOrgTaxon], in_taxon_label = taxon_scientific_name[str(row.taxon_local_unique_identifier)],  version = row.version, name = row.label)
+            if str(row.strain) != 'nan':
+                currGenomeAssem.strain = row.strain
+            genomeAssemblyObjects[id] = currGenomeAssem
     return genomeAssemblyObjects
 
 
 def generate_digest(hash, data):
+    '''Generates a Checksum object from the given hash and data.
+    
+    Parameters:
+    hash (str): Hash algorithm to use. Currently supported: sha256, md5, sha1
+    data (pandas.DataFrame): Data to be hashed
+
+    Returns:
+    Checksum: Checksum object containing the hash value of the given data
+
+    '''
     # Generate a UUID version 4
     uuid_value = uuid.uuid4()
 
@@ -271,12 +310,6 @@ def generate_digest(hash, data):
     elif hash == 'sha1':
         digest = hashlib.sha1(data_bytes).hexdigest()
         return kbmodel.Checksum(id = urn, checksum_algorithm = kbmodel.DigestType.SHA1, value = digest)
-
-
-def gtf_to_gene_annotation(fname, data_dir, output_dir,taxon_id, label, authority):
-    gffcols = ['seqid','source','type','start','end','score','strand','phase','attributes'] # gff columns
-    df = pd.read_csv(os.join(data_dir, fname), sep='\t', comment = "#", header=None, names=gffcols)
-    df.to_csv(data_dir + '/' + fname + '.csv', index=False)
 
 
 if __name__ == '__main__':

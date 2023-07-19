@@ -3,7 +3,7 @@ import glob
 import os
 import argparse
 
-def generateGraph(dir_path):
+def generateGraph(dir_path, output_fname):
     # List all JSON files in the directory
     json_files = glob.glob(os.path.join(dir_path, "*.json"))
 
@@ -24,11 +24,12 @@ def generateGraph(dir_path):
     }
 
     # Write the combined dictionaries to a new JSON file
-    with open("combinedDataGraph.jsonld", "w") as outfile:
+    with open(output_fname, "w") as outfile:
         json.dump(output_data, outfile, indent=2)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create a jsonld graph based on all the json files in a given directory.')
-    parser.add_argument('--dir_path', '-d', type=str, required=True, help='Path to directory containing json files.')
+    parser.add_argument('--dir_path', '-d', type=str, required=True, help='Path to directory containing json files used to create jsonld graph. Note: all .json files in the directory will be used.')
+    parser.add_argument('--output_fname', '-o', type=str, required=True, help='Name of file where graph will be saved. Must have extension .jsonld')
     args = parser.parse_args()
-    generateGraph(args.dir_path)
+    generateGraph(args.dir_path, args.output_fname)

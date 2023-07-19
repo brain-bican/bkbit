@@ -1933,7 +1933,7 @@ class GenomeAssembly(ThingWithTaxon, NamedThing):
     Genome assembly to contain version and label information
     """
     version: Optional[str] = Field(None)
-    label: Optional[str] = Field(None)
+    #label: Optional[str] = Field(None)
     strain: Optional[str] = Field(None)
     in_taxon: Optional[List[OrganismTaxon]] = Field(None, description="""connects an entity to its taxonomic classification. Only certain kinds of entities can be taxonomically classified; see 'thing with taxon'""")
     in_taxon_label: Optional[str] = Field(None, description="""The human readable scientific name for the taxon of the entity.""")
