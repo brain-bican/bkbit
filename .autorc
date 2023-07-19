@@ -1,0 +1,7 @@
+{
+    "onlyPublishWithReleaseLabel": true,
+    "baseBranch": "main",
+    "author": "djarecka <djarecka@mit.edu>",
+    "noVersionPrefix": true,
+    "plugins": ["git-tag"]
+}
