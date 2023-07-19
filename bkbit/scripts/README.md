@@ -29,7 +29,7 @@ gff_to_gene_annotation(input_fname, data_dir, output_dir, genome_assembly_fname)
 
 1. GFF Input File  
 a. Each row in the csv file contains a url to the .gff file as well as additional attributes to describe the dataset. The csv file must contain the following columns: authority, label, taxon_local_unique_identifier, version, gene_identifier_prefix, url. 
-2. Genome Assembly Input File
+2. Genome Assembly Input File  
 a. Each row in the csv file represents a genome assembly. The csv file must contain the following columns: identifier_prefix, local_unique_identifier, taxon_identifier_prefix, taxon_local_unique_identifier, version, strain, label
 3. Generated files  
 a. For each .gff file 3 files will be generated: (i) The raw data downloaded from the url provided will be saved as a csv file in the 'data_dir' directory provided. (ii) The parsed and cleaned data will be saved as a csv file in the 'output_dir' directory provided. (iii) The initialized GeneAnnotation objects will be saved as a list of json dictionaries in a json file in the 'output_dir' directory provided. 
