@@ -7,6 +7,9 @@ gfftranslator.py is a Python script that generates GeneAnnotation objects from d
 ```python
 from bkbit.scripts.gfftranslator import gff_to_gene_annotation
 
+# data_dir is the directory path where the input csv file exists
+data_dir = 'bkbit/example-data'
+
 # input_fname is the name of the input csv file that contains the gff files
 # Note: example input data can be found under example-data directory (20230808_subset_genome_annotation.csv)
 input_fname = 'XXX.csv'
