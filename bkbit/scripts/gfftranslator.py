@@ -6,7 +6,6 @@ import csv
 import json
 import hashlib
 import uuid
-import urllib.parse
 from bkbit.models import kbmodel
 #from mappings import *
 
@@ -64,9 +63,9 @@ def gff_to_gene_annotation(input_fname, data_dir, output_dir, genome_assembly_fn
             curr_digest_256 = generate_digest('sha256', df)
 
             # GENERATE GENOME ANNOTATION OBJECT #
-            if row['authority'].upper() == "NCBI":
+            if row['authority'].upper() == kbmodel.AuthorityType.NCBI.value:
                 authority = kbmodel.AuthorityType.NCBI
-            elif row['authority'].upper() == "ENSEMBL":
+            elif row['authority'].upper() == kbmodel.AuthorityType.ENSEMBL.value:
                 authority = kbmodel.AuthorityType.ENSEMBL
             else:
                 raise Exception(f'Authority {row["authority"]} is not supported. Please use NCBI or Ensembl.')
@@ -122,7 +121,7 @@ def generate_gene_annotations(df, genomeAnnot, orgTaxon, gene_identifier_prefix,
             stable_id = attributes['gene_id'].split('.')[0]
             id = gene_identifier_prefix.upper() + ':' + stable_id
             source_id = stable_id
-            molecular_type = kbmodel.BioType.protein_coding if attributes['biotype'] == 'protein_coding' else kbmodel.BioType.noncoding
+            molecular_type = kbmodel.BioType.protein_coding if attributes['biotype'] == kbmodel.BioType.protein_coding.value else kbmodel.BioType.noncoding
    
         if source_id in gene_annotations:
             if (gene_annotations[source_id].name != name):

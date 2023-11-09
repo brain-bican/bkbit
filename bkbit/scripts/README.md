@@ -8,21 +8,21 @@ gfftranslator.py is a Python script that generates GeneAnnotation objects from d
 from bkbit.scripts.gfftranslator import gff_to_gene_annotation
 
 # input_fname is the name of the input csv file that contains the gff files
-# Note: example input data can be found on Allen Teams under Knowledge Graph files. "20230412_subset_genome_annotation.csv" 
+# Note: example input data can be found under example-data directory (20230808_subset_genome_annotation.csv)
 input_fname = 'XXX.csv'
 
-# data_dir is the directory path where the input csv file exists
-data_dir = ' XXX/XXX/'
+# genome_assembly_fname is the name of the second input csv files that contains information about the genome assembly metadata
+# Note: example input data can be found under example-data directory (genome_assembly.csv)
+genome_assembly_fname = 'XXX.csv'
+
 
 # output_dir is the directory path where all of the generated output files will be saved 
 # Note: if output_dir does not exist, gff_to_gene_annotation will create the directory
 output_dir = 'XXX/XXX/'
 
-# genome_assembly_fname is the name of the input csv file that contains genome assembly meta data
-# Note: example genome_assembly_fname data can be found on Allen Teams under Knowledge Graph files. "20230412_subset_genome_assembly.csv" 
-genome_assembly_fname = 'genome_assembly.csv'
 
 gff_to_gene_annotation(input_fname, data_dir, output_dir, genome_assembly_fname)
+
 ```
 
 ## Notes
