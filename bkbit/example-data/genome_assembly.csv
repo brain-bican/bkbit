@@ -1,0 +1,9 @@
+﻿identifier_prefix,local_unique_identifier,taxon_identifier_prefix,taxon_local_unique_identifier,version,strain,label,description
+assembly,GCF_000001635.27,taxonomy,10090,27,C57BL/6J,GRCm39,Genome Reference Consortium Mouse Build 39
+assembly,GCF_000001635.26,taxonomy,10090,26,C57BL/6J,GRCm38.p6,Genome Reference Consortium Mouse Build 38 patch release 6 (GRCm38.p6)
+assembly,GCF_000001405.40,taxonomy,9606,40,,GRCh38.p14,Genome Reference Consortium Human Build 38 patch release 14 (GRCh38.p14)
+assembly,GCF_000001405.39,taxonomy,9606,39,,GRCh38.p13,Genome Reference Consortium Human Build 38 patch release 13 (GRCh38.p13)
+assembly,GCF_000001405.38,taxonomy,9606,38,,GRCh38.p12,Genome Reference Consortium Human Build 38 patch release 12 (GRCh38.p12)
+assembly,GCF_003339765.1,taxonomy,9544,1,,Mmul_10,The Genome Institute at Washington University School of Medicine Rhesus Macaque
+assembly,GCF_009663435.1,taxonomy,9483,1,cj1700,Callithrix_jacchus_cj1700_1.1,McDonnell Genome Institute at Washington University Common Marmoset
+assembly,GCF_000004665.1,taxonomy,9483,1,,Callithrix jacchus-3.2,
