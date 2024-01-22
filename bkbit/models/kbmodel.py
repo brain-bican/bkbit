@@ -53,9 +53,9 @@ class BioType(str, Enum):
 class AuthorityType(str, Enum):
 
 
-    ensembl = "ENSEMBL"
-
-    ncbi = "NCBI"   
+    ENSEMBL = "ENSEMBL"
+    
+    NCBI = "NCBI"
 
 class TaxonType(str, Enum):
     
