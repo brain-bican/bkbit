@@ -6,7 +6,6 @@ import logging
 import urllib
 import os
 from bkbit.models import kbmodel
-import requests
 
 logging.basicConfig(filename='gff3_translator.log', format='%(levelname)s: %(message)s (%(asctime)s)', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -102,7 +101,7 @@ class Gff3():
     
     def generate_digest(self, hash_functions:list[str]) -> list[kbmodel.Checksum]:
         checksums = []
-        # gff_data = requests.get(url).content #! only needed if data is provided in url 
+        # gff_data = requests.get(url).content #! only needed if data is provided in url  
         gff_data = self.gff_file.encode('utf-8')
         # Generate a UUID version 4
         uuid_value = uuid.uuid4()
@@ -136,9 +135,13 @@ class Gff3():
             for line_raw in file:
                 curr_line_num += 1
                 line_strip = line_raw.strip()
-                if line_strip.startswith('##'): #TODO: handle ##gff-version
+                if curr_line_num == 1 and not line_strip.startswith('##gff-version 3'):
+                    logger.critical('Line %s: ##gff-version 3" missing from the first line.', curr_line_num)
+                elif len(line_strip) == 0: # blank line
+                    continue
+                elif line_strip.startswith('##'): #TODO: parse more metadata
                     pass
-                elif line_strip.startswith('#'):
+                elif line_strip.startswith('#'): #TODO: parse more metadata
                     pass
                 else: # line may be a feature or unknown
                     tokens = list(map(str.strip, line_raw.split('\t')))
@@ -184,7 +187,7 @@ class Gff3():
             if len(attributes['description']) != 1:
                 logger.warning('Line %s: description not set for this row\'s GeneAnnotation object due to more than one description provided.', curr_line_num)
             else:
-                description = re.sub(r"\[Source .*?\]", "",  urllib.parse.unquote(attributes['description'].pop()))
+                description = re.sub(r" \[Source.*?\]", "",  urllib.parse.unquote(attributes['description'].pop()))
         else:
             logger.warning('Line %s: description not set for this row\'s GeneAnnotation object due to missing description attribute.', curr_line_num)
         
@@ -220,13 +223,13 @@ class Gff3():
             logger.info(attributes['Dbxref'])
             dbxref = {t.strip() for s in attributes['Dbxref'] for t in s.split(',')}
             logger.info(dbxref)
-            GeneID_values = set()
+            geneid_values = set()
             for reference in dbxref:
                 k,v = reference.split(':',1)
                 if k == 'GeneID':
-                    GeneID_values.add(v)
-            if len(GeneID_values) == 1:
-                stable_id = GeneID_values.pop().split('.')[0]
+                    geneid_values.add(v) #! do we want to compare the stable ids? so 123.1 and 123.2 are the same?
+            if len(geneid_values) == 1:
+                stable_id = geneid_values.pop().split('.')[0]
         else:
             logger.error('Line %s: No GeneAnnotation object created for this row due to missing dbxref attribute.', curr_line_num)
             return
@@ -238,10 +241,14 @@ class Gff3():
         # Check and validate the name attribute
         name = None
         if 'Name' in attributes:
-            if len(attributes['Name']) != 1:
+            if len(attributes['Name']) != 1 :
                 logger.warning('Line %s: name not set for this row\'s GeneAnnotation object due to more than one name provided.', curr_line_num)
             else:
-                name = attributes['Name'].pop()
+                value = attributes['Name'].pop()
+                if value.find(',') != -1:
+                    logger.warning('Line %s: name not set for this row\'s GeneAnnotation object due to value of name attribute containing ",".', curr_line_num)
+                else:
+                    name = value     
         else:
             logger.warning('Line %s: name not set for this row\'s GeneAnnotation object due to missing name attribute.', curr_line_num)
        
@@ -261,14 +268,19 @@ class Gff3():
             if len(attributes['gene_biotype']) != 1:
                 logger.warning('Line %s: molecular_type is not set for this row\'s GeneAnnotation object due to more than one biotype provided.', curr_line_num)
             else:
-                biotype = attributes['gene_biotype'].pop()
+                value = attributes['gene_biotype'].pop()
+                if value.find(',') != -1:
+                    logger.warning('Line %s: biotype not set for this row\'s GeneAnnotation object due to value of gene_biotype attribute containing ",".', curr_line_num)
+                else:
+                    biotype = value
         else:
             logger.warning('Line %s: molecular_type is not set for this row\'s GeneAnnotation object due to missing biotype attribute.', curr_line_num)
 
         # Parse synonyms
-        synonyms = None
+        synonyms = []
         if 'gene_synonym' in attributes:
             synonyms = list({t.strip() for s in attributes['gene_synonym'] for t in s.split(',')})
+            synonyms.sort() #note: this is not required, but it makes the output more predictable therefore easier to test
         else:
             logger.warning('Line %s: synonym is not set for this row\'s GeneAnnotation object due to missing gene_synonym attribute.', curr_line_num)
 
@@ -282,10 +294,10 @@ class Gff3():
                                                  in_taxon = [self.organism_taxon.id],
                                                  in_taxon_label = self.organism_taxon.full_name,
                                                  synonym = synonyms)
-        if stable_id in self.gene_annotations:
-            if gene_annotation != self.gene_annotations[stable_id]:
+        if gene_annotation.id in self.gene_annotations:
+            if gene_annotation != self.gene_annotations[gene_annotation.id]:
                 return self.__resolve_ncbi_gene_annotation(gene_annotation, curr_line_num)
-            if name != self.gene_annotations[stable_id].name:
+            if name != self.gene_annotations[gene_annotation.id].name:
                 logger.warning('Line %s: GeneAnnotation object with id %s already exists with a different name.', curr_line_num, stable_id)
                 return None
         
@@ -294,18 +306,21 @@ class Gff3():
    
     def __resolve_ncbi_gene_annotation(self, new_gene_annotation, curr_line_num):
         existing_gene_annotation = self.gene_annotations[new_gene_annotation.id]
-
         if existing_gene_annotation.description is None and new_gene_annotation.description is not None:
             return new_gene_annotation
         if existing_gene_annotation.description is not None and new_gene_annotation.description is None:
             return None
-        if existing_gene_annotation.molecular_type == kbmodel.BioType.protein_coding and new_gene_annotation.molecular_type == kbmodel.BioType.noncoding:
-            return None
-        if existing_gene_annotation.molecular_type == kbmodel.BioType.noncoding and new_gene_annotation.molecular_type == kbmodel.BioType.protein_coding:
+        if existing_gene_annotation.molecular_type is None and new_gene_annotation.molecular_type is not None:
             return new_gene_annotation
-
+        if existing_gene_annotation.molecular_type is not None and new_gene_annotation.molecular_type is None:
+            return None
+        if existing_gene_annotation.molecular_type == "noncoding" and new_gene_annotation.molecular_type  != "noncoding":
+            return new_gene_annotation
+        if existing_gene_annotation.molecular_type != "noncoding" and new_gene_annotation.molecular_type  == "noncoding":
+            return None
         logger.critical('Line %s: Unable to resolve duplicates for GeneID: %s.', curr_line_num, new_gene_annotation.id)
-        return None
+        raise ValueError("Can not resolve duplicates")
+        # return None
 
     def __merge_values(self, t):
         result = defaultdict(set)
@@ -317,16 +332,8 @@ class Gff3():
         return result
 
 
-
+    def serialize(self):
+        pass
 
 if __name__ == "__main__":
     pass
-
-
-
-            #     if line_strip != line_raw[:len(line_strip)]:
-            #         logger.warning('Line %s: White chars not allowed at the start of a line.', curr_line_num)
-            #     if curr_line_num == 1 and not line_strip.startswith('##gff-version'):
-            #         logger.warning('Line %s: ##gff-version" missing from the first line.', curr_line_num)
-            #     if len(line_strip) == 0: # blank line
-            #         continue
