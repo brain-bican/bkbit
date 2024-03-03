@@ -37,43 +37,14 @@ PREFIX_MAP = {
     "ENSEMBL": "http://identifiers.org/ensembl/",
     "NCBIAssembly": "https://www.ncbi.nlm.nih.gov/assembly/",
 }
-GENOME_ANNOTATION_FILE_COLUMN_NAMES = {
-    "assembly_identifier_prefix",
-    "assembly_local_unique_identifier",
-    "label",
-    "taxon_identifier_prefix",
-    "taxon_local_unique_identifier",
-    "authority",
-    "version",
-    "gene_identifier_prefix",
-    "description",
-    "url",
-}
-GENOME_ASSEMBLY_FILE_COLUMN_NAMES = {
-    "identifier_prefix",
-    "local_unique_identifier",
-    "taxon_identifier_prefix",
-    "taxon_local_unique_identifier",
-    "version",
-    "strain",
-    "label",
-}
-GFF3_FILE_COLUMN_NAMES = [
-    "seqid",
-    "source",
-    "type",
-    "start",
-    "end",
-    "score",
-    "strand",
-    "phase",
-    "attributes",
-]
 NCBI_GENE_ID_PREFIX = "NCBIGene"
 ENSEMBL_GENE_ID_PREFIX = "ENSEMBL"
 TAXON_PREFIX = "NCBITaxon"
 ASSEMBLY_PREFIX = "NCBIAssembly"
 BICAN_ANNOTATION_PREFIX = "bican:annotation-"
+GENOME_ANNOTATION_DESCRIPTION_FORMAT = (
+    "{authority} {taxon_scientific_name} Annotation Release {genome_version}"
+)
 
 
 class Gff3:
@@ -210,11 +181,11 @@ class Gff3:
             version=genome_version,
             in_taxon=[self.organism_taxon.id],
             in_taxon_label=self.organism_taxon.full_name,
-            description=self.authority.value
-            + " "
-            + self.organism_taxon.full_name
-            + " Annotation Release "
-            + genome_version,  # Format for description: <authority> <TAXON_SCIENTIFIC_NAME> Annotation Release <version>; i.e. NCBI Homo sapiens Annotation Release 110
+            description=GENOME_ANNOTATION_DESCRIPTION_FORMAT.format(
+                authority=self.authority.value,
+                taxon_scientific_name=self.organism_taxon.full_name,
+                genome_version=genome_version,
+            ),
             authority=self.authority,
         )
 
@@ -359,72 +330,18 @@ class Gff3:
             None
 
         """
-        if "gene_id" in attributes:
-            if len(attributes["gene_id"]) != 1:
-                logger.error(
-                    "Line %s: No GeneAnnotation object created for this row due to more than one gene_id provided.",
-                    curr_line_num,
-                )
-                return None
-        else:
-            logger.error(
-                "Line %s: No GeneAnnotation object created for this row due to missing gene_id attribute.",
-                curr_line_num,
-            )
-            return None
-        stable_id = attributes["gene_id"].pop().split(".")[0]
+        stable_id = self.__get_attribute(attributes, "gene_id", curr_line_num)
+        if stable_id:
+            stable_id = stable_id.split(".")[0]
 
         # Check and validate the name attribute
-        name = None
-        if "Name" in attributes:
-            if len(attributes["Name"]) != 1:
-                logger.warning(
-                    "Line %s: name not set for this row's GeneAnnotation object due to more than one name provided.",
-                    curr_line_num,
-                )
-            else:
-                name = attributes["Name"].pop()
-        else:
-            logger.warning(
-                "Line %s: name not set for this row's GeneAnnotation object due to missing name attribute.",
-                curr_line_num,
-            )
+        name = self.__get_attribute(attributes, "Name", curr_line_num)
 
         # Check and validate the description attribute
-        description = None
-        if "description" in attributes:
-            if len(attributes["description"]) != 1:
-                logger.warning(
-                    "Line %s: description not set for this row's GeneAnnotation object due to more than one description provided.",
-                    curr_line_num,
-                )
-            else:
-                description = re.sub(
-                    r" \[Source.*?\]",
-                    "",
-                    urllib.parse.unquote(attributes["description"].pop()),
-                )
-        else:
-            logger.warning(
-                "Line %s: description not set for this row's GeneAnnotation object due to missing description attribute.",
-                curr_line_num,
-            )
+        description = self.__get_attribute(attributes, "description", curr_line_num)
 
         # Check and validate the biotype attribute
-        biotype = None
-        if "biotype" in attributes:
-            if len(attributes["biotype"]) != 1:
-                logger.warning(
-                    "Line %s: biotype not set for this row's GeneAnnotation object due to more than one biotype provided.",
-                    curr_line_num,
-                )
-            else:
-                biotype = attributes["biotype"].pop()
-        else:
-            logger.warning(
-                "Line %s: biotype not set for this row's GeneAnnotation object due to missing biotype attribute.",
-                curr_line_num,
-            )
+        biotype = self.__get_attribute(attributes, "biotype", curr_line_num)
 
         gene_annotation = kbmodel.GeneAnnotation(
             id=ENSEMBL_GENE_ID_PREFIX + ":" + stable_id,
@@ -477,76 +394,23 @@ class Gff3:
                 "Line %s: No GeneAnnotation object created for this row due to missing dbxref attribute.",
                 curr_line_num,
             )
-            return
+            return None
 
         if not stable_id:
             logger.error(
                 "Line %s: No GeneAnnotation object created for this row due to number of GeneIDs provided in dbxref attribute is not equal to one.",
                 curr_line_num,
             )
-            return
+            return None
 
         # Check and validate the name attribute
-        name = None
-        if "Name" in attributes:
-            if len(attributes["Name"]) != 1:
-                logger.warning(
-                    "Line %s: name not set for this row's GeneAnnotation object due to more than one name provided.",
-                    curr_line_num,
-                )
-            else:
-                value = attributes["Name"].pop()
-                if value.find(",") != -1:
-                    logger.warning(
-                        'Line %s: name not set for this row\'s GeneAnnotation object due to value of name attribute containing ",".',
-                        curr_line_num,
-                    )
-                else:
-                    name = value
-        else:
-            logger.warning(
-                "Line %s: name not set for this row's GeneAnnotation object due to missing name attribute.",
-                curr_line_num,
-            )
+        name = self.__get_attribute(attributes, "Name", curr_line_num)
 
         # Check and validate the description attribute
-        description = None
-        if "description" in attributes:
-            if len(attributes["description"]) != 1:
-                logger.warning(
-                    "Line %s: description not set for this row's GeneAnnotation object due to more than one description provided.",
-                    curr_line_num,
-                )
-            else:
-                description = urllib.parse.unquote(attributes["description"].pop())
-        else:
-            logger.warning(
-                "Line %s: description not set for this row's GeneAnnotation object due to missing description attribute.",
-                curr_line_num,
-            )
+        description = self.__get_attribute(attributes, "description", curr_line_num)
 
         # Check and validate the biotype attribute
-        biotype = None
-        if "gene_biotype" in attributes:
-            if len(attributes["gene_biotype"]) != 1:
-                logger.warning(
-                    "Line %s: molecular_type is not set for this row's GeneAnnotation object due to more than one biotype provided.",
-                    curr_line_num,
-                )
-            else:
-                value = attributes["gene_biotype"].pop()
-                if value.find(",") != -1:
-                    logger.warning(
-                        'Line %s: biotype not set for this row\'s GeneAnnotation object due to value of gene_biotype attribute containing ",".',
-                        curr_line_num,
-                    )
-                else:
-                    biotype = value
-        else:
-            logger.warning(
-                "Line %s: molecular_type is not set for this row's GeneAnnotation object due to missing biotype attribute.",
-                curr_line_num,
-            )
+        biotype = self.__get_attribute(attributes, "gene_biotype", curr_line_num)
 
         # Parse synonyms
         synonyms = []
@@ -587,6 +451,31 @@ class Gff3:
                 return None
 
         return gene_annotation
+
+    def __get_attribute(self, attributes, attribute_name, curr_line_num):
+        value = None
+        if attribute_name in attributes:
+            if len(attributes[attribute_name]) != 1:
+                logger.warning(
+                    "Line %s: %s not set for this row's GeneAnnotation object due to more than one %s provided.",
+                    curr_line_num, attribute_name, attribute_name
+                )
+            elif attribute_name == 'description':
+                value = re.sub(r"\s*\[Source.*?\]", "", urllib.parse.unquote(attributes["description"].pop()))
+            else:
+                value = attributes[attribute_name].pop()
+                if value.find(",") != -1:
+                    logger.warning(
+                        'Line %s: %s not set for this row\'s GeneAnnotation object due to value of %s attribute containing ",".',
+                        curr_line_num, attribute_name, attribute_name
+                    )
+                    value = None
+        else:
+            logger.warning(
+                "Line %s: %s not set for this row's GeneAnnotation object due to missing %s attribute.",
+                curr_line_num, attribute_name, attribute_name
+            )
+        return value
 
     def __resolve_ncbi_gene_annotation(self, new_gene_annotation, curr_line_num):
         """
