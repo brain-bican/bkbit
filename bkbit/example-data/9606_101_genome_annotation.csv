@@ -1,0 +1,2 @@
+﻿assembly_identifier_prefix,assembly_local_unique_identifier,label,taxon_identifier_prefix,taxon_local_unique_identifier,authority,version,gene_identifier_prefix,description,url
+assembly,GCF_000001405.26,Ensembl-9606-101,taxonomy,9606,Ensembl,101,ensembl,Ensembl Homo Sapiens Annotation Release 101,https://ftp.ensembl.org/pub/release-101/gff3/homo_sapiens/Homo_sapiens.GRCh38.101.gff3.gz

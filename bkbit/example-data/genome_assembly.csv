@@ -1,0 +1,10 @@
+﻿identifier_prefix,local_unique_identifier,taxon_identifier_prefix,taxon_local_unique_identifier,version,strain,label
+assembly,GCF_000001635.27,taxonomy,10090,27,C57BL/6J,GRCm39
+assembly,GCF_000001635.26,taxonomy,10090,26,C57BL/6J,GRCm38.p6
+assembly,GCF_000001405.40,taxonomy,9606,40,,GRCh38.p14
+assembly,GCF_000001405.39,taxonomy,9606,39,,GRCh38.p13
+assembly,GCF_000001405.26,taxonomy,9606,26,,GRCh38
+assembly,GCF_000001405.38,taxonomy,9606,38,,GRCh38.p12
+assembly,GCF_003339765.1,taxonomy,9544,1,,Mmul_10
+assembly,GCF_009663435.1,taxonomy,9483,1,cj1700,Callithrix_jacchus_cj1700_1.1
+assembly,GCF_000004665.1,taxonomy,9483,1,,Callithrix jacchus-3.2
