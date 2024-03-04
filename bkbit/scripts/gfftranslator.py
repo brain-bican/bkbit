@@ -1,11 +1,16 @@
 from collections import defaultdict
 import re
 import hashlib
+import tempfile
 import uuid
 import logging
 import urllib
 import os
 import json
+import requests
+import validators
+from tqdm import tqdm
+import subprocess
 from bkbit.models import kbmodel
 
 logging.basicConfig(
@@ -47,6 +52,8 @@ GENOME_ANNOTATION_DESCRIPTION_FORMAT = (
 )
 FEATURE_FILTER = ("gene", "pseudogene", "ncRNA_gene")
 DEFAULT_HASH = "SHA256"
+FILE = "FILE"
+URL = "URL"
 
 
 class Gff3:
@@ -78,8 +85,9 @@ class Gff3:
         - hash_functions (tuple[str]): A list of hash functions to use for generating checksums.
         - assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
         """
-        self.gff_file = gff_file
         self.logger = logger
+        self.gff_file = gff_file
+        self.is_url = self.__check_input_type() == URL
         self.authority = self.assign_authority_type(genome_authority)
         self.organism_taxon = self.generate_organism_taxon(taxon_id)
         self.genome_assembly = self.generate_genome_assembly(
@@ -192,7 +200,8 @@ class Gff3:
         )
 
     def generate_digest(
-        self, hash_functions: tuple[str] = DEFAULT_HASH
+        self,
+        hash_functions: tuple[str] = DEFAULT_HASH,
     ) -> list[kbmodel.Checksum]:
         """
         Generates checksum digests for the GFF file using the specified hash functions.
@@ -207,9 +216,13 @@ class Gff3:
             ValueError: If an unsupported hash algorithm is provided.
 
         """
-        # gff_data = requests.get(url).content #* note: only needed if data is provided in url (from old version of gfftranslator)
+        if self.is_url:
+            gff_data = requests.get(
+                self.gff_file
+            ).content  # * note: only needed if data is provided in url (from old version of gfftranslator)
+        else:
+            gff_data = self.gff_file.encode("utf-8")
         checksums = []
-        gff_data = self.gff_file.encode("utf-8")
 
         # Generate a UUID version 4
         uuid_value = uuid.uuid4()
@@ -250,7 +263,58 @@ class Gff3:
                 )
         return checksums
 
+    def __get_line_count(self, file_path):
+        """
+        Get the line count of a file.
+
+        Args:
+            file_path (str): The path to the file.
+
+        Returns:
+            int: The number of lines in the file.
+        """
+
+        result = subprocess.run(
+            ["wc", "-l", file_path], stdout=subprocess.PIPE, check=True
+        )  # If check is True and the exit code was non-zero, it raises a CalledProcessError. The CalledProcessError object will have the return code in the returncode attribute, and output & stderr attributes if those streams were captured.
+        output = result.stdout.decode().strip()
+        line_count = int(output.split()[0])  # Extract the line count from the output
+        return line_count
+
     def parse(self, feature_filter: tuple[str] = FEATURE_FILTER):
+        """
+        Calls the appropriate helper function that parses the GFF file or url and extracts the desired features based on the given feature filter.
+
+        Args:
+            feature_filter (tuple[str], optional): A tuple of feature names to filter. Defaults to FEATURE_FILTER.
+
+        Returns:
+            None
+        """
+        if self.is_url:
+            self.__parse_gff_url(feature_filter)
+        else:
+            self.__parse_helper(self.gff_file, feature_filter)
+
+    def __parse_gff_url(self, feature_filter: tuple[str]):
+        """
+        Parses the GFF file from a URL and processes the data.
+
+        Args:
+            feature_filter (tuple[str]): A tuple of feature types to filter.
+
+        Returns:
+            None
+        """
+        response = requests.get(self.gff_file)
+        with tempfile.NamedTemporaryFile(mode="w") as temp_file:
+            temp_file.write(response.text)
+            temp_file_path = temp_file.name
+            # Process the data here
+            logger.debug("Data processed successfully from URL.")
+            self.__parse_helper(temp_file_path, feature_filter)
+
+    def __parse_helper(self, gff_file_path, feature_filter: tuple[str]):
         """
         Parses the GFF file and extracts gene annotations based on the provided feature filter.
 
@@ -263,12 +327,16 @@ class Gff3:
         Returns:
             None
         """
-        curr_line_num = 0
-        if not os.path.isfile(self.gff_file):
-            raise FileNotFoundError(f"File {self.gff_file} does not exist.")
-        with open(self.gff_file, "r", encoding="utf-8") as file:
+
+        if not os.path.isfile(gff_file_path):
+            raise FileNotFoundError(f"File {gff_file_path} does not exist.")
+
+        with open(gff_file_path, "r", encoding="utf-8") as file:
+            curr_line_num = 1
+            progress_bar = tqdm(
+                total=self.__get_line_count(gff_file_path), desc="Parsing GFF3 File"
+            )
             for line_raw in file:
-                curr_line_num += 1
                 line_strip = line_raw.strip()
                 if curr_line_num == 1 and not line_strip.startswith("##gff-version 3"):
                     logger.critical(
@@ -316,6 +384,9 @@ class Gff3:
                                 self.gene_annotations[gene_annotation.id] = (
                                     gene_annotation
                                 )
+                progress_bar.update(1)
+                curr_line_num += 1
+            progress_bar.close()
 
     def generate_ensembl_gene_annotation(self, attributes, curr_line_num):
         """
@@ -562,6 +633,7 @@ class Gff3:
             dict: A dictionary where each key maps to a set of values.
 
         """
+        self.logger.debug("Merging values")
         result = defaultdict(set)
         for lst in t:
             key = lst[0].strip()
@@ -569,6 +641,16 @@ class Gff3:
             for e in value:
                 result[key].add(e.strip())
         return result
+
+    def __check_input_type(self):
+        self.logger.debug("Checking input type")
+        # if the input is a URL, return True
+        if validators.url(self.gff_file):
+            return URL
+        # if the input is a file path, check if the file exists and return False
+        if os.path.exists(self.gff_file):
+            return FILE
+        raise ValueError("Input is not a valid file path or URL")
 
     def serialize_to_jsonld(
         self, output_file: str, exclude_none: bool = True, exclude_unset: bool = False
@@ -582,6 +664,7 @@ class Gff3:
         Returns:
             None
         """
+        logger.debug("Serializing to JSON-LD")
         with open(output_file, "w", encoding="utf-8") as f:
             data = [
                 self.organism_taxon.dict(
