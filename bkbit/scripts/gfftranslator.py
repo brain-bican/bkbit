@@ -11,10 +11,11 @@ import requests
 import validators
 from tqdm import tqdm
 import subprocess
+from datetime import datetime
 from bkbit.models import kbmodel
 
 logging.basicConfig(
-    filename="gff3_translator.log",
+    filename="gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log",
     format="%(levelname)s: %(message)s (%(asctime)s)",
     datefmt="%m/%d/%Y %I:%M:%S %p",
     level=logging.INFO,
@@ -218,8 +219,9 @@ class Gff3:
         """
         if self.is_url:
             gff_data = requests.get(
-                self.gff_file
-            ).content  # * note: only needed if data is provided in url (from old version of gfftranslator)
+                self.gff_file,
+                timeout=10
+            ).content  #! Question: What is an appropriate timeout value?
         else:
             gff_data = self.gff_file.encode("utf-8")
         checksums = []
@@ -306,7 +308,7 @@ class Gff3:
         Returns:
             None
         """
-        response = requests.get(self.gff_file)
+        response = requests.get(self.gff_file, timeout=10) #! Question: What is an appropriate timeout value?
         with tempfile.NamedTemporaryFile(mode="w") as temp_file:
             temp_file.write(response.text)
             temp_file_path = temp_file.name
