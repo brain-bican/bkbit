@@ -1,380 +1,614 @@
-## IMPORTS ##
-
-import pandas as pd
-import os
-import csv
-import json
-import requests
+from collections import defaultdict
+import re
 import hashlib
 import uuid
-import urllib.parse
-import re
+import logging
+import urllib
+import os
+import json
 from bkbit.models import kbmodel
-#from mappings import *
+
+logging.basicConfig(
+    filename="gff3_translator.log",
+    format="%(levelname)s: %(message)s (%(asctime)s)",
+    datefmt="%m/%d/%Y %I:%M:%S %p",
+    level=logging.INFO,
+)
+logger = logging.getLogger(__name__)
+
 
 ## CONSTANTS ##
 
-TAXON_SCIENTIFIC_NAME = {'9606': 'Homo sapiens', '10090': 'Mus musculus', '9544': 'Macaca mulatta', '9483': 'Callithrix jacchus'}
-TAXON_COMMON_NAME = {'9606': 'human', '10090': 'mouse', '9544': 'rhesus macaque', '9483': 'common marmoset'}
-PREFIX_MAP = {"NCBITaxon": "http://purl.obolibrary.org/obo/NCBITaxon_", "NCBIGene": "http://identifiers.org/ncbigene/", "ENSEMBL": "http://identifiers.org/ensembl/", "NCBIAssembly": "https://www.ncbi.nlm.nih.gov/assembly/"}
-GENOME_ANNOTATION_FILE_COLUMN_NAMES = {'assembly_identifier_prefix', 'assembly_local_unique_identifier', 'label', 'taxon_identifier_prefix', 'taxon_local_unique_identifier', 'authority', 'version', 'gene_identifier_prefix', 'description', 'url'}
-GENOME_ASSEMBLY_FILE_COLUMN_NAMES = {'identifier_prefix','local_unique_identifier','taxon_identifier_prefix','taxon_local_unique_identifier','version','strain','label'}
-GFF3_FILE_COLUMN_NAMES = ['seqid','source','type','start','end','score','strand','phase','attributes']
-NCBI_GENE_ID_PREFIX = 'NCBIGene'
-ENSEMBL_GENE_ID_PREFIX = 'ENSEMBL'
-TAXON_PREFIX = 'NCBITaxon'
+TAXON_SCIENTIFIC_NAME = {
+    "9606": "Homo sapiens",
+    "10090": "Mus musculus",
+    "9544": "Macaca mulatta",
+    "9483": "Callithrix jacchus",
+}
+TAXON_COMMON_NAME = {
+    "9606": "human",
+    "10090": "mouse",
+    "9544": "rhesus macaque",
+    "9483": "common marmoset",
+}
+PREFIX_MAP = {
+    "NCBITaxon": "http://purl.obolibrary.org/obo/NCBITaxon_",
+    "NCBIGene": "http://identifiers.org/ncbigene/",
+    "ENSEMBL": "http://identifiers.org/ensembl/",
+    "NCBIAssembly": "https://www.ncbi.nlm.nih.gov/assembly/",
+}
+NCBI_GENE_ID_PREFIX = "NCBIGene"
+ENSEMBL_GENE_ID_PREFIX = "ENSEMBL"
+TAXON_PREFIX = "NCBITaxon"
 ASSEMBLY_PREFIX = "NCBIAssembly"
-BICAN_ANNOTATION_PREFIX = 'bican:annotation-'
-
-## FUNCTIONS ##
-
-def gff_to_gene_annotation(input_fname, data_dir, output_dir, genome_assembly_fname, hash_functions=['SHA256']):
-    """Converts GFF file(s) to GeneAnnotation objects and serializes them to a JSON file.
-
-    Parameters:
-    input_fname (str): name of csv file containing gff files
-    data_dir (str): path to directory containing input file
-    output_dir (str): path to output directory where generated files will be saved
-    genome_assembly_fname (str): name of csv file containing genome assembly data
-
-    """
-    # CHECK IF DATA DIRECTORY EXISTS #
-    if not os.path.exists(data_dir):
-        raise NotADirectoryError(f"Data directory {data_dir} does not exist.")
-    
-    # CHECK IF INPUT FILES EXIST #
-    if not os.path.isfile(os.path.join(data_dir,input_fname)):
-        raise FileNotFoundError(f"Input file {input_fname} does not exist in data directory {data_dir}.")
-    if not os.path.isfile(os.path.join(data_dir,genome_assembly_fname)):
-        raise FileNotFoundError(f"Genome assembly file {genome_assembly_fname} does not exist in data directory {data_dir}.")
-
-    # GENERATE GENOME ASSEMBLY OBJECTS #
-    genomeAssemblyObjects = generate_genome_assembly(os.path.join(data_dir,genome_assembly_fname)) 
-
-    # CREATE OUTPUT DIRECTORY IF IT DOES NOT EXIST #
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    # ITERATE THROUGH ALL GFF3 FILES PROVIDED IN INPUT CSV #
-    with open(os.path.join(data_dir,input_fname), newline='') as csvfile:
-        reader = csv.DictReader(csvfile)
-        
-        # Check if column names match expected column names
-        column_names = [name.strip('\ufeff').strip() for name in reader.fieldnames]  # Remove invisible characters
-        validate_column_names(column_names, GENOME_ANNOTATION_FILE_COLUMN_NAMES)
-        
-        for row in reader:
-            row = {k.strip('\ufeff').strip(): v.strip('\ufeff').strip() for k, v in row.items()}
-            filter_and_parse_gff3(**row, data_dir=data_dir, output_dir=output_dir, genomeAssemblyObjects=genomeAssemblyObjects, hash_functions=hash_functions)
-            
-
-def filter_and_parse_gff3(assembly_identifier_prefix, assembly_local_unique_identifier, label, taxon_identifier_prefix, taxon_local_unique_identifier, authority, version, gene_identifier_prefix, description, url, data_dir, output_dir, genomeAssemblyObjects, feature_type_filter=['gene', 'pseudogene', 'ncRNA_gene'], hash_functions=['SHA256']):
-    """
-    Filters and parses a GFF3 file, generates various objects, and serializes them.
-
-    Parameters:
-    assembly_identifier_prefix (str): The prefix for the assembly identifier.
-    assembly_local_unique_identifier (str): The local unique identifier for the assembly.
-    label (str): The label for the genome annotation.
-    taxon_identifier_prefix (str): The prefix for the taxon identifier.
-    taxon_local_unique_identifier (str): The local unique identifier for the taxon.
-    authority (str): The authority for the genome annotation.
-    version (str): The version of the genome annotation.
-    gene_identifier_prefix (str): The prefix for the gene identifier.
-    description (str): The description of the genome annotation.
-    url (str): The URL of the GFF3 file.
-    data_dir (str): The directory to store the downloaded data.
-    output_dir (str): The directory to store the serialized objects.
-    genomeAssemblyObjects (dict): A dictionary of genome assembly objects.
-    feature_type_filter (list, optional): The list of feature types to filter for. Defaults to ['gene', 'pseudogene', 'ncRNA_gene'].
-    hash_functions (list, optional): The list of hash functions to generate checksums. Defaults to ['SHA256'].
-
-    """
-    print(f"AUTHORITY: {authority}, LABEL: {label}, TAXON_LOCAL_UNIQUE_ID: {taxon_local_unique_identifier}, VERSION: {version}, GENE_ID_PREFIX: {gene_identifier_prefix}, URL: {url}")
-    gene_name = ''.join(url.split('/')[-1].split('.')[0:-2])
-    print("GENE NAME: ", gene_name)
-
-    if os.path.isfile(data_dir + '/' + gene_name + '.csv'):
-        print(f"Data from url is already downloaded and saved here: {data_dir + '/' + gene_name + '.csv'}")
-        df = pd.read_csv(data_dir + '/' + gene_name + '.csv') 
-    else:
-        print(f"Downloading and saving data from url here: {data_dir + '/' + gene_name + '.csv'}")
-        df = pd.read_csv(url, sep='\t', comment = "#", header=None, names=GFF3_FILE_COLUMN_NAMES)
-        df.to_csv(data_dir + '/' + gene_name + '.csv', index=False)
-
-    # FILTER FOR GENE FEATURES #
-    pred = [x in feature_type_filter for x in df['type']]
-    df_gene = df[pred].copy(deep=True)
-    print(f'LENGTH OF DATAFRAME AFTER FILTERING FOR GENES: {len(df_gene)}')
-    df_gene.to_csv(data_dir + '/' + gene_name + '_genefilter.csv', index=False) 
-
-    # STORES ALL GENERATED OBJECTS RELATED TO THIS GFF3 FILE #
-    fileObjects = []
-
-    # GENERATE ORGANISM TAXON OBJECT #
-    curr_org_taxon = kbmodel.OrganismTaxon(id = TAXON_PREFIX + ':' + str(taxon_local_unique_identifier), full_name = TAXON_SCIENTIFIC_NAME[taxon_local_unique_identifier], name = TAXON_COMMON_NAME[taxon_local_unique_identifier],  iri = PREFIX_MAP[TAXON_PREFIX] + taxon_local_unique_identifier)
-
-    # GENERATE CHECKSUM OBJECT #
-    digests = dict()
-    for hash_function in hash_functions:
-        curr_digest = generate_digest(hash_function, requests.get(url).content)
-        digests[curr_digest.id] = curr_digest
-
-    # CHECK IF AUTHORITY IS VALID #
-    if authority.upper() == kbmodel.AuthorityType.NCBI.value:
-        authority_type = kbmodel.AuthorityType.NCBI
-    elif authority.upper() == kbmodel.AuthorityType.ENSEMBL.value:
-        authority_type = kbmodel.AuthorityType.ENSEMBL
-    else:
-        raise Exception(f'Authority {authority} is not supported. Please use NCBI or Ensembl.')
-    
-    # GENERATE GENOME ANNOTATION OBJECT #
-    curr_genome_annot = kbmodel.GenomeAnnotation(id = BICAN_ANNOTATION_PREFIX + label.upper(), 
-                                                    digest = list(digests.keys()), 
-                                                    content_url = [url], 
-                                                    reference_assembly = genomeAssemblyObjects[assembly_local_unique_identifier].id, 
-                                                    version = version, 
-                                                    in_taxon = [curr_org_taxon.id], 
-                                                    in_taxon_label = TAXON_SCIENTIFIC_NAME[taxon_local_unique_identifier], 
-                                                    description = authority_type.value + ' ' + TAXON_SCIENTIFIC_NAME[taxon_local_unique_identifier] + ' Annotation Release ' + version, # Format for description: <authority> <TAXON_SCIENTIFIC_NAME> Annotation Release <version>; i.e. NCBI Homo sapiens Annotation Release 110
-                                                    authority = authority_type
-                                                )
-    
-    # GENERATE GENE ANNOTATION OBJECT #
-    if authority_type.value == 'NCBI':
-        curr_gene_annots = generate_ncbi_gene_annotation(df_gene, curr_genome_annot, curr_org_taxon, taxon_local_unique_identifier)
-    else: 
-        curr_gene_annots = generate_ensembl_gene_annotation(df_gene, curr_genome_annot, curr_org_taxon, taxon_local_unique_identifier)
-    print(f'NUMBER OF GENE ANNOTATIONS: {len(curr_gene_annots)}')
-
-    # COMBINE ALL GENERATED OBJECTS RELATED TO THIS GFF FILE #
-    fileObjects.append(genomeAssemblyObjects[assembly_local_unique_identifier])
-    fileObjects.append(curr_genome_annot)
-    fileObjects.append(curr_org_taxon)
-    fileObjects.extend(list(digests.values())) 
-    fileObjects.extend(curr_gene_annots)
-    output_ser = os.path.join(output_dir, gene_name +'.json')
-    serialize_annotation_collection(fileObjects, output_ser)
-    print(f'Serialized GeneAnnotation objects saved here: {output_ser}')
+BICAN_ANNOTATION_PREFIX = "bican:annotation-"
+GENOME_ANNOTATION_DESCRIPTION_FORMAT = (
+    "{authority} {taxon_scientific_name} Annotation Release {genome_version}"
+)
+FEATURE_FILTER = ("gene", "pseudogene", "ncRNA_gene")
+DEFAULT_HASH = "SHA256"
 
 
-def generate_ensembl_gene_annotation(df, genomeAnnot, orgTaxon, taxon_id):
-    """Creates a gene annotation object for every row in the provided dataframe.
+class Gff3:
+    def __init__(
+        self,
+        gff_file,
+        taxon_id,
+        assembly_id,
+        assembly_version,
+        assembly_label,
+        genome_label: str,
+        genome_version: str,
+        genome_authority: str,
+        hash_functions: tuple[str],
+        assembly_strain=None,
+    ):
+        """
+        Initializes an instance of the GFFTranslator class.
 
-    Parameters:
-    df (pandas.DataFrame): dataframe containing gene annotations and respective metadata
-    genomeAnnot (GenomeAnnotation): reference to GenomeAnnotation object 
-    orgTaxon (OrganismTaxon): reference to OrganismTaxon object 
-    taxon_id (str): taxon id 
+        Parameters:
+        - gff_file (str): The path to the GFF file.
+        - taxon_id (int): The taxon ID of the organism.
+        - assembly_id (str): The ID of the genome assembly.
+        - assembly_version (str): The version of the genome assembly.
+        - assembly_label (str): The label of the genome assembly.
+        - genome_label (str): The label of the genome.
+        - genome_version (str): The version of the genome.
+        - genome_authority (str): The authority responsible for the genome.
+        - hash_functions (tuple[str]): A list of hash functions to use for generating checksums.
+        - assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
+        """
+        self.gff_file = gff_file
+        self.logger = logger
+        self.authority = self.assign_authority_type(genome_authority)
+        self.organism_taxon = self.generate_organism_taxon(taxon_id)
+        self.genome_assembly = self.generate_genome_assembly(
+            assembly_id, assembly_version, assembly_label, assembly_strain
+        )
+        self.checksums = self.generate_digest(hash_functions)
+        self.genome_annotation = self.generate_genome_annotation(
+            genome_label, genome_version
+        )
+        self.gene_annotations = {}
 
-    Returns:
-    gene_annotations (List[GeneAnnotations]): list of gene annotations created
+    def generate_organism_taxon(self, taxon_id: str):
+        """
+        Generates an organism taxon object based on the provided taxon ID.
 
-    """
-    gene_annotations = []
+        Args:
+            taxon_id (str): The taxon ID of the organism.
 
-    for row in df.itertuples():
-        attributes = dict([x.split('=') for x in row.attributes.split(';')])
-        description = attributes.get("description")
-        if description is not None:
-            description = urllib.parse.unquote(description)
-            description = re.sub(r"\[source .*?\]", "", description)
-        stable_id = attributes['gene_id'].split('.')[0]
-        molecular_type = kbmodel.BioType.protein_coding if attributes.get('biotype') == kbmodel.BioType.protein_coding.value else kbmodel.BioType.noncoding
+        Returns:
+            kbmodel.OrganismTaxon: The generated organism taxon object.
+        """
+        self.logger.debug("Generating organism taxon")
+        return kbmodel.OrganismTaxon(
+            id=TAXON_PREFIX + ":" + taxon_id,
+            full_name=TAXON_SCIENTIFIC_NAME[taxon_id],
+            name=TAXON_COMMON_NAME[taxon_id],
+            iri=PREFIX_MAP[TAXON_PREFIX] + taxon_id,
+        )
 
+    def assign_authority_type(self, authority: str):
+        """
+        Assigns the authority type based on the given authority string.
 
-        curr_gene_annot = kbmodel.GeneAnnotation(id = ENSEMBL_GENE_ID_PREFIX + ':' + stable_id , symbol = attributes.get('Name'), name = attributes.get('Name'), referenced_in = genomeAnnot.id, 
-                                                molecular_type = molecular_type, source_id = stable_id, in_taxon = [orgTaxon.id], 
-                                                in_taxon_label = TAXON_SCIENTIFIC_NAME[taxon_id], description = description, synonym = None)
-        gene_annotations.append(curr_gene_annot)
-    return remove_ensembl_duplicates(gene_annotations)
+        Args:
+            authority (str): The authority string to be assigned.
 
+        Returns:
+            kbmodel.AuthorityType: The corresponding authority type.
 
-def remove_ensembl_duplicates(gene_annotations):
-    """
-    Removes duplicates in a list of gene annotations based on [id, name, description, molecular_type]. 
+        Raises:
+            Exception: If the authority is not supported. Only NCBI and Ensembl authorities are supported.
+        """
+        self.logger.debug("Assigning authority type")
+        if authority.upper() == kbmodel.AuthorityType.NCBI.value:
+            return kbmodel.AuthorityType.NCBI
+        if authority.upper() == kbmodel.AuthorityType.ENSEMBL.value:
+            return kbmodel.AuthorityType.ENSEMBL
+        logger.critical(
+            "Authority %s is not supported. Please use NCBI or Ensembl.", authority
+        )
+        raise ValueError(
+            f"Authority {self.authority} is not supported. Please use NCBI or Ensembl."
+        )
 
-    Parameters:
-    gene_annotations (list): A list of gene annotations.
+    def generate_genome_assembly(
+        self,
+        assembly_id: str,
+        assembly_version: str,
+        assembly_label: str,
+        assembly_strain: str = None,
+    ):
+        """
+        Generate a genome assembly object.
 
-    Returns:
-    list[GeneAnnotations]: A list of unique gene annotations.
+        Parameters:
+        assembly_id (str): The ID of the assembly.
+        assembly_version (str): The version of the assembly.
+        assembly_label (str): The label of the assembly.
+        assembly_strain (str, optional): The strain of the assembly. Defaults to None.
 
-    """
-    #! LONG TERM TODO: make GeneAnnotation hashable so we can use set(). Add def __hash__(self) to GeneAnnotation class in kbmodel.py
-    unique_annotations = dict()
-    seen_annotations = set()
+        Returns:
+        kbmodel.GenomeAssembly: The generated genome assembly object.
+        """
+        self.logger.debug("Generating genome assembly")
+        return kbmodel.GenomeAssembly(
+            id=ASSEMBLY_PREFIX + ":" + assembly_id,
+            in_taxon=[self.organism_taxon.id],
+            in_taxon_label=self.organism_taxon.full_name,
+            version=assembly_version,
+            name=assembly_label,
+            strain=assembly_strain,
+        )
 
-    for annotation in gene_annotations:
-        annotation_key = (annotation.id, annotation.name, annotation.description, annotation.molecular_type)
+    def generate_genome_annotation(self, genome_label: str, genome_version: str):
+        """
+        Generates a genome annotation object.
 
-        if annotation_key not in seen_annotations:
-            unique_annotations[annotation.id] = annotation
-            seen_annotations.add(annotation_key)
+        Args:
+            genome_label (str): The label of the genome.
+            genome_version (str): The version of the genome.
+
+        Returns:
+            kbmodel.GenomeAnnotation: The generated genome annotation.
+        """
+        self.logger.debug("Generating genome annotation")
+        return kbmodel.GenomeAnnotation(
+            id=BICAN_ANNOTATION_PREFIX + genome_label.upper(),
+            digest=[checksum.id for checksum in self.checksums],
+            content_url=[self.gff_file],
+            reference_assembly=self.genome_assembly.id,
+            version=genome_version,
+            in_taxon=[self.organism_taxon.id],
+            in_taxon_label=self.organism_taxon.full_name,
+            description=GENOME_ANNOTATION_DESCRIPTION_FORMAT.format(
+                authority=self.authority.value,
+                taxon_scientific_name=self.organism_taxon.full_name,
+                genome_version=genome_version,
+            ),
+            authority=self.authority,
+        )
+
+    def generate_digest(
+        self, hash_functions: tuple[str] = DEFAULT_HASH
+    ) -> list[kbmodel.Checksum]:
+        """
+        Generates checksum digests for the GFF file using the specified hash functions.
+
+        Args:
+            hash_functions (list[str]): A list of hash functions to use for generating the digests.
+
+        Returns:
+            list[kbmodel.Checksum]: A list of Checksum objects containing the generated digests.
+
+        Raises:
+            ValueError: If an unsupported hash algorithm is provided.
+
+        """
+        # gff_data = requests.get(url).content #* note: only needed if data is provided in url (from old version of gfftranslator)
+        checksums = []
+        gff_data = self.gff_file.encode("utf-8")
+
+        # Generate a UUID version 4
+        uuid_value = uuid.uuid4()
+
+        # Construct a URN with the UUID
+        urn = f"urn:uuid:{uuid_value}"
+        for hash_type in hash_functions:
+
+            hash_type = hash_type.strip().upper()
+            # Create a Checksum object
+            if hash_type == "SHA256":
+                digest = hashlib.sha256(gff_data).hexdigest()
+                checksums.append(
+                    kbmodel.Checksum(
+                        id=urn,
+                        checksum_algorithm=kbmodel.DigestType.SHA256,
+                        value=digest,
+                    )
+                )
+            elif hash_type == "MD5":
+                digest = hashlib.md5(gff_data).hexdigest()
+                checksums.append(
+                    kbmodel.Checksum(
+                        id=urn, checksum_algorithm=kbmodel.DigestType.MD5, value=digest
+                    )
+                )
+            elif hash_type == "SHA1":
+                digest = hashlib.sha1(gff_data).hexdigest()
+                checksums.append(
+                    kbmodel.Checksum(
+                        id=urn, checksum_algorithm=kbmodel.DigestType.SHA1, value=digest
+                    )
+                )
+            else:
+                logger.error(
+                    "Hash algorithm %s is not supported. Please use SHA256, MD5, or SHA1.",
+                    hash_type,
+                )
+        return checksums
+
+    def parse(self, feature_filter: tuple[str] = FEATURE_FILTER):
+        """
+        Parses the GFF file and extracts gene annotations based on the provided feature filter.
+
+        Args:
+            feature_filter (tuple[str]): Tuple of feature types to include in the gene annotations.
+
+        Raises:
+            FileNotFoundError: If the GFF file does not exist.
+
+        Returns:
+            None
+        """
+        curr_line_num = 0
+        if not os.path.isfile(self.gff_file):
+            raise FileNotFoundError(f"File {self.gff_file} does not exist.")
+        with open(self.gff_file, "r", encoding="utf-8") as file:
+            for line_raw in file:
+                curr_line_num += 1
+                line_strip = line_raw.strip()
+                if curr_line_num == 1 and not line_strip.startswith("##gff-version 3"):
+                    logger.critical(
+                        'Line %s: ##gff-version 3" missing from the first line.',
+                        curr_line_num,
+                    )
+                elif len(line_strip) == 0:  # blank line
+                    continue
+                elif line_strip.startswith("##"):  # TODO: parse more metadata
+                    pass
+                elif line_strip.startswith("#"):  # TODO: parse more metadata
+                    pass
+                else:  # line may be a feature or unknown
+                    tokens = list(map(str.strip, line_raw.split("\t")))
+                    if len(tokens) != 9:
+                        logger.warning(
+                            "Line %s: Features are expected 9 columns, found %s.",
+                            curr_line_num,
+                            len(tokens),
+                        )
+                    if (
+                        tokens[2] in feature_filter
+                    ):  # only look at rows that have a type that is included in feature_filter
+                        attributes = self.__merge_values(
+                            tuple(a.split("=") for a in tokens[8].split(";"))
+                        )
+                        # TODO: Write cleaner code that calls respective generate function based on the authority automatically
+                        if (
+                            self.genome_annotation.authority
+                            == kbmodel.AuthorityType.ENSEMBL
+                        ):
+                            gene_annotation = self.generate_ensembl_gene_annotation(
+                                attributes, curr_line_num
+                            )
+                            if gene_annotation is not None:
+                                self.gene_annotations[gene_annotation] = gene_annotation
+                        elif (
+                            self.genome_annotation.authority
+                            == kbmodel.AuthorityType.NCBI
+                        ):
+                            gene_annotation = self.generate_ncbi_gene_annotation(
+                                attributes, curr_line_num
+                            )
+                            if gene_annotation is not None:
+                                self.gene_annotations[gene_annotation.id] = (
+                                    gene_annotation
+                                )
+
+    def generate_ensembl_gene_annotation(self, attributes, curr_line_num):
+        """
+        Generates a GeneAnnotation object for Ensembl based on the provided attributes.
+
+        Args:
+            attributes (dict): A dictionary containing the attributes of the gene.
+            curr_line_num (int): The line number of the current row in the input file.
+
+        Returns:
+            GeneAnnotation or None: The generated GeneAnnotation object if it is not a duplicate,
+            otherwise None.
+
+        Raises:
+            None
+
+        """
+        stable_id = self.__get_attribute(attributes, "gene_id", curr_line_num)
+        if stable_id:
+            stable_id = stable_id.split(".")[0]
+
+        # Check and validate the name attribute
+        name = self.__get_attribute(attributes, "Name", curr_line_num)
+
+        # Check and validate the description attribute
+        description = self.__get_attribute(attributes, "description", curr_line_num)
+
+        # Check and validate the biotype attribute
+        biotype = self.__get_attribute(attributes, "biotype", curr_line_num)
+
+        gene_annotation = kbmodel.GeneAnnotation(
+            id=ENSEMBL_GENE_ID_PREFIX + ":" + stable_id,
+            source_id=stable_id,
+            symbol=name,
+            name=name,
+            description=description,
+            molecular_type=biotype,
+            referenced_in=self.genome_annotation.id,
+            in_taxon=[self.organism_taxon.id],
+            in_taxon_label=self.organism_taxon.full_name,
+        )
+        # handle duplicates
+        if gene_annotation not in self.gene_annotations:
+            return gene_annotation
+        return None
+
+    def generate_ncbi_gene_annotation(self, attributes, curr_line_num):
+        """
+        Generates a GeneAnnotation object for NCBI based on the provided attributes.
+
+        Args:
+            attributes (dict): A dictionary containing the attributes of the gene.
+            curr_line_num (int): The line number of the current row in the input file.
+
+        Returns:
+            GeneAnnotation or None: The generated GeneAnnotation object if it is not a duplicate,
+            otherwise None.
+
+        Raises:
+            None
+
+        """
+        stable_id = None
+        if "Dbxref" in attributes:
+            dbxref = {t.strip() for s in attributes["Dbxref"] for t in s.split(",")}
+            geneid_values = set()
+            for reference in dbxref:
+                k, v = reference.split(":", 1)
+                if k == "GeneID":
+                    geneid_values.add(v.split(".")[0])
+            if len(geneid_values) == 1:
+                stable_id = geneid_values.pop()
         else:
-            try:
-                unique_annotations.pop(annotation.id)
-            except KeyError:
-                pass
-    print(f'NUMBER OF UNIQUE GENE ANNOTATIONS: {len(unique_annotations)}')
-    return list(unique_annotations.values())
-      
+            logger.error(
+                "Line %s: No GeneAnnotation object created for this row due to missing dbxref attribute.",
+                curr_line_num,
+            )
+            return None
 
-def generate_ncbi_gene_annotation(df, genomeAnnot, orgTaxon, taxon_id):
-    """Creates a gene annotation object for every row in the provided dataframe.
+        if not stable_id:
+            logger.error(
+                "Line %s: No GeneAnnotation object created for this row due to number of GeneIDs provided in dbxref attribute is not equal to one.",
+                curr_line_num,
+            )
+            return None
 
-    Parameters:
-    df (pandas.DataFrame): dataframe containing gene annotations and respective metadata
-    genomeAnnot (GenomeAnnotation): reference to GenomeAnnotation object 
-    orgTaxon (OrganismTaxon): reference to OrganismTaxon object 
-    taxon_id (str): taxon id 
+        # Check and validate the name attribute
+        name = self.__get_attribute(attributes, "Name", curr_line_num)
 
-    Returns:
-    gene_annotations.values() (List[GeneAnnotations]): list of gene annotations created
+        # Check and validate the description attribute
+        description = self.__get_attribute(attributes, "description", curr_line_num)
 
-    """
-    gene_annotations = dict()
-    
-    for row in df.itertuples():
-        attributes = dict([x.split('=') for x in row.attributes.split(';')])
-        description = attributes.get("description")
-        if description is not None:
-            description = urllib.parse.unquote(description)
-        db_xref = dict([x.split(':', 1) for x in attributes['Dbxref'].split(',')]) if 'Dbxref' in attributes else {}
-        stable_id = db_xref['GeneID'].split('.')[0]
-        molecular_type = kbmodel.BioType.protein_coding if attributes.get('gene_biotype') == 'protein_coding' else kbmodel.BioType.noncoding
+        # Check and validate the biotype attribute
+        biotype = self.__get_attribute(attributes, "gene_biotype", curr_line_num)
 
-        # CHECK FOR DUPLICATE GENE IDS #
-        #! TODO: ASK IF SHOULD I CHECK IF 'NAME' IS CONSISTENT BETWEEN DUPLICATES?
-        if stable_id in gene_annotations:
-            gene_annotations[stable_id] = resolve_ncbi_duplicates(gene_annotations[stable_id], curr_gene_annot)
+        # Parse synonyms
+        synonyms = []
+        if "gene_synonym" in attributes:
+            synonyms = list(
+                {t.strip() for s in attributes["gene_synonym"] for t in s.split(",")}
+            )
+            synonyms.sort()  # note: this is not required, but it makes the output more predictable therefore easier to test
         else:
-            curr_gene_annot = kbmodel.GeneAnnotation(id = NCBI_GENE_ID_PREFIX + ':' + stable_id, symbol = attributes.get('Name'), name = attributes.get('Name'), referenced_in = genomeAnnot.id, 
-                                                     molecular_type = molecular_type, source_id = stable_id, in_taxon = [orgTaxon.id], 
-                                                     in_taxon_label = TAXON_SCIENTIFIC_NAME[taxon_id], description = description, synonym = attributes.get('gene_synonym').split(','))
-            gene_annotations[stable_id] = curr_gene_annot
-    return gene_annotations.values()
+            logger.warning(
+                "Line %s: synonym is not set for this row's GeneAnnotation object due to missing gene_synonym attribute.",
+                curr_line_num,
+            )
 
-def resolve_ncbi_duplicates(stored_annotation, curr_annotation):
-    """
-    Resolves duplicates between two GeneAnnotation objects with the same GeneID based on specific conditions.
-    Conditions: Among all duplicates with the same GeneID, keep one record per GeneID using the following priority:
-        1.	“description” is not NULL and “molecular_type” = ‘protein_coding’
-        2.	“description” is not NULL and “molecular_type” = ‘noncoding’
-        3.	“description” is NULL and “molecular_type” = ‘protein_coding’
-        4.	“description” is NULL and “molecular_type” = ‘noncoding
+        gene_annotation = kbmodel.GeneAnnotation(
+            id=NCBI_GENE_ID_PREFIX + ":" + stable_id,
+            source_id=stable_id,
+            symbol=name,
+            name=name,
+            description=description,
+            molecular_type=biotype,
+            referenced_in=self.genome_annotation.id,
+            in_taxon=[self.organism_taxon.id],
+            in_taxon_label=self.organism_taxon.full_name,
+            synonym=synonyms,
+        )
+        if gene_annotation.id in self.gene_annotations:
+            if gene_annotation != self.gene_annotations[gene_annotation.id]:
+                return self.__resolve_ncbi_gene_annotation(
+                    gene_annotation, curr_line_num
+                )
+            if name != self.gene_annotations[gene_annotation.id].name:
+                logger.warning(
+                    "Line %s: GeneAnnotation object with id %s already exists with a different name.",
+                    curr_line_num,
+                    stable_id,
+                )
+                return None
+        return gene_annotation
 
-    Parameters:
-    stored_annotation (GeneAnnotation): The stored gene annotation object.
-    curr_annotation (GeneAnnotation): The current gene annotation object.
+    def __get_attribute(self, attributes, attribute_name, curr_line_num):
+        """
+        Get the value of a specific attribute from the given attributes dictionary.
 
-    Returns:
-    (GeneAnnotation): The gene annotation object with higher priority.
+        Args:
+            attributes (dict): A dictionary containing attribute names and their values.
+            attribute_name (str): The name of the attribute to retrieve.
+            curr_line_num (int): The current line number for logging purposes.
 
-    """
-    if stored_annotation.description is None and curr_annotation.description is not None:
-        return curr_annotation
-    elif stored_annotation.description is not None and curr_annotation.description is None:
-        return stored_annotation
-    elif stored_annotation.molecular_type == 'protein_coding' and curr_annotation.molecular_type == 'noncoding':
-        return stored_annotation
-    elif stored_annotation.molecular_type == 'noncoding' and curr_annotation.molecular_type == 'protein_coding':
-        return curr_annotation
-    else:
-        return stored_annotation
-    
+        Returns:
+            str or None: The value of the attribute if found, None otherwise.
+        """
+        value = None
+        if attribute_name in attributes:
+            if len(attributes[attribute_name]) != 1:
+                logger.warning(
+                    "Line %s: %s not set for this row's GeneAnnotation object due to more than one %s provided.",
+                    curr_line_num,
+                    attribute_name,
+                    attribute_name,
+                )
+            elif attribute_name == "description":
+                value = re.sub(
+                    r"\s*\[Source.*?\]",
+                    "",
+                    urllib.parse.unquote(attributes["description"].pop()),
+                )
+            else:
+                value = attributes[attribute_name].pop()
+                if value.find(",") != -1:
+                    logger.warning(
+                        'Line %s: %s not set for this row\'s GeneAnnotation object due to value of %s attribute containing ",".',
+                        curr_line_num,
+                        attribute_name,
+                        attribute_name,
+                    )
+                    value = None
+        else:
+            logger.warning(
+                "Line %s: %s not set for this row's GeneAnnotation object due to missing %s attribute.",
+                curr_line_num,
+                attribute_name,
+                attribute_name,
+            )
+        return value
+
+    def __resolve_ncbi_gene_annotation(self, new_gene_annotation, curr_line_num):
+        """
+        Resolves conflicts between existing and new gene annotations based on certain conditions.
+
+        Args:
+            new_gene_annotation (GeneAnnotation): The new gene annotation to be resolved.
+            curr_line_num (int): The current line number in the file.
+
+        Returns:
+            GeneAnnotation or None: The resolved gene annotation or None if it cannot be resolved.
+
+        Raises:
+            ValueError: If duplicates cannot be resolved.
+
+        """
+        existing_gene_annotation = self.gene_annotations[new_gene_annotation.id]
+        if (
+            existing_gene_annotation.description is None
+            and new_gene_annotation.description is not None
+        ):
+            return new_gene_annotation
+        if (
+            existing_gene_annotation.description is not None
+            and new_gene_annotation.description is None
+        ):
+            return None
+        if (
+            existing_gene_annotation.molecular_type is None
+            and new_gene_annotation.molecular_type is not None
+        ):
+            return new_gene_annotation
+        if (
+            existing_gene_annotation.molecular_type is not None
+            and new_gene_annotation.molecular_type is None
+        ):
+            return None
+        if (
+            existing_gene_annotation.molecular_type == kbmodel.BioType.noncoding.value
+            and new_gene_annotation.molecular_type != kbmodel.BioType.noncoding.value
+        ):
+            return new_gene_annotation
+        if (
+            existing_gene_annotation.molecular_type != kbmodel.BioType.noncoding.value
+            and new_gene_annotation.molecular_type == kbmodel.BioType.noncoding.value
+        ):
+            return None
+        logger.critical(
+            "Line %s: Unable to resolve duplicates for GeneID: %s.\nexisting gene: %s\nnew gene:      %s",
+            curr_line_num,
+            new_gene_annotation.id,
+            existing_gene_annotation,
+            new_gene_annotation,
+        )
+        return None
+
+    def __merge_values(self, t):
+        """
+        Merge values from a list of lists into a dictionary of sets.
+
+        Args:
+            t (list): A list of lists containing key-value pairs.
+
+        Returns:
+            dict: A dictionary where each key maps to a set of values.
+
+        """
+        result = defaultdict(set)
+        for lst in t:
+            key = lst[0].strip()
+            value = lst[1:]
+            for e in value:
+                result[key].add(e.strip())
+        return result
+
+    def serialize_to_jsonld(
+        self, output_file: str, exclude_none: bool = True, exclude_unset: bool = False
+    ):
+        """
+        Serialize the object and write it to the specified output file.
+
+        Parameters:
+            output_file (str): The path of the output file.
+
+        Returns:
+            None
+        """
+        with open(output_file, "w", encoding="utf-8") as f:
+            data = [
+                self.organism_taxon.dict(
+                    exclude_none=exclude_none, exclude_unset=exclude_unset
+                ),
+                self.genome_assembly.dict(
+                    exclude_none=exclude_none, exclude_unset=exclude_unset
+                ),
+                self.genome_annotation.dict(
+                    exclude_none=exclude_none, exclude_unset=exclude_unset
+                ),
+            ]
+            for ck in self.checksums:
+                data.append(
+                    ck.dict(exclude_none=exclude_none, exclude_unset=exclude_unset)
+                )
+            for ga in self.gene_annotations.values():
+                data.append(
+                    ga.dict(exclude_none=exclude_none, exclude_unset=exclude_unset)
+                )
+
+            output_data = {
+                "@context": "https://raw.githubusercontent.com/atlaskb/models/main/jsonld-context-autogen/kbmodel.context.jsonld",
+                "@graph": data,
+            }
+            f.write(json.dumps(output_data, indent=2))
 
 
-def generate_genome_assembly(file_path):
-    ''' Creates GenomeAssembly objects from the given file path. 
-    Parameters:
-    file_path (str): Path to the file containing the genome assembly data.
-
-    Returns: 
-    [GeneomeAssembly]: list of GenomeAssembly objects created from the given file path
-
-    '''
-    df = pd.read_csv(file_path) 
-    validate_column_names(df.columns.tolist(), GENOME_ASSEMBLY_FILE_COLUMN_NAMES)
-    genomeAssemblyObjects = {}
-    for row in df.itertuples(index=False):
-        id = row.local_unique_identifier.strip()
-        if row.local_unique_identifier not in genomeAssemblyObjects:
-            currOrgTaxon = kbmodel.OrganismTaxon(id = TAXON_PREFIX + ':' + str(row.taxon_local_unique_identifier), full_name = TAXON_SCIENTIFIC_NAME[str(row.taxon_local_unique_identifier)], name = TAXON_COMMON_NAME[str(row.taxon_local_unique_identifier)],  iri = PREFIX_MAP[TAXON_PREFIX] + str(row.taxon_local_unique_identifier))
-            currGenomeAssem = kbmodel.GenomeAssembly(id = ASSEMBLY_PREFIX + ":" + id, 
-                                                     in_taxon = [currOrgTaxon.id], 
-                                                     in_taxon_label = TAXON_SCIENTIFIC_NAME[str(row.taxon_local_unique_identifier)],
-                                                     version = str(row.version), 
-                                                     name = row.label)
-            #! LONG TERM TODO: DOUBLE CHECK IF THIS IS THE BEST WAY TO CHECK IF STRAIN IS PROVIDED
-            if str(row.strain) != 'nan':
-                currGenomeAssem.strain = row.strain
-            genomeAssemblyObjects[id] = currGenomeAssem
-    return genomeAssemblyObjects
-
-
-def generate_digest(hash, data):
-    '''Generates a Checksum object from the given hash and data.
-    
-    Parameters:
-    hash (str): Hash algorithm to use. Currently supported: sha256, md5, sha1
-    data (pandas.DataFrame): Data to be hashed
-
-    Returns:
-    Checksum: Checksum object containing the hash value of the given data
-
-    '''
-    hash = hash.strip().upper()
-
-    # Generate a UUID version 4
-    uuid_value = uuid.uuid4()
-
-    # Construct a URN with the UUID
-    urn = f"urn:uuid:{uuid_value}"
-       
-    # Create a Checksum object
-    if hash == 'SHA256':
-        digest = hashlib.sha256(data).hexdigest()
-        return kbmodel.Checksum(id = urn, checksum_algorithm = kbmodel.DigestType.SHA256, value = digest)
-    elif hash == 'MD5':
-        digest = hashlib.md5(data).hexdigest()
-        return kbmodel.Checksum(id = urn, checksum_algorithm = kbmodel.DigestType.MD5, value = digest)
-    elif hash == 'SHA1':
-        digest = hashlib.sha1(data).hexdigest()
-        return kbmodel.Checksum(id = urn, checksum_algorithm = kbmodel.DigestType.SHA1, value = digest)
-    else:
-        raise ValueError(f'Hash algorithm {hash} is not supported. Please use SHA256, MD5, or SHA1.')
-
-
-def serialize_annotation_collection(annotations, outfile):
-    """Serializes the annotation collection object to a JSON file.
-
-    Parameters:  
-    annotations (list): list of initialized classes from kbmodel
-    outfile (str): path to output file
-
-    """
-    with open(outfile, 'w') as f:
-        output_arr = []
-        for g in annotations:
-            output_arr.append(g.dict(exclude_none=True))
-        f.write(json.dumps(output_arr, indent=2))
-
-
-def validate_column_names(column_names, expected_names):
-    #! LONG TERM TODO: ADD EXTRA PARAMETER FOR FILENAME FOR EXTRA CLARITY
-    """Validates that the given column names match the expected column names.
-
-    Parameters:
-    column_names (list): list of column names
-    expected_names (set): set of expected column names
-
-    """
-    if len(column_names) != len(expected_names):
-        raise ValueError(f"Expected {len(expected_names)} columns, but found {len(column_names)} columns. Expected column names: {expected_names}")
-    if set(column_names) != expected_names:
-        raise ValueError(f"Expected column names: {expected_names}, but found: {column_names}.")
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

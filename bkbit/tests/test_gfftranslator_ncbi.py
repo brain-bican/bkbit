@@ -1,5 +1,5 @@
 import pytest
-from bkbit.scripts import gfftranslator_20240226 as gt
+from bkbit.scripts import gfftranslator as gt
 from bkbit.models import kbmodel
 import hashlib
 

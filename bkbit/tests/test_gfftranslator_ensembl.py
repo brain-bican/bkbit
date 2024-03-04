@@ -1,5 +1,5 @@
 import pytest
-from bkbit.scripts import gfftranslator_20240226 as gt
+from bkbit.scripts import gfftranslator as gt
 from bkbit.models import kbmodel
 import hashlib
 
@@ -82,5 +82,3 @@ def test_ensembl_duplicates(df_ensembl_duplicates, gff_params_ensembl_human):
     expected_gene_annotations = {gene_annotation:gene_annotation}
     gff.parse(feature_filter)
     assert gff.gene_annotations == expected_gene_annotations
-
-
