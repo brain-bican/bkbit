@@ -308,19 +308,22 @@ class Gff3:
         Returns:
             None
         """
-        file_name = self.gff_file.split("/")[-1]
-        urllib.request.urlretrieve(self.gff_file, file_name)
+        with urllib.request.urlopen(self.gff_file) as response:
+            gzip_data = response.read()
+
+        # Create a temporary file for the gzip data
+        with tempfile.NamedTemporaryFile(suffix='.gz', delete=False) as f_gzip:
+            f_gzip.write(gzip_data)
+            gzip_file_path = f_gzip.name
 
         # Decompress the gzip file
-        with gzip.open(file_name, "rb") as f_in:
+        with gzip.open(gzip_file_path, 'rb') as f_in:
             # Create a temporary file to save the decompressed data
             with tempfile.NamedTemporaryFile(delete=False) as f_out:
                 # Copy the decompressed data to the temporary file
                 f_out.write(f_in.read())
                 temp_file_path = f_out.name
 
-        # Clean up by deleting the downloaded gzip file
-        os.remove(file_name) #! I will probably change this logic since it is not the best practice to be removing files from the system.
         self.__parse_helper(temp_file_path, feature_filter)
 
     def __parse_helper(self, gff_file_path, feature_filter: tuple[str]):
