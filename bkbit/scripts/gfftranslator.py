@@ -1,18 +1,21 @@
-from collections import defaultdict
 import re
 import hashlib
 import tempfile
 import uuid
 import logging
 import urllib
+import urllib.request
 import os
 import json
+from datetime import datetime
+from collections import defaultdict
+import subprocess
+import gzip
 import requests
 import validators
 from tqdm import tqdm
-import subprocess
-from datetime import datetime
 from bkbit.models import kbmodel
+
 
 logging.basicConfig(
     filename="gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log",
@@ -218,10 +221,7 @@ class Gff3:
 
         """
         if self.is_url:
-            gff_data = requests.get(
-                self.gff_file,
-                timeout=10
-            ).content  #! Question: What is an appropriate timeout value?
+            gff_data = requests.get(self.gff_file, timeout=10).content
         else:
             gff_data = self.gff_file.encode("utf-8")
         checksums = []
@@ -308,13 +308,20 @@ class Gff3:
         Returns:
             None
         """
-        response = requests.get(self.gff_file, timeout=10) #! Question: What is an appropriate timeout value?
-        with tempfile.NamedTemporaryFile(mode="w") as temp_file:
-            temp_file.write(response.text)
-            temp_file_path = temp_file.name
-            # Process the data here
-            logger.debug("Data processed successfully from URL.")
-            self.__parse_helper(temp_file_path, feature_filter)
+        file_name = self.gff_file.split("/")[-1]
+        urllib.request.urlretrieve(self.gff_file, file_name)
+
+        # Decompress the gzip file
+        with gzip.open(file_name, "rb") as f_in:
+            # Create a temporary file to save the decompressed data
+            with tempfile.NamedTemporaryFile(delete=False) as f_out:
+                # Copy the decompressed data to the temporary file
+                f_out.write(f_in.read())
+                temp_file_path = f_out.name
+
+        # Clean up by deleting the downloaded gzip file
+        os.remove(file_name) #! I will probably change this logic since it is not the best practice to be removing files from the system.
+        self.__parse_helper(temp_file_path, feature_filter)
 
     def __parse_helper(self, gff_file_path, feature_filter: tuple[str]):
         """
