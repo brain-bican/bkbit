@@ -31,12 +31,14 @@ TAXON_SCIENTIFIC_NAME = {
     "10090": "Mus musculus",
     "9544": "Macaca mulatta",
     "9483": "Callithrix jacchus",
+    "60711": "Chlorocebus sabaeus",
 }
 TAXON_COMMON_NAME = {
     "9606": "human",
     "10090": "mouse",
     "9544": "rhesus macaque",
     "9483": "common marmoset",
+    "60711": "green monkey",
 }
 PREFIX_MAP = {
     "NCBITaxon": "http://purl.obolibrary.org/obo/NCBITaxon_",
@@ -52,9 +54,8 @@ BICAN_ANNOTATION_PREFIX = "bican:annotation-"
 GENOME_ANNOTATION_DESCRIPTION_FORMAT = (
     "{authority} {taxon_scientific_name} Annotation Release {genome_version}"
 )
-FEATURE_FILTER = ("gene", "pseudogene", "ncRNA_gene")
-DEFAULT_HASH = "SHA256"
-
+DEFAULT_FEATURE_FILTER = ("gene", "pseudogene", "ncRNA_gene")
+DEFAULT_HASH = ("SHA256", "MD5")
 
 
 class Gff3:
@@ -68,7 +69,7 @@ class Gff3:
         genome_label: str,
         genome_version: str,
         genome_authority: str,
-        hash_functions: tuple[str],
+        hash_functions: tuple[str] = DEFAULT_HASH,
         assembly_strain=None,
         gff_file=None,
     ):
@@ -76,7 +77,7 @@ class Gff3:
         Initializes an instance of the GFFTranslator class.
 
         Parameters:
-        - gff_file (str): The path to the GFF file.
+        - content_url (str): The URL of the GFF file.
         - taxon_id (int): The taxon ID of the organism.
         - assembly_id (str): The ID of the genome assembly.
         - assembly_version (str): The version of the genome assembly.
@@ -84,8 +85,9 @@ class Gff3:
         - genome_label (str): The label of the genome.
         - genome_version (str): The version of the genome.
         - genome_authority (str): The authority responsible for the genome.
-        - hash_functions (tuple[str]): A list of hash functions to use for generating checksums.
+        - hash_functions (tuple[str]): A list of hash functions to use for generating checksums. Defaults to ("SHA256", "MD5").
         - assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
+        - gff_file (str, optional): The path to the GFF file. Defaults to None.
         """
         self.logger = logger
         self.content_url = content_url
@@ -118,15 +120,7 @@ class Gff3:
         with tempfile.NamedTemporaryFile(suffix=".gz", delete=False) as f_gzip:
             f_gzip.write(gzip_data)
             gzip_file_path = f_gzip.name
-
-        # Decompress the gzip file
-        with gzip.open(gzip_file_path, "rb") as f_in:
-            # Create a temporary file to save the decompressed data
-            with tempfile.NamedTemporaryFile(delete=False) as f_out:
-                # Copy the decompressed data to the temporary file
-                f_out.write(f_in.read())
-                temp_file_path = f_out.name
-        return temp_file_path
+        return gzip_file_path
 
     def generate_organism_taxon(self, taxon_id: str):
         """
@@ -245,16 +239,17 @@ class Gff3:
             ValueError: If an unsupported hash algorithm is provided.
 
         """
-        gff_data = self.gff_file.encode("utf-8")
+        gff_data = open(
+            self.gff_file, "rb"
+        ).read()  # TODO: Modify this to read the file in chunks
         checksums = []
 
-        # Generate a UUID version 4
-        uuid_value = uuid.uuid4()
-
-        # Construct a URN with the UUID
-        urn = f"urn:uuid:{uuid_value}"
         for hash_type in hash_functions:
+            # Generate a UUID version 4
+            uuid_value = uuid.uuid4()
 
+            # Construct a URN with the UUID
+            urn = f"urn:uuid:{uuid_value}"
             hash_type = hash_type.strip().upper()
             # Create a Checksum object
             if hash_type == "SHA256":
@@ -305,7 +300,7 @@ class Gff3:
         line_count = int(output.split()[0])  # Extract the line count from the output
         return line_count
 
-    def parse(self, feature_filter: tuple[str] = FEATURE_FILTER):
+    def parse(self, feature_filter: tuple[str] = DEFAULT_FEATURE_FILTER):
         """
         Parses the GFF file and extracts gene annotations based on the provided feature filter.
 
@@ -318,14 +313,23 @@ class Gff3:
         Returns:
             None
         """
+        gff_file = self.gff_file
+        if self.gff_file.endswith(".gz"):
+            # Decompress the gzip file
+            with gzip.open(self.gff_file, "rb") as f_in:
+                # Create a temporary file to save the decompressed data
+                with tempfile.NamedTemporaryFile(delete=False) as f_out:
+                    # Copy the decompressed data to the temporary file
+                    f_out.write(f_in.read())
+                    gff_file = f_out.name
 
-        if not os.path.isfile(self.gff_file):
-            raise FileNotFoundError(f"File {self.gff_file} does not exist.")
+        if not os.path.isfile(gff_file):
+            raise FileNotFoundError(f"File {gff_file} does not exist.")
 
-        with open(self.gff_file, "r", encoding="utf-8") as file:
+        with open(gff_file, "r", encoding="utf-8") as file:
             curr_line_num = 1
             progress_bar = tqdm(
-                total=self.__get_line_count(self.gff_file), desc="Parsing GFF3 File"
+                total=self.__get_line_count(gff_file), desc="Parsing GFF3 File"
             )
             for line_raw in file:
                 line_strip = line_raw.strip()
