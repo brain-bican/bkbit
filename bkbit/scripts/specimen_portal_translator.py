@@ -1,6 +1,6 @@
 import requests
-from bkbit.models import purple_boxes as pb
-#from bkbit.models import kbmodel220231002 as pb
+#from bkbit.models import purple_boxes as pb
+from bkbit.models import purple_boxes_entire_biolink as pb
 
 API_URL_PREFIX = 'https://brain-specimenportal.org/api/v1/nhash_ids/'
 INFO_URL_SUFFIX = 'info?id='
