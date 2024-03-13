@@ -87,7 +87,7 @@ class Gff3:
         - genome_authority (str): The authority responsible for the genome.
         - hash_functions (tuple[str]): A list of hash functions to use for generating checksums. Defaults to ("SHA256", "MD5").
         - assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
-        - gff_file (str, optional): The path to the GFF file. Defaults to None.
+        - gff_file (str, optional): The local path to the GFF file if file is already downloaded. Defaults to None.
         """
         self.logger = logger
         self.content_url = content_url
@@ -295,7 +295,9 @@ class Gff3:
 
         result = subprocess.run(
             ["wc", "-l", file_path], stdout=subprocess.PIPE, check=True
-        )  # If check is True and the exit code was non-zero, it raises a CalledProcessError. The CalledProcessError object will have the return code in the returncode attribute, and output & stderr attributes if those streams were captured.
+        )  # If check is True and the exit code was non-zero, it raises a CalledProcessError. 
+           # The CalledProcessError object will have the return code in the returncode attribute,
+           # and output & stderr attributes if those streams were captured.
         output = result.stdout.decode().strip()
         line_count = int(output.split()[0])  # Extract the line count from the output
         return line_count
@@ -509,9 +511,11 @@ class Gff3:
                 )
             if name != self.gene_annotations[gene_annotation.id].name:
                 logger.warning(
-                    "Line %s: GeneAnnotation object with id %s already exists with a different name.",
+                    "Line %s: GeneAnnotation object with id %s already exists with a different name. Current name: %s, Existing name: %s",
                     curr_line_num,
                     stable_id,
+                    name,
+                    self.gene_annotations[gene_annotation.id].name
                 )
                 return None
         return gene_annotation
@@ -571,7 +575,9 @@ class Gff3:
             curr_line_num (int): The current line number in the file.
 
         Returns:
-            GeneAnnotation or None: The resolved gene annotation or None if it cannot be resolved.
+            GeneAnnotation or None: The resolved gene annotation or None if it cannot be resolved
+                                    or None if the resolution is in favor of the existing gene
+                                    annotation.
 
         Raises:
             ValueError: If duplicates cannot be resolved.
