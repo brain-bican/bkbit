@@ -3,7 +3,7 @@ import yaml
 import click
 from pathlib import Path
 
-from linkml_runtime.linkml_model.meta import SchemaDefinition
+from linkml_runtime.linkml_model.meta import SchemaDefinition, SlotDefinition
 from linkml_runtime.utils.schema_as_dict import schema_as_dict
 from schemasheets import schemamaker as sm
 
@@ -44,6 +44,10 @@ def bican_fix(schema: SchemaDefinition, template_yaml) -> SchemaDefinition:
     :param schema:
     :return:
     """
+
+
+    for nm, cl in schema.classes.items():
+        cl.slot_usage["category"] = SlotDefinition(name="category", pattern=r"^biolink:[A-Z][A-Za-z]+$")
 
     with (template_yaml).open() as file:
         classes_base = yaml.safe_load(file)
