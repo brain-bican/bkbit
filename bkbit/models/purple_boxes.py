@@ -1273,7 +1273,7 @@ class Entity(ConfiguredBaseModel):
     """
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
-    category: List[Literal["https://w3id.org/biolink/Entity","biolink:Entity"]] = Field(["biolink:Entity"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
+    category: List[Literal["https://w3id.org/biolink/vocab/Entity","biolink:Entity"]] = Field(["biolink:Entity"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -1319,6 +1319,7 @@ class NamedThing(Entity):
     """
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://w3id.org/biolink/vocab/NamedThing","biolink:NamedThing"]] = Field(["biolink:NamedThing"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -1328,33 +1329,7 @@ class NamedThing(Entity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://w3id.org/biolink/NamedThing","biolink:NamedThing"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://w3id.org/biolink/NamedThing","biolink:NamedThing"]] = Field(["biolink:NamedThing"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
-    
-    @field_validator('category')
-    def pattern_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid category format: {v}")
-        return v
     
 
 class Attribute(NamedThing, OntologyClass):
@@ -1362,6 +1337,7 @@ class Attribute(NamedThing, OntologyClass):
     A property or characteristic of an entity. For example, an apple may have properties such as color, shape, age, crispiness. An environmental sample may have attributes such as depth, lat, long, material.
     """
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
+    category: List[Literal["https://w3id.org/biolink/vocab/Attribute","biolink:Attribute"]] = Field(["biolink:Attribute"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
     has_attribute: Optional[List[str]] = Field(None, description="""connects any entity to an attribute""")
@@ -1370,39 +1346,13 @@ class Attribute(NamedThing, OntologyClass):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://w3id.org/biolink/Attribute","biolink:Attribute"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     attribute_name: Optional[str] = Field(None, description="""The human-readable 'attribute name' can be set to a string which reflects its context of interpretation, e.g. SEPIO evidence/provenance/confidence annotation or it can default to the name associated with the 'has attribute type' slot ontology term.""")
     has_attribute_type: str = Field(..., description="""connects an attribute to a class that describes it""")
     has_quantitative_value: Optional[List[QuantityValue]] = Field(None, description="""connects an attribute to a value""")
     has_qualitative_value: Optional[str] = Field(None, description="""connects an attribute to a value""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
     name: Optional[str] = Field(None, description="""The human-readable 'attribute name' can be set to a string which reflects its context of interpretation, e.g. SEPIO evidence/provenance/confidence annotation or it can default to the name associated with the 'has attribute type' slot ontology term.""")
-    category: List[Literal["https://w3id.org/biolink/Attribute","biolink:Attribute"]] = Field(["biolink:Attribute"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
-    
-    @field_validator('category')
-    def pattern_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid category format: {v}")
-        return v
     
 
 class TaxonomicRank(OntologyClass):
@@ -1419,6 +1369,7 @@ class OrganismTaxon(NamedThing):
     """
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://w3id.org/biolink/vocab/OrganismTaxon","biolink:OrganismTaxon"]] = Field(["biolink:OrganismTaxon"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -1428,34 +1379,8 @@ class OrganismTaxon(NamedThing):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://w3id.org/biolink/OrganismTaxon","biolink:OrganismTaxon"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     organism_taxon_has_taxonomic_rank: Optional[str] = Field(None)
-    category: List[Literal["https://w3id.org/biolink/OrganismTaxon","biolink:OrganismTaxon"]] = Field(["biolink:OrganismTaxon"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
-    
-    @field_validator('category')
-    def pattern_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid category format: {v}")
-        return v
     
 
 class PhysicalEssenceOrOccurrent(ConfiguredBaseModel):
@@ -1480,6 +1405,7 @@ class PhysicalEntity(PhysicalEssence, NamedThing):
     """
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://w3id.org/biolink/vocab/PhysicalEntity","biolink:PhysicalEntity"]] = Field(["biolink:PhysicalEntity"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -1489,33 +1415,7 @@ class PhysicalEntity(PhysicalEssence, NamedThing):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://w3id.org/biolink/PhysicalEntity","biolink:PhysicalEntity"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://w3id.org/biolink/PhysicalEntity","biolink:PhysicalEntity"]] = Field(["biolink:PhysicalEntity"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
-    
-    @field_validator('category')
-    def pattern_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid category format: {v}")
-        return v
     
 
 class Occurrent(PhysicalEssenceOrOccurrent):
@@ -1540,6 +1440,7 @@ class Activity(ActivityAndBehavior, NamedThing):
     """
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://w3id.org/biolink/vocab/Activity","biolink:Activity"]] = Field(["biolink:Activity"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -1549,33 +1450,7 @@ class Activity(ActivityAndBehavior, NamedThing):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://w3id.org/biolink/Activity","biolink:Activity"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://w3id.org/biolink/Activity","biolink:Activity"]] = Field(["biolink:Activity"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
-    
-    @field_validator('category')
-    def pattern_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid category format: {v}")
-        return v
     
 
 class Procedure(ActivityAndBehavior, NamedThing):
@@ -1584,6 +1459,7 @@ class Procedure(ActivityAndBehavior, NamedThing):
     """
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://w3id.org/biolink/vocab/Procedure","biolink:Procedure"]] = Field(["biolink:Procedure"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -1593,33 +1469,7 @@ class Procedure(ActivityAndBehavior, NamedThing):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://w3id.org/biolink/Procedure","biolink:Procedure"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://w3id.org/biolink/Procedure","biolink:Procedure"]] = Field(["biolink:Procedure"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
-    
-    @field_validator('category')
-    def pattern_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid category format: {v}")
-        return v
     
 
 class DissectionRoiDelineation(Procedure, ProvActivity):
@@ -1630,6 +1480,7 @@ class DissectionRoiDelineation(Procedure, ProvActivity):
     was_guided_by: Optional[str] = Field(None, description="""Guidance is the influence of an entity on an activity. This entity is known as an influencer, and the activity is influenced by the influencer.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/DissectionRoiDelineation","bican:DissectionRoiDelineation"]] = Field(["bican:DissectionRoiDelineation"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -1639,21 +1490,7 @@ class DissectionRoiDelineation(Procedure, ProvActivity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/DissectionRoiDelineation","bican:DissectionRoiDelineation"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/DissectionRoiDelineation","bican:DissectionRoiDelineation"]] = Field(["bican:DissectionRoiDelineation"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -1676,6 +1513,7 @@ class TissueDissection(Procedure, ProvActivity):
     used: Optional[str] = Field(None, description="""The brain slab from which the tissue sample was dissected from.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/TissueDissection","bican:TissueDissection"]] = Field(["bican:TissueDissection"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -1685,21 +1523,7 @@ class TissueDissection(Procedure, ProvActivity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/TissueDissection","bican:TissueDissection"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/TissueDissection","bican:TissueDissection"]] = Field(["bican:TissueDissection"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -1723,6 +1547,7 @@ class CellDissociation(Procedure, ProvActivity):
     was_guided_by: Optional[str] = Field(None, description="""Guidance is the influence of an entity on an activity. This entity is known as an influencer, and the activity is influenced by the influencer.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/CellDissociation","bican:CellDissociation"]] = Field(["bican:CellDissociation"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -1732,21 +1557,7 @@ class CellDissociation(Procedure, ProvActivity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/CellDissociation","bican:CellDissociation"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/CellDissociation","bican:CellDissociation"]] = Field(["bican:CellDissociation"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -1770,6 +1581,7 @@ class CellEnrichment(Procedure, ProvActivity):
     was_guided_by: Optional[str] = Field(None, description="""Guidance is the influence of an entity on an activity. This entity is known as an influencer, and the activity is influenced by the influencer.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/CellEnrichment","bican:CellEnrichment"]] = Field(["bican:CellEnrichment"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -1779,21 +1591,7 @@ class CellEnrichment(Procedure, ProvActivity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/CellEnrichment","bican:CellEnrichment"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/CellEnrichment","bican:CellEnrichment"]] = Field(["bican:CellEnrichment"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -1816,6 +1614,7 @@ class EnrichedCellSampleSplitting(Procedure, ProvActivity):
     was_guided_by: Optional[str] = Field(None, description="""Guidance is the influence of an entity on an activity. This entity is known as an influencer, and the activity is influenced by the influencer.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/EnrichedCellSampleSplitting","bican:EnrichedCellSampleSplitting"]] = Field(["bican:EnrichedCellSampleSplitting"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -1825,21 +1624,7 @@ class EnrichedCellSampleSplitting(Procedure, ProvActivity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/EnrichedCellSampleSplitting","bican:EnrichedCellSampleSplitting"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/EnrichedCellSampleSplitting","bican:EnrichedCellSampleSplitting"]] = Field(["bican:EnrichedCellSampleSplitting"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -1866,6 +1651,7 @@ class CellBarcoding(Procedure, ProvActivity):
     was_guided_by: Optional[str] = Field(None, description="""Guidance is the influence of an entity on an activity. This entity is known as an influencer, and the activity is influenced by the influencer.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/CellBarcoding","bican:CellBarcoding"]] = Field(["bican:CellBarcoding"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -1875,21 +1661,7 @@ class CellBarcoding(Procedure, ProvActivity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/CellBarcoding","bican:CellBarcoding"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/CellBarcoding","bican:CellBarcoding"]] = Field(["bican:CellBarcoding"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -1915,6 +1687,7 @@ class CdnaAmplification(Procedure, ProvActivity):
     was_guided_by: Optional[str] = Field(None, description="""Guidance is the influence of an entity on an activity. This entity is known as an influencer, and the activity is influenced by the influencer.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/CdnaAmplification","bican:CdnaAmplification"]] = Field(["bican:CdnaAmplification"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -1924,21 +1697,7 @@ class CdnaAmplification(Procedure, ProvActivity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/CdnaAmplification","bican:CdnaAmplification"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/CdnaAmplification","bican:CdnaAmplification"]] = Field(["bican:CdnaAmplification"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -1965,6 +1724,7 @@ class LibraryConstruction(Procedure, ProvActivity):
     was_guided_by: Optional[str] = Field(None, description="""Guidance is the influence of an entity on an activity. This entity is known as an influencer, and the activity is influenced by the influencer.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/LibraryConstruction","bican:LibraryConstruction"]] = Field(["bican:LibraryConstruction"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -1974,21 +1734,7 @@ class LibraryConstruction(Procedure, ProvActivity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/LibraryConstruction","bican:LibraryConstruction"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/LibraryConstruction","bican:LibraryConstruction"]] = Field(["bican:LibraryConstruction"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -2012,6 +1758,7 @@ class LibraryPooling(Procedure, ProvActivity):
     was_guided_by: Optional[str] = Field(None, description="""Guidance is the influence of an entity on an activity. This entity is known as an influencer, and the activity is influenced by the influencer.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/LibraryPooling","bican:LibraryPooling"]] = Field(["bican:LibraryPooling"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -2021,21 +1768,7 @@ class LibraryPooling(Procedure, ProvActivity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/LibraryPooling","bican:LibraryPooling"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/LibraryPooling","bican:LibraryPooling"]] = Field(["bican:LibraryPooling"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -2064,6 +1797,7 @@ class MaterialSample(SubjectOfInvestigation, PhysicalEntity):
     """
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://w3id.org/biolink/vocab/MaterialSample","biolink:MaterialSample"]] = Field(["biolink:MaterialSample"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -2073,33 +1807,7 @@ class MaterialSample(SubjectOfInvestigation, PhysicalEntity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://w3id.org/biolink/MaterialSample","biolink:MaterialSample"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://w3id.org/biolink/MaterialSample","biolink:MaterialSample"]] = Field(["biolink:MaterialSample"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
-    
-    @field_validator('category')
-    def pattern_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid category format: {v}")
-        return v
     
 
 class BrainSlab(MaterialSample, ProvEntity):
@@ -2113,6 +1821,7 @@ class BrainSlab(MaterialSample, ProvEntity):
     dissection_was_guided_by: Optional[str] = Field(None, description="""Tranformation (dissection) of one entity into another entity.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/BrainSlab","bican:BrainSlab"]] = Field(["bican:BrainSlab"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
     has_attribute: Optional[List[str]] = Field(None, description="""connects any entity to an attribute""")
@@ -2121,21 +1830,7 @@ class BrainSlab(MaterialSample, ProvEntity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/BrainSlab","bican:BrainSlab"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/BrainSlab","bican:BrainSlab"]] = Field(["bican:BrainSlab"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -2161,6 +1856,7 @@ class TissueSample(MaterialSample, ProvEntity):
     annotates: Optional[str] = Field(None, description="""Annotation is the addition of metadata to an entity""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/TissueSample","bican:TissueSample"]] = Field(["bican:TissueSample"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
     has_attribute: Optional[List[str]] = Field(None, description="""connects any entity to an attribute""")
@@ -2169,21 +1865,7 @@ class TissueSample(MaterialSample, ProvEntity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/TissueSample","bican:TissueSample"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/TissueSample","bican:TissueSample"]] = Field(["bican:TissueSample"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -2211,6 +1893,7 @@ class DissociatedCellSample(MaterialSample, ProvEntity):
     dissection_was_guided_by: Optional[str] = Field(None, description="""Tranformation (dissection) of one entity into another entity.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/DissociatedCellSample","bican:DissociatedCellSample"]] = Field(["bican:DissociatedCellSample"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
     has_attribute: Optional[List[str]] = Field(None, description="""connects any entity to an attribute""")
@@ -2219,21 +1902,7 @@ class DissociatedCellSample(MaterialSample, ProvEntity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/DissociatedCellSample","bican:DissociatedCellSample"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/DissociatedCellSample","bican:DissociatedCellSample"]] = Field(["bican:DissociatedCellSample"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -2262,6 +1931,7 @@ class EnrichedCellSample(MaterialSample, ProvEntity):
     dissection_was_guided_by: Optional[str] = Field(None, description="""Tranformation (dissection) of one entity into another entity.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/EnrichedCellSample","bican:EnrichedCellSample"]] = Field(["bican:EnrichedCellSample"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
     has_attribute: Optional[List[str]] = Field(None, description="""connects any entity to an attribute""")
@@ -2270,21 +1940,7 @@ class EnrichedCellSample(MaterialSample, ProvEntity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/EnrichedCellSample","bican:EnrichedCellSample"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/EnrichedCellSample","bican:EnrichedCellSample"]] = Field(["bican:EnrichedCellSample"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -2311,6 +1967,7 @@ class BarcodedCellSample(MaterialSample, ProvEntity):
     dissection_was_guided_by: Optional[str] = Field(None, description="""Tranformation (dissection) of one entity into another entity.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/BarcodedCellSample","bican:BarcodedCellSample"]] = Field(["bican:BarcodedCellSample"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
     has_attribute: Optional[List[str]] = Field(None, description="""connects any entity to an attribute""")
@@ -2319,21 +1976,7 @@ class BarcodedCellSample(MaterialSample, ProvEntity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/BarcodedCellSample","bican:BarcodedCellSample"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/BarcodedCellSample","bican:BarcodedCellSample"]] = Field(["bican:BarcodedCellSample"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -2362,6 +2005,7 @@ class AmplifiedCdna(MaterialSample, ProvEntity):
     dissection_was_guided_by: Optional[str] = Field(None, description="""Tranformation (dissection) of one entity into another entity.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/AmplifiedCdna","bican:AmplifiedCdna"]] = Field(["bican:AmplifiedCdna"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
     has_attribute: Optional[List[str]] = Field(None, description="""connects any entity to an attribute""")
@@ -2370,21 +2014,7 @@ class AmplifiedCdna(MaterialSample, ProvEntity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/AmplifiedCdna","bican:AmplifiedCdna"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/AmplifiedCdna","bican:AmplifiedCdna"]] = Field(["bican:AmplifiedCdna"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -2416,6 +2046,7 @@ class Library(MaterialSample, ProvEntity):
     dissection_was_guided_by: Optional[str] = Field(None, description="""Tranformation (dissection) of one entity into another entity.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/Library","bican:Library"]] = Field(["bican:Library"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
     has_attribute: Optional[List[str]] = Field(None, description="""connects any entity to an attribute""")
@@ -2424,21 +2055,7 @@ class Library(MaterialSample, ProvEntity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/Library","bican:Library"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/Library","bican:Library"]] = Field(["bican:Library"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -2464,6 +2081,7 @@ class LibraryAliquot(MaterialSample, ProvEntity):
     dissection_was_guided_by: Optional[str] = Field(None, description="""Tranformation (dissection) of one entity into another entity.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/LibraryAliquot","bican:LibraryAliquot"]] = Field(["bican:LibraryAliquot"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
     has_attribute: Optional[List[str]] = Field(None, description="""connects any entity to an attribute""")
@@ -2472,21 +2090,7 @@ class LibraryAliquot(MaterialSample, ProvEntity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/LibraryAliquot","bican:LibraryAliquot"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/LibraryAliquot","bican:LibraryAliquot"]] = Field(["bican:LibraryAliquot"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -2513,6 +2117,7 @@ class LibraryPool(MaterialSample, ProvEntity):
     dissection_was_guided_by: Optional[str] = Field(None, description="""Tranformation (dissection) of one entity into another entity.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/LibraryPool","bican:LibraryPool"]] = Field(["bican:LibraryPool"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
     has_attribute: Optional[List[str]] = Field(None, description="""connects any entity to an attribute""")
@@ -2521,21 +2126,7 @@ class LibraryPool(MaterialSample, ProvEntity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/LibraryPool","bican:LibraryPool"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/LibraryPool","bican:LibraryPool"]] = Field(["bican:LibraryPool"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -2577,6 +2168,7 @@ class Donor(ThingWithTaxon, MaterialSample, ProvEntity):
     dissection_was_guided_by: Optional[str] = Field(None, description="""Tranformation (dissection) of one entity into another entity.""")
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://identifiers.org/brain-bican/vocab/Donor","bican:Donor"]] = Field(["bican:Donor"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
     has_attribute: Optional[List[str]] = Field(None, description="""connects any entity to an attribute""")
@@ -2585,21 +2177,7 @@ class Donor(ThingWithTaxon, MaterialSample, ProvEntity):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://identifiers.org/brain-bican/vocab/Donor","bican:Donor"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
-    category: List[Literal["https://identifiers.org/brain-bican/vocab/Donor","bican:Donor"]] = Field(["bican:Donor"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
     
     @field_validator('category')
     def pattern_category(cls, v):
@@ -2618,6 +2196,7 @@ class BiologicalEntity(ThingWithTaxon, NamedThing):
     
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://w3id.org/biolink/vocab/BiologicalEntity","biolink:BiologicalEntity"]] = Field(["biolink:BiologicalEntity"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -2627,35 +2206,9 @@ class BiologicalEntity(ThingWithTaxon, NamedThing):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://w3id.org/biolink/BiologicalEntity","biolink:BiologicalEntity"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     in_taxon: Optional[List[str]] = Field(None, description="""connects an entity to its taxonomic classification. Only certain kinds of entities can be taxonomically classified; see 'thing with taxon'""")
     in_taxon_label: Optional[str] = Field(None, description="""The human readable scientific name for the taxon of the entity.""")
-    category: List[Literal["https://w3id.org/biolink/BiologicalEntity","biolink:BiologicalEntity"]] = Field(["biolink:BiologicalEntity"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
-    
-    @field_validator('category')
-    def pattern_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid category format: {v}")
-        return v
     
 
 class GenomicEntity(ConfiguredBaseModel):
@@ -2694,6 +2247,7 @@ class Gene(GeneOrGeneProduct, ChemicalEntityOrGeneOrGeneProduct, GenomicEntity, 
     """
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://w3id.org/biolink/vocab/Gene","biolink:Gene"]] = Field(["biolink:Gene"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""genes are typically designated by a short symbol and a full name. We map the symbol to the default display name and use an additional slot for full name""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -2702,39 +2256,13 @@ class Gene(GeneOrGeneProduct, ChemicalEntityOrGeneOrGeneProduct, GenomicEntity, 
     provided_by: Optional[List[str]] = Field(None, description="""The value in this node property represents the knowledge provider that created or assembled the node and all of its attributes.  Used internally to represent how a particular node made its way into a knowledge provider or graph.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://w3id.org/biolink/Gene","biolink:Gene"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     in_taxon: Optional[List[str]] = Field(None, description="""connects an entity to its taxonomic classification. Only certain kinds of entities can be taxonomically classified; see 'thing with taxon'""")
     in_taxon_label: Optional[str] = Field(None, description="""The human readable scientific name for the taxon of the entity.""")
     symbol: Optional[str] = Field(None, description="""Symbol for a particular thing""")
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     has_biological_sequence: Optional[str] = Field(None, description="""connects a genomic feature to its sequence""")
     macromolecular_machine_mixin_name: Optional[str] = Field(None, description="""genes are typically designated by a short symbol and a full name. We map the symbol to the default display name and use an additional slot for full name""")
-    category: List[Literal["https://w3id.org/biolink/Gene","biolink:Gene"]] = Field(["biolink:Gene"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
-    
-    @field_validator('category')
-    def pattern_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid category format: {v}")
-        return v
     
 
 class Genome(GenomicEntity, BiologicalEntity, PhysicalEssence, OntologyClass):
@@ -2743,6 +2271,7 @@ class Genome(GenomicEntity, BiologicalEntity, PhysicalEssence, OntologyClass):
     """
     id: str = Field(..., description="""A unique identifier for an entity. Must be either a CURIE shorthand for a URI or a complete URI""")
     iri: Optional[str] = Field(None, description="""An IRI for an entity. This is determined by the id using expansion rules.""")
+    category: List[Literal["https://w3id.org/biolink/vocab/Genome","biolink:Genome"]] = Field(["biolink:Genome"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     type: Optional[List[str]] = Field(default_factory=list)
     name: Optional[str] = Field(None, description="""A human-readable name for an attribute or entity.""")
     description: Optional[str] = Field(None, description="""a human-readable description of an entity""")
@@ -2752,36 +2281,10 @@ class Genome(GenomicEntity, BiologicalEntity, PhysicalEssence, OntologyClass):
     xref: Optional[List[str]] = Field(default_factory=list, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""")
     full_name: Optional[str] = Field(None, description="""a long-form human readable name for a thing""")
     synonym: Optional[List[str]] = Field(default_factory=list, description="""Alternate human-readable names for a thing""")
-    named_thing_category: List[Literal["https://w3id.org/biolink/Genome","biolink:Genome"]] = Field(..., description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     in_taxon: Optional[List[str]] = Field(None, description="""connects an entity to its taxonomic classification. Only certain kinds of entities can be taxonomically classified; see 'thing with taxon'""")
     in_taxon_label: Optional[str] = Field(None, description="""The human readable scientific name for the taxon of the entity.""")
     has_biological_sequence: Optional[str] = Field(None, description="""connects a genomic feature to its sequence""")
-    category: List[Literal["https://w3id.org/biolink/Genome","biolink:Genome"]] = Field(["biolink:Genome"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""")
     
-    
-    @field_validator('named_thing_category')
-    def pattern_named_thing_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid named_thing_category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid named_thing_category format: {v}")
-        return v
-    
-    @field_validator('category')
-    def pattern_category(cls, v):
-        pattern=re.compile(r"^biolink:[A-Z][A-Za-z]+$")
-        if isinstance(v,list):
-            for element in v:
-                if not pattern.match(element):
-                    raise ValueError(f"Invalid category format: {element}")
-        elif isinstance(v,str):
-            if not pattern.match(v):
-                raise ValueError(f"Invalid category format: {v}")
-        return v
     
 
 
