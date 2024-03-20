@@ -47,7 +47,7 @@ def bican_fix(schema: SchemaDefinition, template_yaml) -> SchemaDefinition:
 
 
     for nm, cl in schema.classes.items():
-        cl.slot_usage["category"] = SlotDefinition(name="category", pattern=r"^biolink:[A-Z][A-Za-z]+$")
+        cl.slot_usage["category"] = SlotDefinition(name="category", pattern=r"^bican:[A-Z][A-Za-z]+$")
 
     with (template_yaml).open() as file:
         classes_base = yaml.safe_load(file)
