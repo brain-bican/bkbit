@@ -23,7 +23,6 @@ CATEGORY_TO_CLASS = {'librarypool': pb.LibraryPool,
 
 class SpecimenPortal:
     def __init__(self, jwt_token, bican_to_nimp_file_path):
-        #self.jwt_token = jwt_token
         self.headers = {'Authorization': f'Bearer {jwt_token}'}
         self.generated_objects = {}
         self.bican_to_nimp_mapping, self.bican_slots_per_class = self.create_bican_to_nimp_mapping(bican_to_nimp_file_path)
@@ -101,9 +100,9 @@ class SpecimenPortal:
         bican_object = bican_class(id='NIMP:'+ nhash_id)
         # handle was_derived_from attribute. type of this attribute can either be Optional[str] or Optional[List[str]]
         if 'List' in bican_class.__annotations__['was_derived_from']:
-            bican_object.was_derived_from = was_derived_from
+            bican_object.was_derived_from = [f"NIMP:{item}" for item in was_derived_from]
         else:
-            bican_object.was_derived_from = was_derived_from[0] if was_derived_from else None
+            bican_object.was_derived_from = f"NIMP:{was_derived_from[0]}" if was_derived_from else None
         class_attributes = self.bican_slots_per_class.get(category) 
         if class_attributes is not None:
             for attribute in self.bican_slots_per_class.get(category):   
@@ -119,6 +118,22 @@ class SpecimenPortal:
                             value = float(value)
                         elif 'bool' in bican_attribute_type:
                             value = bool(value)
+                        elif 'AmplifiedCdnaRnaAmplificationPassFail' in bican_attribute_type:
+                            value = pb.AmplifiedCdnaRnaAmplificationPassFail.__members__.get(value)
+                        elif 'BarcodedCellSampleTechnique' in bican_attribute_type:
+                            value = pb.BarcodedCellSampleTechnique.__members__.get(value)
+                        elif 'DissociatedCellSampleCellPrepType' in bican_attribute_type:
+                            value = pb.DissociatedCellSampleCellPrepType.__members__.get(value)
+                        elif 'DissociatedCellSampleCellLabelBarcode' in bican_attribute_type:
+                            value = pb.DissociatedCellSampleCellLabelBarcode.__members__.get(value)
+                        elif 'LibraryTechnique' in bican_attribute_type:
+                            value = pb.LibraryTechnique.__members__.get(value)
+                        elif 'LibraryPrepPassFail' in bican_attribute_type:
+                            value = value.replace(' ', '_')
+                            value = pb.LibraryPrepPassFail.__members__.get(value)
+                        elif 'LibraryR1R2Index' in bican_attribute_type:
+                            value = value.replace(' ', '_')
+                            value = pb.LibraryR1R2Index.__members__.get(value)
                         else:
                             #print(f'Attribute {attribute} of class {category} is of type {bican_attribute_type} which is not supported.')
                             value = None
@@ -177,6 +192,7 @@ class SpecimenPortal:
         pass
 
 if __name__ == '__main__':
-    temp = SpecimenPortal('eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcxMTUzNDg0MX0.XmzK75YcNrbQgt3bCakV3O9rdpUPj-slkGVf5YsMsdI', 'bican_to_nimp_slots.csv')
+    temp = SpecimenPortal('eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcxMjcxMjEyOX0.OPiASlLykVJZpK6xuljsoq8ZobkNdHqlHh5HCYkbhVA', 'bican_to_nimp_slots.csv')
+    #temp.generate_bican_object('LI-DDFMNG372245')
     temp.parse_nhash_id('LP-CVFLMQ819998')    
-    temp.serialize_to_jsonld('output_LP-CVFLMQ819998.jsonld')
+    temp.serialize_to_jsonld('output_LP-CVFLMQ819998_20240409.jsonld')
