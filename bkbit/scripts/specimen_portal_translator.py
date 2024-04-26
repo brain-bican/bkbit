@@ -119,28 +119,31 @@ class SpecimenPortal:
                         elif 'bool' in bican_attribute_type:
                             value = bool(value)
                         elif 'AmplifiedCdnaRnaAmplificationPassFail' in bican_attribute_type:
-                            value = pb.AmplifiedCdnaRnaAmplificationPassFail.__members__.get(value)
+                            value = self.__check_valueset_membership('AmplifiedCdnaRnaAmplificationPassFail', value)
                         elif 'BarcodedCellSampleTechnique' in bican_attribute_type:
-                            value = pb.BarcodedCellSampleTechnique.__members__.get(value)
+                            value = self.__check_valueset_membership('BarcodedCellSampleTechnique', value)
                         elif 'DissociatedCellSampleCellPrepType' in bican_attribute_type:
-                            value = pb.DissociatedCellSampleCellPrepType.__members__.get(value)
+                            value = self.__check_valueset_membership('DissociatedCellSampleCellPrepType', value)
                         elif 'DissociatedCellSampleCellLabelBarcode' in bican_attribute_type:
-                            value = pb.DissociatedCellSampleCellLabelBarcode.__members__.get(value)
+                            value = self.__check_valueset_membership('DissociatedCellSampleCellLabelBarcode', value)
                         elif 'LibraryTechnique' in bican_attribute_type:
-                            value = pb.LibraryTechnique.__members__.get(value)
+                            value = self.__check_valueset_membership('LibraryTechnique', value)
                         elif 'LibraryPrepPassFail' in bican_attribute_type:
-                            value = value.replace(' ', '_')
-                            value = pb.LibraryPrepPassFail.__members__.get(value)
+                            value = self.__check_valueset_membership('LibraryPrepPassFail', value)
                         elif 'LibraryR1R2Index' in bican_attribute_type:
-                            value = value.replace(' ', '_')
-                            value = pb.LibraryR1R2Index.__members__.get(value)
+                            value = self.__check_valueset_membership('LibraryR1R2Index', value)
                         else:
                             #print(f'Attribute {attribute} of class {category} is of type {bican_attribute_type} which is not supported.')
                             value = None
                     bican_object.__setattr__(attribute, value)
         return bican_object
 
-
+    def __check_valueset_membership(self, enum_name, nimp_value):
+        enum = pb.__dict__.get(enum_name)
+        if enum is not None:
+            valueset = {m.value: m for m in enum}
+            return valueset.get(nimp_value)
+        return None
 
     def parse_nhash_id(self, nhash_id):
         ancestor_tree = self.get_ancestors(nhash_id).get('data')
@@ -192,7 +195,7 @@ class SpecimenPortal:
         pass
 
 if __name__ == '__main__':
-    temp = SpecimenPortal('eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcxMzQwNTM0NH0._VbrMKkmPSGbmqcGJJPj3LdHQRELI4jnADtePKZbluY', 'bican_to_nimp_slots.csv')
+    temp = SpecimenPortal('eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcxNDE3Mzk5NH0.NZd07OqzhRImLcffPxcojEUO6W6rqxRFHrvgdPMbmg8', 'bican_to_nimp_slots.csv')
     #temp.generate_bican_object('LI-DDFMNG372245')
     temp.parse_nhash_id('LP-CVFLMQ819998')    
-    temp.serialize_to_jsonld('output_LP-CVFLMQ819998_20240409.jsonld')
+    temp.serialize_to_jsonld('output_LP-CVFLMQ819998_20240426.jsonld')
