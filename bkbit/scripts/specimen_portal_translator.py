@@ -173,7 +173,7 @@ class SpecimenPortal:
                 #data.append(obj.to_dict(exclude_none=exclude_none, exclude_unset=exclude_unset))
                 data.append(obj.__dict__)
             output_data = {
-                "@context": "https://raw.githubusercontent.com/brain-bican/bkbit/248a7ae86338f2520d2c3abafa79552baa52dea4/bkbit/models/purple_boxes.py",
+                "@context": "https://raw.githubusercontent.com/djarecka/models_tests/main/purple_boxes.context.json",
                 "@graph": data,
             }
             f.write(json.dumps(output_data, indent=2))
@@ -192,7 +192,7 @@ class SpecimenPortal:
         pass
 
 if __name__ == '__main__':
-    temp = SpecimenPortal('eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcxMjcxMjEyOX0.OPiASlLykVJZpK6xuljsoq8ZobkNdHqlHh5HCYkbhVA', 'bican_to_nimp_slots.csv')
+    temp = SpecimenPortal('eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcxMzQwNTM0NH0._VbrMKkmPSGbmqcGJJPj3LdHQRELI4jnADtePKZbluY', 'bican_to_nimp_slots.csv')
     #temp.generate_bican_object('LI-DDFMNG372245')
     temp.parse_nhash_id('LP-CVFLMQ819998')    
     temp.serialize_to_jsonld('output_LP-CVFLMQ819998_20240409.jsonld')
