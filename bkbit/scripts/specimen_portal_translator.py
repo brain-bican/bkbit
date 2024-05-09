@@ -19,7 +19,9 @@ CATEGORY_TO_CLASS = {'librarypool': pb.LibraryPool,
                      'enrichedcellsample': pb.EnrichedCellSample,
                      'dissociatedcellsample': pb.DissociatedCellSample,
                      'tissue': pb.TissueSample,
-                     'donor': pb.Donor}
+                     'donor': pb.Donor,
+                     'specimendissectedroi': pb.DissectionRoiPolygon,
+                     'slab': pb.BrainSlab}
 
 class SpecimenPortal:
     @staticmethod
@@ -100,6 +102,9 @@ class SpecimenPortal:
         nhash_id = data.get('id')
         category = data.get('category').replace(' ', '').lower()
         bican_category = cls.nimp_to_bican_class_mapping.get(category)
+        print(f'Category: {category}, Bican Category: {bican_category}')
+        if bican_category is None:
+            return None
         bican_class = CATEGORY_TO_CLASS.get(category)
         bican_object = bican_class(id='NIMP:'+ nhash_id)
         # handle was_derived_from attribute. type of this attribute can either be Optional[str] or Optional[List[str]]
@@ -168,6 +173,7 @@ class SpecimenPortal:
                 parents = ancestor_tree.get(current_nhash_id).get('edges').get('has_parent')
                 #bican_object = self.generate_bican_object(current_nhash_id, parents)
                 data = SpecimenPortal.get_data(current_nhash_id, self.jwt_token).get('data')
+                #print(f'Processing NHash ID: {current_nhash_id}')
                 bican_object = self.generate_bican_object(data, parents)
                 if bican_object is not None:
                     self.generated_objects[current_nhash_id] = bican_object   
@@ -197,22 +203,22 @@ class SpecimenPortal:
             }
             f.write(json.dumps(output_data, indent=2))
 
-    # NOTE: DEFINE THE FOLLOWING FUNCTIONS AS NEEDED #
-    def get_children(self, nhash_id, nhash_only=True):
-        '''
-        Retrieve information of a record’s children with a NHash ID. 
-        '''
-        pass
-
-    def get_descendants(self, nhash_id, nhash_only=True, id_only=True):
-        '''
-        Retrieve information of all descendants of a record with a NHash ID. 
-        '''
-        pass
 
 if __name__ == '__main__':
-    temp = SpecimenPortal('eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcxNTIxODYyNX0.fztv_nJ9sYWtrH5CZEyt2iC5vOnQPQWh50mg-7jStqk', 'bican_to_nimp_slots.csv')
-    #temp.generate_bican_object('LI-DDFMNG372245')
-    temp.parse_nhash_id('LP-CVFLMQ819998')
-    #temp.parse_nhash_id("AC-ATDJAH472237")
-    temp.serialize_to_jsonld('output_LP-CVFLMQ819998_20240502.jsonld')
+    # temp = SpecimenPortal('eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcxNTI0NDgxNX0.-bB0KPxN93WGTFyWyGFXNv5mwqyPr2Cizz8-EtkTMxA')
+    # #temp.generate_bican_object('LI-DDFMNG372245')
+    # temp.parse_nhash_id('LP-CVFLMQ819998')
+    # #temp.parse_nhash_id("AC-ATDJAH472237")
+    # temp.serialize_to_jsonld('output_LP-CVFLMQ819998_20240508.jsonld')
+
+    sp = SpecimenPortal('eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcxNTI5MzcwMX0.xquqUIIFsPynRc25SfU2GMqpg2gatSfldyYlqRhql8k')
+    with open('example_library_pool_data.csv', 'r', encoding='utf-8') as file:
+        reader = csv.DictReader(file)
+        count = 1
+        for row in reader:
+            print(f'Processing LP: {row["NHash ID"]}')
+            sp.parse_nhash_id(row['NHash ID'])
+            sp.serialize_to_jsonld('output_' + row["NHash ID"] + '.jsonld')
+            if count > 10:
+                break
+        

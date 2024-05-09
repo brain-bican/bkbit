@@ -334,7 +334,7 @@ def test_donor():
         "id": "DO-GINI5305",
         "category": "Donor",
         "record": {
-            "age_of_death": 0.0,
+            "age_of_death": 0.0, # ? seems like this value is not set by NIMP because it is almost always 0.0
             "race": None,
             "sex": "2",
             "project_number": "U01MH130962",
