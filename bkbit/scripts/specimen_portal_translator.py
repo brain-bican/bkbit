@@ -309,23 +309,25 @@ class SpecimenPortal:
 
 
 if __name__ == "__main__":
+    ## EXAMPLE #1 ##
     # sp = SpecimenPortal(
     #     "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcxNTc1NzUzN30.2CsWyCHwtOAd4NnOUMinhgtTk86z0ydh0T5__rfh824"
     # )
     # sp.parse_nhash_id('AC-ATDJAH472237')
 
-    token = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcxNTc1NzUzN30.2CsWyCHwtOAd4NnOUMinhgtTk86z0ydh0T5__rfh824"
-    sp = SpecimenPortal(
-        token
-    )
-    LIMIT = 10
-    with open("example_library_pool_data.csv", "r", encoding="utf-8") as file:
-        reader = csv.DictReader(file)
-        row_number = 1
-        for row in reader:
-            print(f'Processing LP: {row["NHash ID"]}')
-            sp.parse_nhash_id(row["NHash ID"])
-            sp.serialize_to_jsonld("output_" + row["NHash ID"] + ".jsonld")
-            if row_number == LIMIT:
-                break
-            row_number += 1
+    ## EXAMPLE #2 ##
+    # token = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcxNTc1NzUzN30.2CsWyCHwtOAd4NnOUMinhgtTk86z0ydh0T5__rfh824"
+    # sp = SpecimenPortal(
+    #     token
+    # )
+    # LIMIT = 10
+    # with open("example_library_pool_data.csv", "r", encoding="utf-8") as file:
+    #     reader = csv.DictReader(file)
+    #     row_number = 1
+    #     for row in reader:
+    #         print(f'Processing LP: {row["NHash ID"]}')
+    #         sp.parse_nhash_id(row["NHash ID"])
+    #         sp.serialize_to_jsonld("output_" + row["NHash ID"] + ".jsonld")
+    #         if row_number == LIMIT:
+    #             break
+    #         row_number += 1
