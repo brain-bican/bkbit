@@ -309,6 +309,7 @@ class SpecimenPortal:
 
 
 if __name__ == "__main__":
+    pass
     ## EXAMPLE #1 ##
     # sp = SpecimenPortal(
     #     "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcxNTc1NzUzN30.2CsWyCHwtOAd4NnOUMinhgtTk86z0ydh0T5__rfh824"
