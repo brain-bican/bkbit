@@ -1,6 +1,6 @@
 import pytest
 from bkbit.scripts.specimen_portal_translator import SpecimenPortal
-from bkbit.models import purple_boxes as pb
+from bkbit.models import library_generation as lg
 
 
 def test_library_pool():
@@ -152,10 +152,10 @@ def test_library():
     assert l.pass_fail_result == "Pass"
     assert (
         l.quantity_fmol == 2045.39236239
-    )  #! requires data type change to model int -> float
+    )
     assert (
         l.quantity_ng == 1200.11351471
-    )  #! requires data type change to model int -> float
+    )
     assert l.r1_r2_index == "SI-NA-D5"
     assert l.was_derived_from == "NIMP:AC-ATDJAH472237"
 
@@ -188,7 +188,7 @@ def test_amplified_cdna():
     ac = SpecimenPortal.generate_bican_object(nimp_data, parents)
     assert ac.id == "NIMP:AC-ATDJAH472237"
     assert ac.name == "B8XM_230516_01_H01"
-    assert ac.pass_fail_result == pb.AmplifiedCdnaRnaAmplificationPassFail.Pass
+    assert ac.pass_fail_result == "Pass"
     assert ac.quantity_ng == 12.3
     assert ac.percent_cdna_longer_than_400bp == 1.23
     assert ac.was_derived_from == "NIMP:BC-ABUEKB857169"
@@ -365,6 +365,6 @@ def test_donor():
     assert d.age_at_death_description == "P0"
     assert d.age_at_death_reference_point == "birth"
     assert d.age_at_death_unit == "days"
-    assert d.age_at_death_value == 0.0  #! requires data type change to model str -> float and needs nimp name changed in schemasheets table
+    assert d.age_at_death_value == 0.0
     assert d.species == "NCBITaxon:10090"
     assert d.was_derived_from is None
