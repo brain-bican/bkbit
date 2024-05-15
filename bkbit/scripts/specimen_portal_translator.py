@@ -1,10 +1,9 @@
 import requests
-from bkbit.models import purple_boxes as pb
+from bkbit.models import library_generation as lg
 import csv
 import json
 from collections import defaultdict
 
-# from bkbit.models import purple_boxes_entire_biolink as pb
 
 PURPLE_BOXES_MODEL = "pb"
 API_URL_PREFIX = "https://brain-specimenportal.org/api/v1/nhash_ids/"
@@ -13,17 +12,17 @@ ANCESTORS_URL_SUFFIX = "ancestors?id="
 PARENTS_URL_SUFFIX = "parents?id="
 NHASH_ONLY_SUFFIX = "&nhash_only="
 CATEGORY_TO_CLASS = {
-    "librarypool": pb.LibraryPool,
-    "libraryaliquot": pb.LibraryAliquot,
-    "library": pb.Library,
-    "amplifiedcdna": pb.AmplifiedCdna,
-    "barcodedcellsample": pb.BarcodedCellSample,
-    "enrichedcellsample": pb.EnrichedCellSample,
-    "dissociatedcellsample": pb.DissociatedCellSample,
-    "tissue": pb.TissueSample,
-    "donor": pb.Donor,
-    "specimendissectedroi": pb.DissectionRoiPolygon,
-    "slab": pb.BrainSlab,
+    "librarypool": lg.LibraryPool,
+    "libraryaliquot": lg.LibraryAliquot,
+    "library": lg.Library,
+    "amplifiedcdna": lg.AmplifiedCdna,
+    "barcodedcellsample": lg.BarcodedCellSample,
+    "enrichedcellsample": lg.EnrichedCellSample,
+    "dissociatedcellsample": lg.DissociatedCellSample,
+    "tissue": lg.TissueSample,
+    "donor": lg.Donor,
+    "specimendissectedroi": lg.DissectionRoiPolygon,
+    "slab": lg.BrainSlab,
 }
 
 
@@ -223,7 +222,7 @@ class SpecimenPortal:
 
     @staticmethod
     def __check_valueset_membership(enum_name, nimp_value):
-        enum = pb.__dict__.get(enum_name)
+        enum = lg.__dict__.get(enum_name)
         if enum is not None:
             valueset = {m.value: m for m in enum}
             return valueset.get(nimp_value)
