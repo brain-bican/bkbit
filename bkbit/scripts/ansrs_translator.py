@@ -1,6 +1,8 @@
 import csv
+import inspect
+import os
+import json
 from bkbit.models import ansrs
-
 
 class AnSRS():
     def __init__(self):
@@ -15,6 +17,18 @@ class AnSRS():
         self.parcellation_term_set = []
         self.parcellation_term = []
         self.parcellation_color_scheme = []
+        self.func_header_mapping = self.__class__.assign_func_header()
+
+    @classmethod
+    def assign_func_header(cls):
+        mapping = {}
+        for f in dir(cls):
+            func = getattr(cls, f)
+            if inspect.isfunction(func):
+                func_params = inspect.signature(func).parameters.keys()
+                filtered_params = frozenset(param for param in func_params if param != 'self')
+                mapping[filtered_params] = func
+        return mapping
 
 
     def read_data(self, file_name):
@@ -25,16 +39,24 @@ class AnSRS():
             
             # Read the first row to get column names
             column_names = next(reader)
-            
-            # Iterate through each row in the CSV file
-            for row in reader:
-                # Create a dictionary to store key-value pairs for each row
-                row_data = {}
-                for column_name, data in zip(column_names, row):
-                    row_data[column_name] = data
-                # Process the data as needed
-                print(row_data)
-
+            # Find corresponding 'generate' function 
+            func = self.func_header_mapping.get(frozenset(column_names))
+            if func:
+                # Iterate through each row in the CSV file
+                for row in reader:
+                    # Create a dictionary to store key-value pairs for each row
+                    row_data = {}
+                    for column_name, data in zip(column_names, row):
+                        row_data[column_name] = data
+                    # Generate appropriate data object 
+                    func(self, **row_data)
+                    
+    def provide_data(self, dir_path, output_file_name):
+        for file in os.listdir(dir_path):
+            if file.endswith(".csv"):
+                self.read_data(os.path.join(dir_path, file))
+        jsonld_file = os.path.join(dir_path, output_file_name)
+        self.serialize_to_jsonld(jsonld_file)
 
 
 
@@ -89,16 +111,48 @@ class AnSRS():
         self.parcellation_color_assignment.append(parcellation_color_assignment)
         return parcellation_color_assignment
     
-
-
     def generate_image_dataset(self, label, name, description, revision_of, version, x_direction, y_direction, z_direction, x_size, y_size, z_size, x_resolution, y_resolution, z_resolution, unit):
-        image_dataset = ansrs.ImageDataset(id=label, name=name, description=description, version=version, revision_of=revision_of, x_direction=x_direction, y_direction=y_direction, z_direction=z_direction, x_size=x_size, y_size=y_size, z_size=z_size, x_resolution=x_resolution, y_resolution=y_resolution, z_resolution=z_resolution, unit=unit)
+        image_dataset = ansrs.ImageDataset(id=label, name=name, description=description, version=version, revision_of=revision_of, x_direction=getattr(ansrs.ANATOMICALDIRECTION, x_direction.replace('-','_')), y_direction=getattr(ansrs.ANATOMICALDIRECTION, y_direction.replace('-', '_')), z_direction=getattr(ansrs.ANATOMICALDIRECTION, z_direction.replace('-', '_')), x_size=x_size, y_size=y_size, z_size=z_size, x_resolution=x_resolution, y_resolution=y_resolution, z_resolution=z_resolution, unit=getattr(ansrs.DISTANCEUNIT, unit))
         self.image_dataset.append(image_dataset)
         return image_dataset
 
 
     
+    def serialize_to_jsonld(
+        self, output_file: str, exclude_none: bool = True, exclude_unset: bool = False
+    ):
+        """
+        Serialize the object and write it to the specified output file.
 
+        Parameters:
+            output_file (str): The path of the output file.
+
+        Returns:
+            None
+        """
+        with open(output_file, "w", encoding="utf-8") as f:
+            data = []
+            # for obj in self.generated_objects.values():
+            #     # data.append(obj.to_dict(exclude_none=exclude_none, exclude_unset=exclude_unset))
+            #     data.append(obj.__dict__)
+            data.extend([obj.__dict__ for obj in self.anatomical_annotation_set])
+            data.extend([obj.__dict__ for obj in self.anatomical_space])
+            data.extend([obj.__dict__ for obj in self.image_dataset])
+            data.extend([obj.__dict__ for obj in self.parcellation_annotation])
+            data.extend([obj.__dict__ for obj in self.parcellation_annotation_term_map])
+            data.extend([obj.__dict__ for obj in self.parcellation_atlas])
+            data.extend([obj.__dict__ for obj in self.parcellation_color_assignment])
+            data.extend([obj.__dict__ for obj in self.parcellation_color_scheme])
+            data.extend([obj.__dict__ for obj in self.parcellation_terminology])
+            data.extend([obj.__dict__ for obj in self.parcellation_term_set])
+            data.extend([obj.__dict__ for obj in self.parcellation_term])
+
+
+            output_data = {
+                "@context": "https://raw.githubusercontent.com/puja-trivedi/models/ansrs_model_puja_version/jsonld-context-autogen/ansrs_schema.context.jsonld",
+                "@graph": data,
+            }
+            f.write(json.dumps(output_data, indent=2))
     
 
     
