@@ -1,6 +1,6 @@
 import pytest
 from bkbit.scripts import gfftranslator as gt
-from bkbit.models import kbmodel
+from bkbit.models import genome_annotation as ga
 import hashlib
 
 
@@ -56,11 +56,11 @@ def test_parse_ensembl_one_row(df_ensembl_human_one_row, gff_params_ensembl_huma
 
     gff = gt.Gff3(df_ensembl_human_one_row, **gff_params_ensembl_human)
 
-    expected_org_taxon = kbmodel.OrganismTaxon(id = 'NCBITaxon:9606', full_name = 'Homo sapiens', name = 'human', iri = 'http://purl.obolibrary.org/obo/NCBITaxon_9606')
-    expected_genome_assembly = kbmodel.GenomeAssembly(id = "NCBIAssembly:GCF_000001405.40", in_taxon = [expected_org_taxon.id], in_taxon_label = expected_org_taxon.full_name, version = '40', name = 'GRCH38.p14')
-    expected_checksums = [kbmodel.Checksum(id = gff.checksums[0].id, checksum_algorithm = kbmodel.DigestType.SHA256, value = hashlib.sha256(df_ensembl_human_one_row.encode('utf-8')).hexdigest())]
-    expected_genome_annotation = kbmodel.GenomeAnnotation(id = 'bican:annotation-' + genome_label.upper(), digest = [expected_checksums[0].id], content_url = [df_ensembl_human_one_row], reference_assembly = expected_genome_assembly.id, version = genome_version, in_taxon = [expected_org_taxon.id], in_taxon_label = expected_org_taxon.full_name, description = 'ENSEMBL Homo sapiens Annotation Release 110', authority = kbmodel.AuthorityType.ENSEMBL)
-    gene_annotation = kbmodel.GeneAnnotation(id = 'ENSEMBL:ENSG00000284733', source_id = 'ENSG00000284733', symbol = 'OR4F29', name = 'OR4F29', molecular_type = 'protein_coding', referenced_in = expected_genome_annotation.id, in_taxon = [expected_org_taxon.id], in_taxon_label = expected_org_taxon.full_name, description = 'olfactory receptor family 4 subfamily F member 29')
+    expected_org_taxon = ga.OrganismTaxon(id = 'NCBITaxon:9606', full_name = 'Homo sapiens', name = 'human', iri = 'http://purl.obolibrary.org/obo/NCBITaxon_9606')
+    expected_genome_assembly = ga.GenomeAssembly(id = "NCBIAssembly:GCF_000001405.40", in_taxon = [expected_org_taxon.id], in_taxon_label = expected_org_taxon.full_name, version = '40', name = 'GRCH38.p14')
+    expected_checksums = [ga.Checksum(id = gff.checksums[0].id, checksum_algorithm = ga.DigestType.SHA256, value = hashlib.sha256(df_ensembl_human_one_row.encode('utf-8')).hexdigest())]
+    expected_genome_annotation = ga.GenomeAnnotation(id = 'bican:annotation-' + genome_label.upper(), digest = [expected_checksums[0].id], content_url = [df_ensembl_human_one_row], reference_assembly = expected_genome_assembly.id, version = genome_version, in_taxon = [expected_org_taxon.id], in_taxon_label = expected_org_taxon.full_name, description = 'ENSEMBL Homo sapiens Annotation Release 110', authority = ga.AuthorityType.ENSEMBL)
+    gene_annotation = ga.GeneAnnotation(id = 'ENSEMBL:ENSG00000284733', source_id = 'ENSG00000284733', symbol = 'OR4F29', name = 'OR4F29', molecular_type = 'protein_coding', referenced_in = expected_genome_annotation.id, in_taxon = [expected_org_taxon.id], in_taxon_label = expected_org_taxon.full_name, description = 'olfactory receptor family 4 subfamily F member 29')
     expected_gene_annotations = {gene_annotation:gene_annotation}
     gff.parse(feature_filter)
     assert gff.gene_annotations == expected_gene_annotations
@@ -74,11 +74,11 @@ def test_ensembl_duplicates(df_ensembl_duplicates, gff_params_ensembl_human):
 
     gff = gt.Gff3(df_ensembl_duplicates, **gff_params_ensembl_human)
 
-    expected_org_taxon = kbmodel.OrganismTaxon(id = 'NCBITaxon:9606', full_name = 'Homo sapiens', name = 'human', iri = 'http://purl.obolibrary.org/obo/NCBITaxon_9606')
-    expected_genome_assembly = kbmodel.GenomeAssembly(id = "NCBIAssembly:GCF_000001405.40", in_taxon = [expected_org_taxon.id], in_taxon_label = expected_org_taxon.full_name, version = '40', name = 'GRCH38.p14')
-    expected_checksums = [kbmodel.Checksum(id = gff.checksums[0].id, checksum_algorithm = kbmodel.DigestType.SHA256, value = hashlib.sha256(df_ensembl_duplicates.encode('utf-8')).hexdigest())]
-    expected_genome_annotation = kbmodel.GenomeAnnotation(id = 'bican:annotation-' + genome_label.upper(), digest = [expected_checksums[0].id], content_url = [df_ensembl_duplicates], reference_assembly = expected_genome_assembly.id, version = genome_version, in_taxon = [expected_org_taxon.id], in_taxon_label = expected_org_taxon.full_name, description = 'ENSEMBL Homo sapiens Annotation Release 110', authority = kbmodel.AuthorityType.ENSEMBL)
-    gene_annotation = kbmodel.GeneAnnotation(id = 'ENSEMBL:ENSG00000284733', source_id = 'ENSG00000284733', symbol = 'OR4F29', name = 'OR4F29', molecular_type = 'protein_coding', referenced_in = expected_genome_annotation.id, in_taxon = [expected_org_taxon.id], in_taxon_label = expected_org_taxon.full_name, description = 'olfactory receptor family 4 subfamily F member 29')
+    expected_org_taxon = ga.OrganismTaxon(id = 'NCBITaxon:9606', full_name = 'Homo sapiens', name = 'human', iri = 'http://purl.obolibrary.org/obo/NCBITaxon_9606')
+    expected_genome_assembly = ga.GenomeAssembly(id = "NCBIAssembly:GCF_000001405.40", in_taxon = [expected_org_taxon.id], in_taxon_label = expected_org_taxon.full_name, version = '40', name = 'GRCH38.p14')
+    expected_checksums = [ga.Checksum(id = gff.checksums[0].id, checksum_algorithm = ga.DigestType.SHA256, value = hashlib.sha256(df_ensembl_duplicates.encode('utf-8')).hexdigest())]
+    expected_genome_annotation = ga.GenomeAnnotation(id = 'bican:annotation-' + genome_label.upper(), digest = [expected_checksums[0].id], content_url = [df_ensembl_duplicates], reference_assembly = expected_genome_assembly.id, version = genome_version, in_taxon = [expected_org_taxon.id], in_taxon_label = expected_org_taxon.full_name, description = 'ENSEMBL Homo sapiens Annotation Release 110', authority = ga.AuthorityType.ENSEMBL)
+    gene_annotation = ga.GeneAnnotation(id = 'ENSEMBL:ENSG00000284733', source_id = 'ENSG00000284733', symbol = 'OR4F29', name = 'OR4F29', molecular_type = 'protein_coding', referenced_in = expected_genome_annotation.id, in_taxon = [expected_org_taxon.id], in_taxon_label = expected_org_taxon.full_name, description = 'olfactory receptor family 4 subfamily F member 29')
     expected_gene_annotations = {gene_annotation:gene_annotation}
     gff.parse(feature_filter)
     assert gff.gene_annotations == expected_gene_annotations
