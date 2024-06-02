@@ -3,6 +3,7 @@ import csv, yaml
 from io import StringIO
 import click
 from pathlib import Path
+import requests
 
 from linkml_runtime.linkml_model.meta import SchemaDefinition, SlotDefinition
 from linkml_runtime.utils.schema_as_dict import schema_as_dict
@@ -87,6 +88,43 @@ def adding_template(schema:SchemaDefinition, template_yaml) -> SchemaDefinition:
     return schema
 
 
+def download_google_sheet_as_tsv(sheet_id, save_path, sheet_gid):
+    # Construct the URL to export the Google Sheet as TSV
+    tsv_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=tsv&gid={sheet_gid}'
+    response = requests.get(tsv_url)
+    response.raise_for_status()  # Ensure the request was successful
+    # Save the TSV content to a file
+    with open(save_path, 'wb') as file:
+        file.write(response.content)
+
+
+def read_and_parse_gid_file(gid_filepath):
+    gid_dict = {}
+    with open(gid_filepath, 'r', encoding='utf-8') as file:
+        for line in file:
+            line_spl = line.split()
+            if len(line_spl) == 1:
+                gid_dict[line_spl[0]] = line_spl[0]
+            elif len(line_spl) == 2:
+                gid_dict[line_spl[0]] = line_spl[1]
+            else:
+                raise(f"wrong format of git file, each line should eitehr have gid or gid and tab name, got {line}")
+    return gid_dict
+
+
+def download_gsheets(gsheet_id, gsheet_download_dir, gid_filepath):
+    gid_dict = read_and_parse_gid_file(gid_filepath)
+
+    downloaded_files = []
+
+    for gid, shnm in gid_dict.items():
+        gsheet_save_path = gsheet_download_dir / f"{shnm}.tsv"
+        download_google_sheet_as_tsv(gsheet_id, gsheet_save_path, gid)
+        downloaded_files.append(gsheet_save_path)
+    return downloaded_files
+
+
+
 @click.command()
 @click.option('-o', '--output',
               type=click.File(mode="w"),
@@ -96,6 +134,12 @@ def adding_template(schema:SchemaDefinition, template_yaml) -> SchemaDefinition:
               type=click.Path(exists=True),
               default=None,
               help="template file")
+@click.option("--gsheet-id",
+              help="Google sheets ID. If this is specified then the arguments MUST be a file with list of gid")
+@click.option("--gsheet-download-dir",
+              type=click.Path(),
+              default=None,
+              help="Path used to download Google Sheets")
 @click.option("--fix_tsv/--no-fix_tsv",
               default=False,
               show_default=True,
@@ -109,13 +153,24 @@ def adding_template(schema:SchemaDefinition, template_yaml) -> SchemaDefinition:
               show_default=True,
               help="Auto-repair specifically for bican yaml model")
 @click.argument('tsv_files', nargs=-1)
-def generateSchema(tsv_files, output, fix_tsv, repair, fix_bican_model, template):
+def generateSchema(tsv_files, output, fix_tsv, repair, fix_bican_model, template, gsheet_id, gsheet_download_dir):
     schema_maker = sm.SchemaMaker()
 
-    if not template:
-        # checking default name of template
-        if (Path(tsv_files[0]).parent / "classes_base.yaml").exists():
-            template = Path(tsv_files[0]).parent / "classes_base.yaml"
+    if gsheet_id:
+        if not gsheet_download_dir:
+            gsheet_download_dir = Path(".") / f"google_sheet_{gsheet_id}"
+        if len(tsv_files) != 1 or not Path(tsv_files[0]).exists:
+            raise Exception(f"if gsheet-if is used the argument must me a file with gsheet_id, "
+                            f"but file {tsv_files} doesn't exist")
+
+        gsheet_download_dir.mkdir(exist_ok=True)
+        tsv_files = download_gsheets(gsheet_id, gsheet_download_dir, tsv_files[0])
+
+    # checking template and default name of template
+    if template:
+        template = Path(template)
+    elif (Path(tsv_files[0]).parent / "classes_base.yaml").exists():
+        template = Path(tsv_files[0]).parent / "classes_base.yaml"
 
     if fix_tsv:
         tsv_files = fix_tsv_files(list(tsv_files))
