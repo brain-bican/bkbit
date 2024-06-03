@@ -6,7 +6,7 @@ build-backend = 'setuptools.build_meta'
 [project]
 name = "bkbit"
 authors = [
-  { name="atlaskb developers"},
+  { name="bkbit developers"},
 ]
 description = "A library for atlaskb data models"
 readme = "README.md"
@@ -18,10 +18,14 @@ classifiers = [
 license = {text = "Apache 2.0"}
 dependencies = [
     "linkml>=1.5",
-    "pandas"
+    "pandas",
+    "click",
+    "schemasheets"
 ]
 dynamic = ["version"]
 
+[project.scripts]
+bkbit = "bkbit.cli:cli"
 
 [project.optional-dependencies]
 test = [
