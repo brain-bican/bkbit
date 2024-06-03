@@ -20,6 +20,7 @@ dependencies = [
     "linkml>=1.5",
     "pandas",
     "click",
+    "schemasheets"
 ]
 dynamic = ["version"]
 
