@@ -123,24 +123,24 @@ def download_gsheets(gsheet_id, sheets, gsheet_download_dir):
 @click.option('-o', '--output',
               type=click.File(mode="w"),
               default=sys.stdout,
-              help="output file")
+              help="Path for the yaml output file.")
 @click.option('-t', '--template',
               type=click.Path(exists=True),
               default=None,
-              help="template file")
+              help="Optional template yaml file with standard classes that will be added to the model.")
 @click.option("--gsheet/--no-gsheet",
               default=False,
               show_default=True,
-              help="Using Google sheet as a source. "
+              help="Using Google Sheet as a source. "
                    "If True, the arguments MUST be a yaml file with gsheet_id and gid of all the sheets")
 @click.option("--gsheet-download-dir",
               type=click.Path(),
               default=None,
-              help="Path used to download Google Sheets")
+              help="Path used to download Google Sheets. If not specified a default directory will be created.")
 @click.option("--fix_tsv/--no-fix_tsv",
               default=True,
               show_default=True,
-              help="Fixing known issues with tsv files from Google sheet")
+              help="Fixing known issues with tsv files from Google Sheets.")
 @click.option("--fix_tsv_save/--no-fix_tsv_save",
               default=False,
               show_default=True,
@@ -148,38 +148,53 @@ def download_gsheets(gsheet_id, sheets, gsheet_download_dir):
 @click.option("--repair/--no-repair",
               default=True,
               show_default=True,
-              help="Auto-repair schema")
+              help="Standard Linkml auto-repair schema")
 @click.option("--fix_bican_model/--no-fix_bican_model",
               default=True,
               show_default=True,
-              help="Auto-repair specifically for bican yaml model")
-@click.argument('tsv_files', nargs=-1)
-def schema2model(tsv_files, output, fix_tsv, fix_tsv_save, repair, fix_bican_model, template, gsheet, gsheet_download_dir):
+              help="Automated repair specifically for the BICAN YAML model")
+@click.argument('spreadsheets', nargs=-1)
+def schema2model(spreadsheets, output, fix_tsv, fix_tsv_save, repair, fix_bican_model, template,
+                 gsheet, gsheet_download_dir):
+    """
+    This converter allows to create a yaml linkml model from set of spreadsheets.
+    It can either use tsv files or Google Sheet as an input.
+
+    The default behavior is to run the converter starting with TSV files,
+     specifying their paths as arguments, for example, model_spreadsheets/*tsv.
+
+    If `--gsheet` option is used, the converter starts from downloading spreadsheets
+     from Google Sheets.
+     The argument must be a YAML file that has `gsheet_id` and a list of `sheets`
+     with `gid` (a unique identifier for each individual sheet) and `name` (optionally)
+     that will be used as a name of the downloaded TSV file (if not available `gid` wil be used).
+    """
+
     schema_maker = sm.SchemaMaker()
 
     if gsheet:
-        if len(tsv_files) != 1 or not Path(tsv_files[0]).exists:
+        if len(spreadsheets) != 1 or not Path(spreadsheets[0]).exists:
             raise Exception(f"if gsheet is used the argument must me a yaml file with gsheet_id, "
-                            f"but file {tsv_files} doesn't exist")
-        gsheet_id, sheets = read_and_parse_gsheet_yaml(tsv_files[0])
+                            f"but file {spreadsheets} doesn't exist")
+        gsheet_id, sheets = read_and_parse_gsheet_yaml(spreadsheets[0])
         if gsheet_download_dir:
             gsheet_download_dir = Path(gsheet_download_dir)
         else:
             gsheet_download_dir = Path(".") / f"google_sheet_{gsheet_id}"
 
         gsheet_download_dir.mkdir(exist_ok=True)
-        tsv_files = download_gsheets(gsheet_id, sheets, gsheet_download_dir)
+        spreadsheets = download_gsheets(gsheet_id, sheets, gsheet_download_dir)
 
     # checking template and default name of template
     if template:
         template = Path(template)
-    elif (Path(tsv_files[0]).parent / "classes_base.yaml").exists():
-        template = Path(tsv_files[0]).parent / "classes_base.yaml"
+    elif (Path(spreadsheets[0]).parent / "classes_base.yaml").exists():
+        template = Path(spreadsheets[0]).parent / "classes_base.yaml"
 
     if fix_tsv:
-        tsv_files = fix_tsv_files(list(tsv_files))
+        spreadsheets = fix_tsv_files(list(spreadsheets))
 
-    schema = schema_maker.create_schema(list(tsv_files))
+    schema = schema_maker.create_schema(list(spreadsheets))
     if repair:
         schema = schema_maker.repair_schema(schema)
 
@@ -195,7 +210,7 @@ def schema2model(tsv_files, output, fix_tsv, fix_tsv_save, repair, fix_bican_mod
 
     # removing the fixed files:
     if fix_tsv and not fix_tsv_save:
-        shutil.rmtree(Path(tsv_files[0]).parent)
+        shutil.rmtree(Path(spreadsheets[0]).parent)
 
 
 if __name__ == '__main__':
