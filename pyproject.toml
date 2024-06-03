@@ -20,7 +20,7 @@ dependencies = [
     "linkml>=1.5",
     "pandas",
     "click",
-    "schemasheets"
+    "schemasheets@git+https://github.com/linkml/schemasheets",
 ]
 dynamic = ["version"]
 
