@@ -24,6 +24,10 @@ dynamic = ["version"]
 
 
 [project.optional-dependencies]
+dev = [
+    "black",
+    "pre-commit",
+]
 test = [
     "pytest",
 ]
