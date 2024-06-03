@@ -153,7 +153,7 @@ def download_gsheets(gsheet_id, gsheet_download_dir, gid_filepath):
               show_default=True,
               help="Auto-repair specifically for bican yaml model")
 @click.argument('tsv_files', nargs=-1)
-def generateSchema(tsv_files, output, fix_tsv, repair, fix_bican_model, template, gsheet_id, gsheet_download_dir):
+def schema2model(tsv_files, output, fix_tsv, repair, fix_bican_model, template, gsheet_id, gsheet_download_dir):
     schema_maker = sm.SchemaMaker()
 
     if gsheet_id:
@@ -191,4 +191,4 @@ def generateSchema(tsv_files, output, fix_tsv, repair, fix_bican_model, template
 
 
 if __name__ == '__main__':
-    generateSchema()
+    schema2model()
