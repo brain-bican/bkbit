@@ -31,4 +31,3 @@ pip install bkbit
 - Clone your fork
 - Navigate to the main project directory: `cd bkbit`
 - Install in editable mode: `pip install -e .[all]`
-```
