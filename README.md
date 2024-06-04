@@ -25,9 +25,14 @@ All models are located in the [models directory](./bkbit/models). Currently, we 
 ```bash
 pip install bkbit
 ```
+#### Temporary fix: updating to new schemasheets version from GitHub:
+```commandline
+pip install git+https://github.com/linkml/schemasheets
+```
 
 ### Instructions for developers:
 - Fork the repository
 - Clone your fork
 - Navigate to the main project directory: `cd bkbit`
 - Install in editable mode: `pip install -e .[all]`
+- Install newer version of schemasheets (temporary fix): `pip install git+https://github.com/linkml/schemasheets`
