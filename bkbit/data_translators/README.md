@@ -9,7 +9,7 @@ specimen_portal_translator retrieves data from the Specimen Portal using the NIM
 # Step 0: Download Mapping Data bkbit.utils.bican_to_nimp_slots.csv and set correct path in specimen_portal_translator.py line 7
 
 # Step 1: Import specimen_portal_translator
-from bkbit.scripts.specimen_portal_translator import SpecimenPortal
+from bkbit.data_translators.libray_generation_translator import SpecimenPortal
 
 # Step 2: Retrieve Personal API Token from SpecimenPortal
 token = ... 
