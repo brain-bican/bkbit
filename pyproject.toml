@@ -26,6 +26,7 @@ dynamic = ["version"]
 
 [project.scripts]
 bkbit = "bkbit.cli:cli"
+gen-geneannotation = "bkbit.data_translators.genome_annotation_translator:cli"
 
 [project.optional-dependencies]
 test = [

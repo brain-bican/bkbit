@@ -12,6 +12,7 @@ from collections import defaultdict
 import subprocess
 import gzip
 from tqdm import tqdm
+import click
 from bkbit.models import genome_annotation as ga
 
 
@@ -97,7 +98,6 @@ class Gff3:
         genome_authority: str,
         hash_functions: tuple[str] = DEFAULT_HASH,
         assembly_strain=None,
-        gff_file=None,
     ):
         """
         Initializes an instance of the GFFTranslator class.
@@ -111,16 +111,12 @@ class Gff3:
         - genome_label (str): The label of the genome.
         - genome_version (str): The version of the genome.
         - genome_authority (str): The authority responsible for the genome.
-        - hash_functions (tuple[str]): A list of hash functions to use for generating checksums. Defaults to ("SHA256", "MD5").
+        - hash_functions (tuple[str], optional): A list of hash functions to use for generating checksums. Defaults to ("SHA256", "MD5").
         - assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
-        - gff_file (str, optional): The local path to the GFF file if file is already downloaded. Defaults to None.
         """
         self.logger = logger
         self.content_url = content_url
-        if gff_file is None:
-            self.gff_file = self.__download_gff_file()
-        else:
-            self.gff_file = gff_file
+        self.gff_file = self.__download_gff_file()
         self.authority = self.assign_authority_type(genome_authority)
         self.organism_taxon = self.generate_organism_taxon(taxon_id)
         self.genome_assembly = self.generate_genome_assembly(
@@ -139,14 +135,38 @@ class Gff3:
         Returns:
             str: The path to the temporary file containing the decompressed GFF data.
         """
-        with urllib.request.urlopen(self.content_url) as response:
-            gzip_data = response.read()
+        # Request the file and get its size
+        response = urllib.request.urlopen(self.content_url)
+        total_size = int(response.headers.get('content-length', 0))
+        block_size = 1024  # 1 Kilobyte
 
         # Create a temporary file for the gzip data
         with tempfile.NamedTemporaryFile(suffix=".gz", delete=False) as f_gzip:
-            f_gzip.write(gzip_data)
             gzip_file_path = f_gzip.name
+            
+            # Create a progress bar
+            progress_bar = tqdm(total=total_size, unit='iB', unit_scale=True, desc="Downloading GFF file")
+
+            # Read the file in chunks and write to the temporary file
+            while True:
+                data = response.read(block_size)
+                if not data:
+                    break
+                f_gzip.write(data)
+                progress_bar.update(len(data))
+
+            progress_bar.close()
+
         return gzip_file_path
+        ## OLD CODE ##
+        # with urllib.request.urlopen(self.content_url) as response:
+        #     gzip_data = response.read()
+
+        # # Create a temporary file for the gzip data
+        # with tempfile.NamedTemporaryFile(suffix=".gz", delete=False) as f_gzip:
+        #     f_gzip.write(gzip_data)
+        #     gzip_file_path = f_gzip.name
+        # return gzip_file_path
 
     def generate_organism_taxon(self, taxon_id: str):
         """
@@ -709,6 +729,24 @@ class Gff3:
             }
             f.write(json.dumps(output_data, indent=2))
 
+@click.command()
+@click.option("--content_url", "-c", required=True, help="The URL of the GFF file.")
+@click.option("--taxon_id", "-t", required=True, help="The taxon ID of the organism.")
+@click.option("--assembly_id", "-a", required=True, help="The ID of the genome assembly.")
+@click.option("--assembly_version", "-v", required=True, help="The version of the genome assembly.")
+@click.option("--assembly_label", "-l", required=True, help="The label of the genome assembly.")
+@click.option("--genome_label", "-g", required=True, help="The label of the genome.")
+@click.option("--genome_version", "-V", required=True, help="The version of the genome.")
+@click.option("--genome_authority", "-A", required=True, help="The authority responsible for the genome.")
+@click.option("--hash_functions", "-H", default=DEFAULT_HASH, help="A list of hash functions to use for generating checksums. Defaults to ('SHA256', 'MD5').")
+@click.option("--assembly_strain", "-s", default=None, help="The strain of the genome assembly. Defaults to None.")
+
+def cli(content_url, taxon_id, assembly_id, assembly_version, assembly_label, genome_label, genome_version, genome_authority, hash_functions, assembly_strain, **args):
+    gff3 = Gff3(content_url, taxon_id, assembly_id, assembly_version, assembly_label, genome_label, genome_version, genome_authority, hash_functions, assembly_strain)
+    gff3.parse()
+    gff3.serialize_to_jsonld("output_20240725.jsonld")
+
 
 if __name__ == "__main__":
-    pass
+    cli()
+
