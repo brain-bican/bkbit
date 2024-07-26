@@ -20,7 +20,7 @@ logging.basicConfig(
     filename="gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log",
     format="%(levelname)s: %(message)s (%(asctime)s)",
     datefmt="%m/%d/%Y %I:%M:%S %p",
-    level=logging.INFO,
+    level=logging.DEBUG,
 )
 logger = logging.getLogger(__name__)
 
@@ -158,15 +158,6 @@ class Gff3:
             progress_bar.close()
 
         return gzip_file_path
-        ## OLD CODE ##
-        # with urllib.request.urlopen(self.content_url) as response:
-        #     gzip_data = response.read()
-
-        # # Create a temporary file for the gzip data
-        # with tempfile.NamedTemporaryFile(suffix=".gz", delete=False) as f_gzip:
-        #     f_gzip.write(gzip_data)
-        #     gzip_file_path = f_gzip.name
-        # return gzip_file_path
 
     def generate_organism_taxon(self, taxon_id: str):
         """
@@ -285,12 +276,14 @@ class Gff3:
             ValueError: If an unsupported hash algorithm is provided.
 
         """
+        self.logger.debug("Generating checksum digests")
         gff_data = open(
             self.gff_file, "rb"
         ).read()  # TODO: Modify this to read the file in chunks
         checksums = []
 
         for hash_type in hash_functions:
+            self.logger.debug("Generating checksum for %s", hash_type)
             # Generate a UUID version 4
             uuid_value = uuid.uuid4()
 
@@ -299,6 +292,7 @@ class Gff3:
             hash_type = hash_type.strip().upper()
             # Create a Checksum object
             if hash_type == "SHA256":
+                self.logger.debug("Generating SHA256 digest")
                 digest = hashlib.sha256(gff_data).hexdigest()
                 checksums.append(
                     ga.Checksum(
@@ -308,6 +302,7 @@ class Gff3:
                     )
                 )
             elif hash_type == "MD5":
+                self.logger.debug("Generating MD5 digest")
                 digest = hashlib.md5(gff_data).hexdigest()
                 checksums.append(
                     ga.Checksum(
@@ -315,6 +310,7 @@ class Gff3:
                     )
                 )
             elif hash_type == "SHA1":
+                self.logger.debug("Generating SHA1 digest")
                 digest = hashlib.sha1(gff_data).hexdigest()
                 checksums.append(
                     ga.Checksum(
@@ -690,61 +686,74 @@ class Gff3:
         return result
 
     def serialize_to_jsonld(
-        self, output_file: str, exclude_none: bool = True, exclude_unset: bool = False
+        self, exclude_none: bool = True, exclude_unset: bool = False
     ):
         """
-        Serialize the object and write it to the specified output file.
+        Serialize the object and either write it to the specified output file or print it to the CLI.
 
         Parameters:
-            output_file (str): The path of the output file.
+            exclude_none (bool): Whether to exclude None values in the output.
+            exclude_unset (bool): Whether to exclude unset values in the output.
 
         Returns:
             None
         """
         logger.debug("Serializing to JSON-LD")
-        with open(output_file, "w", encoding="utf-8") as f:
-            data = [
-                self.organism_taxon.dict(
-                    exclude_none=exclude_none, exclude_unset=exclude_unset
-                ),
-                self.genome_assembly.dict(
-                    exclude_none=exclude_none, exclude_unset=exclude_unset
-                ),
-                self.genome_annotation.dict(
-                    exclude_none=exclude_none, exclude_unset=exclude_unset
-                ),
-            ]
-            for ck in self.checksums:
-                data.append(
-                    ck.dict(exclude_none=exclude_none, exclude_unset=exclude_unset)
-                )
-            for ga in self.gene_annotations.values():
-                data.append(
-                    ga.dict(exclude_none=exclude_none, exclude_unset=exclude_unset)
-                )
+        
+        data = [
+            self.organism_taxon.dict(
+                exclude_none=exclude_none, exclude_unset=exclude_unset
+            ),
+            self.genome_assembly.dict(
+                exclude_none=exclude_none, exclude_unset=exclude_unset
+            ),
+            self.genome_annotation.dict(
+                exclude_none=exclude_none, exclude_unset=exclude_unset
+            ),
+        ]
+        for ck in self.checksums:
+            data.append(
+                ck.dict(exclude_none=exclude_none, exclude_unset=exclude_unset)
+            )
+        for ga in self.gene_annotations.values():
+            data.append(
+                ga.dict(exclude_none=exclude_none, exclude_unset=exclude_unset)
+            )
 
-            output_data = {
-                "@context": "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/genome_annotation.context.jsonld",
-                "@graph": data,
-            }
-            f.write(json.dumps(output_data, indent=2))
+        output_data = {
+            "@context": "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/genome_annotation.context.jsonld",
+            "@graph": data,
+        }
+
+        print(json.dumps(output_data, indent=2))
 
 @click.command()
-@click.option("--content_url", "-c", required=True, help="The URL of the GFF file.")
-@click.option("--taxon_id", "-t", required=True, help="The taxon ID of the organism.")
-@click.option("--assembly_id", "-a", required=True, help="The ID of the genome assembly.")
-@click.option("--assembly_version", "-v", required=True, help="The version of the genome assembly.")
-@click.option("--assembly_label", "-l", required=True, help="The label of the genome assembly.")
-@click.option("--genome_label", "-g", required=True, help="The label of the genome.")
-@click.option("--genome_version", "-V", required=True, help="The version of the genome.")
-@click.option("--genome_authority", "-A", required=True, help="The authority responsible for the genome.")
-@click.option("--hash_functions", "-H", default=DEFAULT_HASH, help="A list of hash functions to use for generating checksums. Defaults to ('SHA256', 'MD5').")
-@click.option("--assembly_strain", "-s", default=None, help="The strain of the genome assembly. Defaults to None.")
+##ARGUEMENTS##
+# Argument #1: The URL of the GFF file
+@click.argument("content_url", type=str)
+# Argument #2: The taxon ID of the organism
+@click.argument("taxon_id", type=str)
+# Argument #3: The ID of the genome assembly
+@click.argument("assembly_id", type=str)
+# Argument #4: The version of the genome assembly
+@click.argument("assembly_version", type=str)
+# Argument #5: The label of the genome assembly
+@click.argument("assembly_label", type=str)
+# Argument #6: The label of the genome
+@click.argument("genome_label", type=str)
+# Argument #7: The version of the genome
+@click.argument("genome_version", type=str)
+# Argument #8: The authority responsible for the genome
+@click.argument("genome_authority", type=str)
+##OPTIONS##
+@click.option("--hash_function", "-h", required=False, multiple=True, type=str, default=DEFAULT_HASH, help="A list of hash functions to use for generating checksums. Defaults to ('SHA256', 'MD5').")
+@click.option("--assembly_strain", "-s", required=False, default=None, help="The strain of the genome assembly. Defaults to None.")
 
-def cli(content_url, taxon_id, assembly_id, assembly_version, assembly_label, genome_label, genome_version, genome_authority, hash_functions, assembly_strain, **args):
-    gff3 = Gff3(content_url, taxon_id, assembly_id, assembly_version, assembly_label, genome_label, genome_version, genome_authority, hash_functions, assembly_strain)
+def cli(content_url, taxon_id, assembly_id, assembly_version, assembly_label, genome_label, genome_version, genome_authority, hash_function, assembly_strain, **args):
+    hash_list = list(set(hash_function))
+    gff3 = Gff3(content_url, taxon_id, assembly_id, assembly_version, assembly_label, genome_label, genome_version, genome_authority, hash_list, assembly_strain)
     gff3.parse()
-    gff3.serialize_to_jsonld("output_20240725.jsonld")
+    gff3.serialize_to_jsonld()
 
 
 if __name__ == "__main__":
