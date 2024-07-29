@@ -2,8 +2,8 @@ name: add dunder methods to genome_annotation model
 
 on:
   push:
-    # paths:
-    #   - 'bkbit/models/genome_annotation.py'
+    paths:
+      - 'bkbit/models/genome_annotation.py'
 
 permissions:
   contents: write
