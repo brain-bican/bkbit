@@ -169,7 +169,7 @@ class Gff3:
             assembly_id = assembly_accession
 
         # Assign assembly_version, assembly_label, genome_version, and genome_label
-        assembly_version = assembly_id.split(".")[1] #! CHECK IF THERE IS AN INDEX 1
+        assembly_version = assembly_id.split(".")[1] if len(assembly_id.split(".")) >= 1 else None
         assembly_label = url_metadata.get("assembly_name")
         genome_version = url_metadata.get("release_version")
         genome_label = self.authority.value + "-" + taxon_id + "-" + genome_version
