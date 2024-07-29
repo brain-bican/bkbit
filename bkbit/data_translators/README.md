@@ -1,27 +1,33 @@
-# specimen_portal_translator.py
+# genome_annotation_translator.py
 
-specimen_portal_translator retrieves data from the Specimen Portal using the NIMP API and then generates respective data classes using classes defined in library_generation.py. 
+genome_annotation_translator uses annoated genome data in GFF3 format to generate respective data objects representing genes, genome assemblies, and organisms. 
 
-## Usage 
+## Command Line
+### gen-geneannotation
+```python
+gen-geneannotation [OPTIONS] GFF3_URL 
+```
+
+#### Requirements
+<span style="color: red;">-a, --assembly_accession</span> <br> 
+ID assigned to the genomic assembly used in the GFF3 file. <br>
+<b>*Note*</b>: Must be provided when using ENSEMBL GFF3 files
+
+<span style="color: red;">-s, --assembly_strain</span> <br>
+Specific strain of the organism associated with the GFF3 file.
+
+#### Example 1: NCBI GFF3 File 
 
 ```python
+pip install bkbit
 
-# Step 0: Download Mapping Data bkbit.utils.bican_to_nimp_slots.csv and set correct path in specimen_portal_translator.py line 7
+gen-geneannotation 'https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/9823/106/GCF_000003025.6_Sscrofa11.1/GCF_000003025.6_Sscrofa11.1_genomic.gff.gz' > output.jsonld
+```
 
-# Step 1: Import specimen_portal_translator
-from bkbit.data_translators.libray_generation_translator import SpecimenPortal
+#### Example 2: ENSEMBL GFF3 File 
 
-# Step 2: Retrieve Personal API Token from SpecimenPortal
-token = ... 
+```python
+pip install bkbit
 
-# Step 3: Initialize SpecimenPortal instance
-sp = SpecimenPortal(token)
-
-# Step 4: Generate respective BICAN data objects for provided nhash_id and its ancestors:
-nhash_id = ... # i.e. nhashid = 'LP-CVFLMQ819998'
-sp.parse_nhash_id(nhash_id)
-
-# Step 5: Serialize BICAN data objects to jsonld 
-output_file_name = ... # i.e. output_file_name = output_LP-CVFLMQ819998.jsonld
-sp.serialize_to_jsonld(output_file_name)
+gen-geneannotation -a 'GCF_003339765.1' 'https://ftp.ensembl.org/pub/release-104/gff3/macaca_mulatta/Macaca_mulatta.Mmul_10.104.gff3.gz' > output.jsonld
 ```
