@@ -412,6 +412,16 @@ class GeneAnnotation(Gene):
     """
     An annotation describing the location, boundaries, and functions of  individual genes within a genome annotation.
     """
+
+    def __hash__(self):
+        return hash(tuple([self.id, self.name, self.molecular_type, self.description]))
+    
+    def __eq__(self, other):
+        return (self.description == other.description) and (self.molecular_type == other.molecular_type)
+    
+    def __ne__(self, other):
+        return (self.description != other.description) or (self.molecular_type != other.molecular_type)
+    
     molecular_type: Optional[Union[BioType, str]] = Field(None)
     source_id: Optional[str] = Field(None, description="""The authority specific identifier.""")
     referenced_in: Union[GenomeAnnotation, str] = Field(..., description="""The genome annotation that this gene annotation was referenced from.""")
