@@ -14,6 +14,7 @@ import subprocess
 import gzip
 from tqdm import tqdm
 import click
+import pkg_resources
 from bkbit.models import genome_annotation as ga
 
 logging.basicConfig(
@@ -27,6 +28,34 @@ logger = logging.getLogger(__name__)
 
 ## CONSTANTS ##
 
+PREFIX_MAP = {
+    "NCBITaxon": "http://purl.obolibrary.org/obo/NCBITaxon_",
+    "NCBIGene": "http://identifiers.org/ncbigene/",
+    "ENSEMBL": "http://identifiers.org/ensembl/",
+    "NCBIAssembly": "https://www.ncbi.nlm.nih.gov/assembly/",
+}
+NCBI_GENE_ID_PREFIX = "NCBIGene"
+ENSEMBL_GENE_ID_PREFIX = "ENSEMBL"
+TAXON_PREFIX = "NCBITaxon"
+ASSEMBLY_PREFIX = "NCBIAssembly"
+BICAN_ANNOTATION_PREFIX = "bican:annotation-"
+GENOME_ANNOTATION_DESCRIPTION_FORMAT = (
+    "{authority} {taxon_scientific_name} Annotation Release {genome_version}"
+)
+DEFAULT_FEATURE_FILTER = ("gene", "pseudogene", "ncRNA_gene")
+DEFAULT_HASH = tuple("MD5")
+
+# scientific_name_to_taxid_path = pkg_resources.resource_filename(__name__, '../utils/ncbi_taxonomy/scientific_name_to_taxid.json')
+# with open(scientific_name_to_taxid_path, 'r', encoding='utf-8') as f:
+#     SCIENTIFIC_NAME_TO_TAXONID = json.load(f)
+
+# taxid_to_common_name_path = pkg_resources.resource_filename(__name__, '../utils/ncbi_taxonomy/taxid_to_common_name.json')
+# with open(taxid_to_common_name_path, 'r', encoding='utf-8') as f:
+#     TAXON_COMMON_NAME = json.load(f)
+
+# taxid_to_scientific_name_path = pkg_resources.resource_filename(__name__, '../utils/ncbi_taxonomy/taxid_to_scientific_name.json')
+# with open(taxid_to_scientific_name_path, 'r', encoding='utf-8') as f:
+#     TAXON_SCIENTIFIC_NAME = json.load(f)
 TAXON_SCIENTIFIC_NAME = {
     "9606": "Homo sapiens",
     "10090": "Mus musculus",
@@ -89,24 +118,6 @@ TAXON_COMMON_NAME = {
     "9407": "egyptian fruit bat",
     "9598": "chimpanzee",
 }
-
-PREFIX_MAP = {
-    "NCBITaxon": "http://purl.obolibrary.org/obo/NCBITaxon_",
-    "NCBIGene": "http://identifiers.org/ncbigene/",
-    "ENSEMBL": "http://identifiers.org/ensembl/",
-    "NCBIAssembly": "https://www.ncbi.nlm.nih.gov/assembly/",
-}
-NCBI_GENE_ID_PREFIX = "NCBIGene"
-ENSEMBL_GENE_ID_PREFIX = "ENSEMBL"
-TAXON_PREFIX = "NCBITaxon"
-ASSEMBLY_PREFIX = "NCBIAssembly"
-BICAN_ANNOTATION_PREFIX = "bican:annotation-"
-GENOME_ANNOTATION_DESCRIPTION_FORMAT = (
-    "{authority} {taxon_scientific_name} Annotation Release {genome_version}"
-)
-DEFAULT_FEATURE_FILTER = ("gene", "pseudogene", "ncRNA_gene")
-DEFAULT_HASH = tuple("MD5")
-
 
 class Gff3:
     def __init__(
