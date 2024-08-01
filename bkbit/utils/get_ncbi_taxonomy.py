@@ -124,19 +124,19 @@ def process_and_save_taxdmp_in_memory(url, output_dir):
 
     # Step 3: Save the dictionaries to files
     with open(
-        os.path.join(output_dir, "taxid_to_scientific_name.json"), "w", encoding="utf-8"
-    ) as f:
-        json.dump(taxid_to_scientific_name, f, indent=4)
-
-    with open(
         os.path.join(output_dir, "taxid_to_common_name.json"), "w", encoding="utf-8"
     ) as f:
         json.dump(taxid_to_common_name, f, indent=4)
 
-    with open(
-        os.path.join(output_dir, "scientific_name_to_taxid.json"), "w", encoding="utf-8"
-    ) as f:
-        json.dump(scientific_name_to_taxid, f, indent=4)
+    # with open(
+    #     os.path.join(output_dir, "taxid_to_scientific_name.json"), "w", encoding="utf-8"
+    # ) as f:
+    #     json.dump(taxid_to_scientific_name, f, indent=4)
+
+    # with open(
+    #     os.path.join(output_dir, "scientific_name_to_taxid.json"), "w", encoding="utf-8"
+    # ) as f:
+    #     json.dump(scientific_name_to_taxid, f, indent=4)
 
 
 if __name__ == "__main__":

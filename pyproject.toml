@@ -39,5 +39,8 @@ docs = [
 [project.urls]
 "Homepage" = "https://github.com/brain-bican/bkbit"
 
+[tool.setuptools.package-data]
+"bkbit" = ["utils/ncbi_taxonomy/*.json"]
+
 [tool.setuptools_scm]
 write_to = "bkbit/_version.py"

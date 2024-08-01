@@ -49,13 +49,17 @@ DEFAULT_HASH = tuple("MD5")
 # with open(scientific_name_to_taxid_path, 'r', encoding='utf-8') as f:
 #     SCIENTIFIC_NAME_TO_TAXONID = json.load(f)
 
-# taxid_to_common_name_path = pkg_resources.resource_filename(__name__, '../utils/ncbi_taxonomy/taxid_to_common_name.json')
-# with open(taxid_to_common_name_path, 'r', encoding='utf-8') as f:
-#     TAXON_COMMON_NAME = json.load(f)
-
 # taxid_to_scientific_name_path = pkg_resources.resource_filename(__name__, '../utils/ncbi_taxonomy/taxid_to_scientific_name.json')
 # with open(taxid_to_scientific_name_path, 'r', encoding='utf-8') as f:
 #     TAXON_SCIENTIFIC_NAME = json.load(f)
+
+taxid_to_common_name_path = pkg_resources.resource_filename(
+    __name__, "../utils/ncbi_taxonomy/taxid_to_common_name.json"
+)
+with open(taxid_to_common_name_path, "r", encoding="utf-8") as f:
+    TAXON_COMMON_NAME = json.load(f)
+
+
 TAXON_SCIENTIFIC_NAME = {
     "9606": "Homo sapiens",
     "10090": "Mus musculus",
@@ -98,26 +102,6 @@ SCIENTIFIC_NAME_TO_TAXONID = {
     "Pan troglodytes": "9598",
 }
 
-TAXON_COMMON_NAME = {
-    "9606": "human",
-    "10090": "mouse",
-    "9544": "rhesus macaque",
-    "9483": "common marmoset",
-    "60711": "green monkey",
-    "9361": "nine-banded armadillo",
-    "9685": "cat",
-    "9669": "ferret",
-    "30611": "galago",
-    "9593": "gorilla",
-    "13616": "gray short-tailed opossum",
-    "9823": "pig",
-    "9986": "rabbit",
-    "10116": "rat",
-    "27679": "squirrel monkey",
-    "246437": "Chinese tree shrew",
-    "9407": "egyptian fruit bat",
-    "9598": "chimpanzee",
-}
 
 class Gff3:
     def __init__(
@@ -180,7 +164,9 @@ class Gff3:
             assembly_id = assembly_accession
 
         # Assign assembly_version, assembly_label, genome_version, and genome_label
-        assembly_version = assembly_id.split(".")[1] if len(assembly_id.split(".")) >= 1 else None
+        assembly_version = (
+            assembly_id.split(".")[1] if len(assembly_id.split(".")) >= 1 else None
+        )
         assembly_label = url_metadata.get("assembly_name")
         genome_version = url_metadata.get("release_version")
         genome_label = self.authority.value + "-" + taxon_id + "-" + genome_version
@@ -219,7 +205,9 @@ class Gff3:
         # NCBI : [assembly accession.version]_[assembly name]_[content type].[optional format]
         # ENSEMBL :  <species>.<assembly>.<_version>.gff3.gz -> organism full name, assembly name, genome version
         ncbi_pattern = r"/genomes/all/annotation_releases/(\d+)(?:/(\d+))?/(GCF_\d+\.\d+)[_-]([^/]+)/(GCF_\d+\.\d+)[_-]([^/]+)_genomic\.gff\.gz"
-        ensembl_pattern = r"/pub/release-(\d+)/gff3/([^/]+)/([^/.]+)\.([^/.]+)\.([^/.]+)\.gff3\.gz"
+        ensembl_pattern = (
+            r"/pub/release-(\d+)/gff3/([^/]+)/([^/.]+)\.([^/.]+)\.([^/.]+)\.gff3\.gz"
+        )
 
         # Parse the URL to get the path
         parsed_url = urlparse(self.content_url)
@@ -253,7 +241,7 @@ class Gff3:
 
         # If no match is found, return None
         return None
-    
+
     def __download_gff_file(self):
         """
         Downloads a GFF file from a given URL and calculates the MD5, SHA256, and SHA1 hashes.
@@ -877,7 +865,6 @@ class Gff3:
     type=str,
     help="The strain of the genome assembly. Defaults to None.",
 )
-
 def cli(content_url, assembly_accession, assembly_strain, **args):
     gff3 = Gff3(content_url, assembly_accession, assembly_strain)
     gff3.parse()
