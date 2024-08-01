@@ -37,7 +37,7 @@ docs = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/atlaskb/bkbit"
+"Homepage" = "https://github.com/brain-bican/bkbit"
 
 [tool.setuptools_scm]
 write_to = "bkbit/_version.py"
