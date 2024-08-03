@@ -45,62 +45,23 @@ GENOME_ANNOTATION_DESCRIPTION_FORMAT = (
 DEFAULT_FEATURE_FILTER = ("gene", "pseudogene", "ncRNA_gene")
 DEFAULT_HASH = tuple("MD5")
 
-# scientific_name_to_taxid_path = pkg_resources.resource_filename(__name__, '../utils/ncbi_taxonomy/scientific_name_to_taxid.json')
-# with open(scientific_name_to_taxid_path, 'r', encoding='utf-8') as f:
-#     SCIENTIFIC_NAME_TO_TAXONID = json.load(f)
+scientific_name_to_taxid_path = pkg_resources.resource_filename(
+    __name__, "../utils/ncbi_taxonomy/scientific_name_to_taxid.json"
+)
+with open(scientific_name_to_taxid_path, "r", encoding="utf-8") as f:
+    SCIENTIFIC_NAME_TO_TAXONID = json.load(f)
 
-# taxid_to_scientific_name_path = pkg_resources.resource_filename(__name__, '../utils/ncbi_taxonomy/taxid_to_scientific_name.json')
-# with open(taxid_to_scientific_name_path, 'r', encoding='utf-8') as f:
-#     TAXON_SCIENTIFIC_NAME = json.load(f)
+taxid_to_scientific_name_path = pkg_resources.resource_filename(
+    __name__, "../utils/ncbi_taxonomy/taxid_to_scientific_name.json"
+)
+with open(taxid_to_scientific_name_path, "r", encoding="utf-8") as f:
+    TAXON_SCIENTIFIC_NAME = json.load(f)
 
 taxid_to_common_name_path = pkg_resources.resource_filename(
     __name__, "../utils/ncbi_taxonomy/taxid_to_common_name.json"
 )
 with open(taxid_to_common_name_path, "r", encoding="utf-8") as f:
     TAXON_COMMON_NAME = json.load(f)
-
-
-TAXON_SCIENTIFIC_NAME = {
-    "9606": "Homo sapiens",
-    "10090": "Mus musculus",
-    "9544": "Macaca mulatta",
-    "9483": "Callithrix jacchus",
-    "60711": "Chlorocebus sabaeus",
-    "9361": "Dasypus novemcinctus",
-    "9685": "Felis catus",
-    "9669": "Mustela putorius furo",
-    "30611": "Otolemur garnettii",
-    "9593": "Gorilla gorilla",
-    "13616": "Monodelphis domestica",
-    "9823": "Sus scrofa",
-    "9986": "Oryctolagus cuniculus",
-    "10116": "Rattus norvegicus",
-    "27679": "Saimiri boliviensis",
-    "246437": "Tupaia belangeri chinensis",
-    "9407": "Rousettus aegyptiacus",
-    "9598": "Pan troglodytes",
-}
-
-SCIENTIFIC_NAME_TO_TAXONID = {
-    "Homo sapiens": "9606",
-    "Mus musculus": "10090",
-    "Macaca mulatta": "9544",
-    "Callithrix jacchus": "9483",
-    "Chlorocebus sabaeus": "60711",
-    "Dasypus novemcinctus": "9361",
-    "Felis catus": "9685",
-    "Mustela putorius furo": "9669",
-    "Otolemur garnettii": "30611",
-    "Gorilla gorilla": "9593",
-    "Monodelphis domestica": "13616",
-    "Sus scrofa": "9823",
-    "Oryctolagus cuniculus": "9986",
-    "Rattus norvegicus": "10116",
-    "Saimiri boliviensis": "27679",
-    "Tupaia belangeri chinensis": "246437",
-    "Rousettus aegyptiacus": "9407",
-    "Pan troglodytes": "9598",
-}
 
 
 class Gff3:
