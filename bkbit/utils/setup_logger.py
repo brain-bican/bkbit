@@ -30,6 +30,7 @@ Functions:
 Attributes:
     LOG_LEVELS (dict): A dictionary mapping log level names to their corresponding logging constants.
 """
+
 import logging
 
 LOG_LEVELS = {
@@ -37,10 +38,15 @@ LOG_LEVELS = {
     "INFO": logging.INFO,
     "WARNING": logging.WARNING,
     "ERROR": logging.ERROR,
-    "CRITICAL": logging.CRITICAL
+    "CRITICAL": logging.CRITICAL,
 }
 
-def setup_logger(file_name,  log_level="WARNING", log_to_file=False,):
+
+def setup_logger(
+    file_name,
+    log_level="WARNING",
+    log_to_file=False,
+):
     """
     Set up a logger with the specified log level and log destination.
 
