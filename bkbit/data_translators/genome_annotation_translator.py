@@ -2,7 +2,7 @@ import re
 import hashlib
 import tempfile
 import uuid
-import logging
+#import logging
 import urllib
 import urllib.request
 from urllib.parse import urlparse
@@ -16,6 +16,7 @@ from tqdm import tqdm
 import click
 import pkg_resources
 from bkbit.models import genome_annotation as ga
+from bkbit.utils.setup_logger import setup_logger
 
 ## CONSTANTS ##
 
@@ -35,13 +36,8 @@ GENOME_ANNOTATION_DESCRIPTION_FORMAT = (
 )
 DEFAULT_FEATURE_FILTER = ("gene", "pseudogene", "ncRNA_gene")
 DEFAULT_HASH = ("MD5",)
-LOG_LEVELS = {
-    "DEBUG": logging.DEBUG,
-    "INFO": logging.INFO,
-    "WARNING": logging.WARNING,
-    "ERROR": logging.ERROR,
-    "CRITICAL": logging.CRITICAL
-}
+LOG_FILE_NAME = "gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log"
+
 
 
 scientific_name_to_taxid_path = pkg_resources.resource_filename(
@@ -81,7 +77,7 @@ class Gff3:
         - assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
         - hash_functions (tuple[str]): A tuple of hash functions to use for generating checksums. Defaults to ('MD5').
         """
-        self.logger = self.setup_logger(log_to_file, LOG_LEVELS[log_level])
+        self.logger = setup_logger(LOG_FILE_NAME, log_level, log_to_file)
         self.content_url = content_url
 
         ## STEP 1: Parse the content URL to get metadata
@@ -149,24 +145,6 @@ class Gff3:
         )
 
         self.gene_annotations = {}
-
-    def setup_logger(self, log_to_file=False, log_level=logging.WARNING):
-        if log_to_file:
-            logging.basicConfig(
-                filename="gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log",
-                format="%(levelname)s: %(message)s (%(asctime)s)",
-                datefmt="%m/%d/%Y %I:%M:%S %p",
-                level=log_level,
-            )
-        else:
-            logging.basicConfig(
-                format="%(levelname)s: %(message)s (%(asctime)s)",
-                datefmt="%m/%d/%Y %I:%M:%S %p",
-                level=log_level,
-            )
-
-        logger = logging.getLogger(__name__)
-        return logger
 
     def parse_url(self):
         """
@@ -834,7 +812,6 @@ class Gff3:
     "-l",
     required=False,
     default="WARNING",
-    type=click.Choice(LOG_LEVELS.keys()),
     help="The log level. Defaults to WARNING.",
 )
 # Option #4: Log to file
