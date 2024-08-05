@@ -1,3 +1,52 @@
+"""
+Module for downloading, parsing, and processing GFF3 files from NCBI and Ensembl repositories. This module provides functionality to:
+
+1. Download a GFF3 file from a specified URL and calculate its checksums.
+2. Parse the GFF3 file to extract gene annotations.
+3. Generate various metadata objects such as organism taxon, genome assembly, and genome annotation.
+4. Serialize the extracted information into JSON-LD format for further use.
+
+Classes:
+    Gff3: A class to handle the entire process of downloading, parsing, and processing GFF3 files.
+
+Functions:
+    cli: Command line interface function to execute the module as a script.
+
+Dependencies:
+    - re
+    - hashlib
+    - tempfile
+    - uuid
+    - urllib
+    - urllib.request
+    - urllib.parse
+    - os
+    - json
+    - datetime
+    - collections.defaultdict
+    - subprocess
+    - gzip
+    - tqdm
+    - click
+    - pkg_resources
+    - bkbit.models.genome_annotation as ga
+    - bkbit.utils.setup_logger as setup_logger
+    - bkbit.utils.load_json as load_json
+
+Usage:
+    The module can be run as a standalone script by executing it with appropriate arguments and options:
+    
+    ```
+    python script_name.py <content_url> -a <assembly_accession> -s <assembly_strain> -l <log_level> -f
+    ```
+    Example:
+    ```
+    python script_name.py "https://example.com/path/to/gff3.gz" -a "GCF_000001405.39" -s "strain_name" -l "INFO" -f
+    ```
+
+    The script will download the GFF3 file from the specified URL, parse it, and serialize the extracted information into JSON-LD format.
+"""
+
 import re
 import hashlib
 import tempfile
@@ -55,7 +104,68 @@ TAXON_COMMON_NAME = load_json(
     )
 )
 
+
 class Gff3:
+    """
+    A class to handle the downloading, parsing, and processing of GFF3 files from NCBI and Ensembl repositories.
+
+    Attributes:
+        content_url (str): The URL of the GFF file.
+        assembly_accession (str): The ID of the genome assembly.
+        assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
+        log_level (str): The logging level. Defaults to 'WARNING'.
+        log_to_file (bool): Flag to log messages to a file. Defaults to False.
+
+    Methods:
+        __init__(content_url, assembly_accession=None, assembly_strain=None, log_level="WARNING", log_to_file=False):
+            Initializes the Gff3 class with the provided parameters.
+
+        parse_url():
+            Parses the content URL and extracts information about the genome annotation.
+
+        __download_gff_file():
+            Downloads a GFF file from a given URL and calculates the MD5, SHA256, and SHA1 hashes.
+
+        generate_organism_taxon(taxon_id):
+            Generates an organism taxon object based on the provided taxon ID.
+
+        assign_authority_type(authority):
+            Assigns the authority type based on the given authority string.
+
+        generate_genome_assembly(assembly_id, assembly_version, assembly_label, assembly_strain=None):
+            Generates a genome assembly object based on the provided parameters.
+
+        generate_genome_annotation(genome_label, genome_version):
+            Generates a genome annotation object based on the provided parameters.
+
+        generate_digest(hash_values, hash_functions=DEFAULT_HASH):
+            Generates checksum digests for the GFF file using the specified hash functions.
+
+        __get_line_count(file_path):
+            Returns the line count of a file.
+
+        parse(feature_filter=DEFAULT_FEATURE_FILTER):
+            Parses the GFF file and extracts gene annotations based on the provided feature filter.
+
+        generate_ensembl_gene_annotation(attributes, curr_line_num):
+            Generates a GeneAnnotation object for Ensembl based on the provided attributes.
+
+        generate_ncbi_gene_annotation(attributes, curr_line_num):
+            Generates a GeneAnnotation object for NCBI based on the provided attributes.
+
+        __get_attribute(attributes, attribute_name, curr_line_num):
+            Retrieves the value of a specific attribute from the given attributes dictionary.
+
+        __resolve_ncbi_gene_annotation(new_gene_annotation, curr_line_num):
+            Resolves conflicts between existing and new gene annotations based on certain conditions.
+
+        __merge_values(t):
+            Merges values from a list of lists into a dictionary of sets.
+
+        serialize_to_jsonld(exclude_none=True, exclude_unset=False):
+            Serializes the object and either writes it to the specified output file or prints it to the CLI.
+    """
+
     def __init__(
         self,
         content_url,
