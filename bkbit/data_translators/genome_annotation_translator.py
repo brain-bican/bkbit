@@ -2,7 +2,6 @@ import re
 import hashlib
 import tempfile
 import uuid
-#import logging
 import urllib
 import urllib.request
 from urllib.parse import urlparse
@@ -17,6 +16,7 @@ import click
 import pkg_resources
 from bkbit.models import genome_annotation as ga
 from bkbit.utils.setup_logger import setup_logger
+from bkbit.utils.load_json import load_json
 
 ## CONSTANTS ##
 
@@ -36,28 +36,24 @@ GENOME_ANNOTATION_DESCRIPTION_FORMAT = (
 )
 DEFAULT_FEATURE_FILTER = ("gene", "pseudogene", "ncRNA_gene")
 DEFAULT_HASH = ("MD5",)
-LOG_FILE_NAME = "gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log"
-
-
-
-scientific_name_to_taxid_path = pkg_resources.resource_filename(
-    __name__, "../utils/ncbi_taxonomy/scientific_name_to_taxid.json"
+LOG_FILE_NAME = (
+    "gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log"
 )
-with open(scientific_name_to_taxid_path, "r", encoding="utf-8") as f:
-    SCIENTIFIC_NAME_TO_TAXONID = json.load(f)
-
-taxid_to_scientific_name_path = pkg_resources.resource_filename(
-    __name__, "../utils/ncbi_taxonomy/taxid_to_scientific_name.json"
+SCIENTIFIC_NAME_TO_TAXONID = load_json(
+    pkg_resources.resource_filename(
+        __name__, "../utils/ncbi_taxonomy/scientific_name_to_taxid.json"
+    )
 )
-with open(taxid_to_scientific_name_path, "r", encoding="utf-8") as f:
-    TAXON_SCIENTIFIC_NAME = json.load(f)
-
-taxid_to_common_name_path = pkg_resources.resource_filename(
-    __name__, "../utils/ncbi_taxonomy/taxid_to_common_name.json"
+TAXON_SCIENTIFIC_NAME = load_json(
+    pkg_resources.resource_filename(
+        __name__, "../utils/ncbi_taxonomy/taxid_to_scientific_name.json"
+    )
 )
-with open(taxid_to_common_name_path, "r", encoding="utf-8") as f:
-    TAXON_COMMON_NAME = json.load(f)
-
+TAXON_COMMON_NAME = load_json(
+    pkg_resources.resource_filename(
+        __name__, "../utils/ncbi_taxonomy/taxid_to_common_name.json"
+    )
+)
 
 class Gff3:
     def __init__(
@@ -65,8 +61,8 @@ class Gff3:
         content_url,
         assembly_accession=None,
         assembly_strain=None,
-        log_level = "WARNING",
-        log_to_file = False,
+        log_level="WARNING",
+        log_to_file=False,
     ):
         """
         Initializes an instance of the GFFTranslator class.
@@ -822,7 +818,9 @@ class Gff3:
     help="Log to a file instead of the console.",
 )
 def cli(content_url, assembly_accession, assembly_strain, log_level, log_to_file):
-    gff3 = Gff3(content_url, assembly_accession, assembly_strain, log_level, log_to_file)
+    gff3 = Gff3(
+        content_url, assembly_accession, assembly_strain, log_level, log_to_file
+    )
     gff3.parse()
     gff3.serialize_to_jsonld()
 
