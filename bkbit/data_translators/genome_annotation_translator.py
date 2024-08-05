@@ -17,15 +17,6 @@ import click
 import pkg_resources
 from bkbit.models import genome_annotation as ga
 
-logging.basicConfig(
-    filename="gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log",
-    format="%(levelname)s: %(message)s (%(asctime)s)",
-    datefmt="%m/%d/%Y %I:%M:%S %p",
-    level=logging.INFO,
-)
-logger = logging.getLogger(__name__)
-
-
 ## CONSTANTS ##
 
 PREFIX_MAP = {
@@ -43,7 +34,15 @@ GENOME_ANNOTATION_DESCRIPTION_FORMAT = (
     "{authority} {taxon_scientific_name} Annotation Release {genome_version}"
 )
 DEFAULT_FEATURE_FILTER = ("gene", "pseudogene", "ncRNA_gene")
-DEFAULT_HASH = tuple("MD5")
+DEFAULT_HASH = ("MD5",)
+LOG_LEVELS = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL
+}
+
 
 scientific_name_to_taxid_path = pkg_resources.resource_filename(
     __name__, "../utils/ncbi_taxonomy/scientific_name_to_taxid.json"
@@ -70,6 +69,8 @@ class Gff3:
         content_url,
         assembly_accession=None,
         assembly_strain=None,
+        log_level = "WARNING",
+        log_to_file = False,
     ):
         """
         Initializes an instance of the GFFTranslator class.
@@ -80,14 +81,14 @@ class Gff3:
         - assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
         - hash_functions (tuple[str]): A tuple of hash functions to use for generating checksums. Defaults to ('MD5').
         """
-        self.logger = logger
+        self.logger = self.setup_logger(log_to_file, LOG_LEVELS[log_level])
         self.content_url = content_url
 
         ## STEP 1: Parse the content URL to get metadata
         # Parse content_url to get metadata
         url_metadata = self.parse_url()
         if url_metadata is None:
-            logger.critical(
+            self.logger.critical(
                 "The provided content URL is not supported. Please provide a valid URL."
             )
             raise ValueError(
@@ -116,7 +117,7 @@ class Gff3:
                 url_metadata.get("scientific_name").replace("_", " ")
             )
             if assembly_accession is None:
-                logger.critical(
+                self.logger.critical(
                     "The assembly ID is required for Ensembl URLs. Please provide the assembly ID."
                 )
                 raise ValueError(
@@ -148,6 +149,24 @@ class Gff3:
         )
 
         self.gene_annotations = {}
+
+    def setup_logger(self, log_to_file=False, log_level=logging.WARNING):
+        if log_to_file:
+            logging.basicConfig(
+                filename="gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log",
+                format="%(levelname)s: %(message)s (%(asctime)s)",
+                datefmt="%m/%d/%Y %I:%M:%S %p",
+                level=log_level,
+            )
+        else:
+            logging.basicConfig(
+                format="%(levelname)s: %(message)s (%(asctime)s)",
+                datefmt="%m/%d/%Y %I:%M:%S %p",
+                level=log_level,
+            )
+
+        logger = logging.getLogger(__name__)
+        return logger
 
     def parse_url(self):
         """
@@ -262,7 +281,6 @@ class Gff3:
         Returns:
             ga.OrganismTaxon: The generated organism taxon object.
         """
-        self.logger.debug("Generating organism taxon")
         return ga.OrganismTaxon(
             id=TAXON_PREFIX + ":" + taxon_id,
             full_name=TAXON_SCIENTIFIC_NAME[taxon_id],
@@ -283,12 +301,11 @@ class Gff3:
         Raises:
             Exception: If the authority is not supported. Only NCBI and Ensembl authorities are supported.
         """
-        self.logger.debug("Assigning authority type")
         if authority.upper() == ga.AuthorityType.NCBI.value:
             return ga.AuthorityType.NCBI
         if authority.upper() == ga.AuthorityType.ENSEMBL.value:
             return ga.AuthorityType.ENSEMBL
-        logger.critical(
+        self.logger.critical(
             "Authority %s is not supported. Please use NCBI or Ensembl.", authority
         )
         raise ValueError(
@@ -314,7 +331,6 @@ class Gff3:
         Returns:
         ga.GenomeAssembly: The generated genome assembly object.
         """
-        self.logger.debug("Generating genome assembly")
         return ga.GenomeAssembly(
             id=ASSEMBLY_PREFIX + ":" + assembly_id,
             in_taxon=[self.organism_taxon.id],
@@ -335,7 +351,6 @@ class Gff3:
         Returns:
             ga.GenomeAnnotation: The generated genome annotation.
         """
-        self.logger.debug("Generating genome annotation")
         return ga.GenomeAnnotation(
             id=BICAN_ANNOTATION_PREFIX + genome_label.upper(),
             digest=[checksum.id for checksum in self.checksums],
@@ -370,10 +385,8 @@ class Gff3:
             ValueError: If an unsupported hash algorithm is provided.
 
         """
-        self.logger.debug("Generating checksum digests")
         checksums = []
         for hash_type in hash_functions:
-            self.logger.debug("Generating checksum for %s", hash_type)
             # Generate a UUID version 4
             uuid_value = uuid.uuid4()
 
@@ -382,7 +395,6 @@ class Gff3:
             hash_type = hash_type.strip().upper()
             # Create a Checksum object
             if hash_type == ga.DigestType.SHA256.name:
-                self.logger.debug("Generating SHA256 digest")
                 checksums.append(
                     ga.Checksum(
                         id=urn,
@@ -391,7 +403,6 @@ class Gff3:
                     )
                 )
             elif hash_type == ga.DigestType.MD5.name:
-                self.logger.debug("Generating MD5 digest")
                 checksums.append(
                     ga.Checksum(
                         id=urn,
@@ -400,7 +411,6 @@ class Gff3:
                     )
                 )
             elif hash_type == ga.DigestType.SHA1.name:
-                self.logger.debug("Generating SHA1 digest")
                 checksums.append(
                     ga.Checksum(
                         id=urn,
@@ -409,7 +419,7 @@ class Gff3:
                     )
                 )
             else:
-                logger.error(
+                self.logger.error(
                     "Hash algorithm %s is not supported. Please use SHA256, MD5, or SHA1.",
                     hash_type,
                 )
@@ -469,9 +479,8 @@ class Gff3:
             for line_raw in file:
                 line_strip = line_raw.strip()
                 if curr_line_num == 1 and not line_strip.startswith("##gff-version 3"):
-                    logger.critical(
-                        'Line %s: ##gff-version 3" missing from the first line.',
-                        curr_line_num,
+                    self.logger.warning(
+                        '"##gff-version 3" missing from the first line of the file. The given file may not be a valid GFF3 file.'
                     )
                 elif len(line_strip) == 0:  # blank line
                     continue
@@ -482,7 +491,7 @@ class Gff3:
                 else:  # line may be a feature or unknown
                     tokens = list(map(str.strip, line_raw.split("\t")))
                     if len(tokens) != 9:
-                        logger.warning(
+                        self.logger.warning(
                             "Line %s: Features are expected 9 columns, found %s.",
                             curr_line_num,
                             len(tokens),
@@ -584,14 +593,14 @@ class Gff3:
             if len(geneid_values) == 1:
                 stable_id = geneid_values.pop()
         else:
-            logger.error(
+            self.logger.error(
                 "Line %s: No GeneAnnotation object created for this row due to missing dbxref attribute.",
                 curr_line_num,
             )
             return None
 
         if not stable_id:
-            logger.error(
+            self.logger.error(
                 "Line %s: No GeneAnnotation object created for this row due to number of GeneIDs provided in dbxref attribute is not equal to one.",
                 curr_line_num,
             )
@@ -614,7 +623,7 @@ class Gff3:
             )
             synonyms.sort()  # note: this is not required, but it makes the output more predictable therefore easier to test
         else:
-            logger.warning(
+            self.logger.debug(
                 "Line %s: synonym is not set for this row's GeneAnnotation object due to missing gene_synonym attribute.",
                 curr_line_num,
             )
@@ -637,7 +646,7 @@ class Gff3:
                     gene_annotation, curr_line_num
                 )
             if name != self.gene_annotations[gene_annotation.id].name:
-                logger.warning(
+                self.logger.debug(
                     "Line %s: GeneAnnotation object with id %s already exists with a different name. Current name: %s, Existing name: %s",
                     curr_line_num,
                     stable_id,
@@ -662,7 +671,7 @@ class Gff3:
         value = None
         if attribute_name in attributes:
             if len(attributes[attribute_name]) != 1:
-                logger.warning(
+                self.logger.debug(
                     "Line %s: %s not set for this row's GeneAnnotation object due to more than one %s provided.",
                     curr_line_num,
                     attribute_name,
@@ -677,7 +686,7 @@ class Gff3:
             else:
                 value = attributes[attribute_name].pop()
                 if value.find(",") != -1:
-                    logger.warning(
+                    self.logger.debug(
                         'Line %s: %s not set for this row\'s GeneAnnotation object due to value of %s attribute containing ",".',
                         curr_line_num,
                         attribute_name,
@@ -685,7 +694,7 @@ class Gff3:
                     )
                     value = None
         else:
-            logger.warning(
+            self.logger.debug(
                 "Line %s: %s not set for this row's GeneAnnotation object due to missing %s attribute.",
                 curr_line_num,
                 attribute_name,
@@ -712,18 +721,13 @@ class Gff3:
         """
         existing_gene_annotation = self.gene_annotations[new_gene_annotation.id]
         if (
-            existing_gene_annotation.description is None
-            and new_gene_annotation.description is not None
-        ):
-            return new_gene_annotation
-        if (
             existing_gene_annotation.description is not None
             and new_gene_annotation.description is None
         ):
             return None
         if (
-            existing_gene_annotation.molecular_type is None
-            and new_gene_annotation.molecular_type is not None
+            existing_gene_annotation.description is None
+            and new_gene_annotation.description is not None
         ):
             return new_gene_annotation
         if (
@@ -732,17 +736,17 @@ class Gff3:
         ):
             return None
         if (
-            existing_gene_annotation.molecular_type == ga.BioType.noncoding.value
-            and new_gene_annotation.molecular_type != ga.BioType.noncoding.value
+            existing_gene_annotation.molecular_type is None
+            and new_gene_annotation.molecular_type is not None
         ):
             return new_gene_annotation
-        if (
-            existing_gene_annotation.molecular_type != ga.BioType.noncoding.value
-            and new_gene_annotation.molecular_type == ga.BioType.noncoding.value
-        ):
+        if existing_gene_annotation.molecular_type == ga.BioType.protein_coding.value:
             return None
-        logger.critical(
-            "Line %s: Unable to resolve duplicates for GeneID: %s.\nexisting gene: %s\nnew gene:      %s",
+        if new_gene_annotation.molecular_type == ga.BioType.protein_coding.value:
+            return new_gene_annotation
+
+        self.logger.error(
+            "Line %s: Unable to resolve duplicates for GeneID: %s.\nexisting gene: %s\nnew gene: %s",
             curr_line_num,
             new_gene_annotation.id,
             existing_gene_annotation,
@@ -761,7 +765,6 @@ class Gff3:
             dict: A dictionary where each key maps to a set of values.
 
         """
-        self.logger.debug("Merging values")
         result = defaultdict(set)
         for lst in t:
             key = lst[0].strip()
@@ -783,7 +786,6 @@ class Gff3:
         Returns:
             None
         """
-        logger.debug("Serializing to JSON-LD")
 
         data = [
             self.organism_taxon.dict(
@@ -826,8 +828,24 @@ class Gff3:
     type=str,
     help="The strain of the genome assembly. Defaults to None.",
 )
-def cli(content_url, assembly_accession, assembly_strain, **args):
-    gff3 = Gff3(content_url, assembly_accession, assembly_strain)
+# Option #3: The log level
+@click.option(
+    "--log_level",
+    "-l",
+    required=False,
+    default="WARNING",
+    type=click.Choice(LOG_LEVELS.keys()),
+    help="The log level. Defaults to WARNING.",
+)
+# Option #4: Log to file
+@click.option(
+    "--log_to_file",
+    "-f",
+    is_flag=True,
+    help="Log to a file instead of the console.",
+)
+def cli(content_url, assembly_accession, assembly_strain, log_level, log_to_file):
+    gff3 = Gff3(content_url, assembly_accession, assembly_strain, log_level, log_to_file)
     gff3.parse()
     gff3.serialize_to_jsonld()
 
