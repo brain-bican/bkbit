@@ -1,6 +1,15 @@
 # genome_annotation_translator.py
 
-genome_annotation_translator uses annoated genome data in GFF3 format to generate respective data objects representing genes, genome assemblies, and organisms. 
+## Overview
+genome_annotation_translator uses annotated genome data in GFF3 format to generate respective data objects representing genes, genome assemblies, and organisms. All data object are defined in the [Genome Annotation Schema](https://brain-bican.github.io/models/index_genome_annotation/).<br>
+Each jsonld file will contain:
+- GeneAnnotation objects
+- 1 GenomeAnnotation object
+- 1 GenomeAssembly object
+- 1 OrganismTaxon object
+- 1 Checksum object
+
+
 
 ## Command Line
 ### gen-geneannotation
@@ -10,12 +19,25 @@ gen-geneannotation [OPTIONS] GFF3_URL
 
 #### Requirements
 <span style="color: red;">-a, --assembly_accession</span> <br> 
-ID assigned to the genomic assembly used in the GFF3 file. <br>
-<b>*Note*</b>: Must be provided when using ENSEMBL GFF3 files
+&emsp;ID assigned to the genomic assembly used in the GFF3 file. <br>
+&emsp;<b>*Note*</b>: Must be provided when using ENSEMBL GFF3 files
 
 <span style="color: red;">-s, --assembly_strain</span> <br>
-Specific strain of the organism associated with the GFF3 file.
+&emsp;Specific strain of the organism associated with the GFF3 file.
 
+<span style="color: red;">-l, --log_level</span> <br>
+&emsp;Logging level. <br>
+&emsp;DEFAULT:<br>
+&emsp;&emsp;'WARNING'<br>
+&emsp;OPTIONS:<br>
+&emsp;&emsp;DEBUG | INFO | WARNING | ERROR | CRITICIAL 
+
+<span style="color: red;">-f, --log_to_file</span> <br>
+&emsp;Log to a file instead of the console. <br>
+&emsp;DEFAULT:<br>
+&emsp;&emsp;False <br>
+
+## Examples
 #### Example 1: NCBI GFF3 File 
 
 ```python
