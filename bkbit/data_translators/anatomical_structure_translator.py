@@ -2,6 +2,7 @@ import csv
 import inspect
 import os
 import json
+import click
 from bkbit.models import anatomical_structure as ans
 
 class AnS():
@@ -32,7 +33,6 @@ class AnS():
 
 
     def read_data(self, file_name):
-
         with open(file_name, mode='r', encoding='utf-8') as file:
             # Create a CSV reader object
             reader = csv.reader(file)
@@ -51,12 +51,11 @@ class AnS():
                     # Generate appropriate data object 
                     func(self, **row_data)
                     
-    def provide_data(self, dir_path, output_file_name):
+    def provide_data(self, dir_path):
         for file in os.listdir(dir_path):
             if file.endswith(".csv"):
                 self.read_data(os.path.join(dir_path, file))
-        jsonld_file = os.path.join(dir_path, output_file_name)
-        self.serialize_to_jsonld(jsonld_file)
+        self.serialize_to_jsonld()
 
 
 
@@ -119,41 +118,50 @@ class AnS():
 
     
     def serialize_to_jsonld(
-        self, output_file: str, exclude_none: bool = True, exclude_unset: bool = False
+        self, exclude_none: bool = True, exclude_unset: bool = False
     ):
         """
         Serialize the object and write it to the specified output file.
 
         Parameters:
-            output_file (str): The path of the output file.
 
         Returns:
             None
         """
-        with open(output_file, "w", encoding="utf-8") as f:
-            data = []
-            # for obj in self.generated_objects.values():
-            #     # data.append(obj.to_dict(exclude_none=exclude_none, exclude_unset=exclude_unset))
-            #     data.append(obj.__dict__)
-            data.extend([obj.__dict__ for obj in self.anatomical_annotation_set])
-            data.extend([obj.__dict__ for obj in self.anatomical_space])
-            data.extend([obj.__dict__ for obj in self.image_dataset])
-            data.extend([obj.__dict__ for obj in self.parcellation_annotation])
-            data.extend([obj.__dict__ for obj in self.parcellation_annotation_term_map])
-            data.extend([obj.__dict__ for obj in self.parcellation_atlas])
-            data.extend([obj.__dict__ for obj in self.parcellation_color_assignment])
-            data.extend([obj.__dict__ for obj in self.parcellation_color_scheme])
-            data.extend([obj.__dict__ for obj in self.parcellation_terminology])
-            data.extend([obj.__dict__ for obj in self.parcellation_term_set])
-            data.extend([obj.__dict__ for obj in self.parcellation_term])
+        data = []
+        data.extend([obj.__dict__ for obj in self.anatomical_annotation_set])
+        data.extend([obj.__dict__ for obj in self.anatomical_space])
+        data.extend([obj.__dict__ for obj in self.image_dataset])
+        data.extend([obj.__dict__ for obj in self.parcellation_annotation])
+        data.extend([obj.__dict__ for obj in self.parcellation_annotation_term_map])
+        data.extend([obj.__dict__ for obj in self.parcellation_atlas])
+        data.extend([obj.__dict__ for obj in self.parcellation_color_assignment])
+        data.extend([obj.__dict__ for obj in self.parcellation_color_scheme])
+        data.extend([obj.__dict__ for obj in self.parcellation_terminology])
+        data.extend([obj.__dict__ for obj in self.parcellation_term_set])
+        data.extend([obj.__dict__ for obj in self.parcellation_term])
 
 
-            output_data = {
-                "@context": "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/anatomical_structure.context.jsonld",
-                "@graph": data,
-            }
-            f.write(json.dumps(output_data, indent=2))
+        output_data = {
+            "@context": "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/anatomical_structure.context.jsonld",
+            "@graph": data,
+        }
+        print(json.dumps(output_data, indent=2))
     
 
-    
+@click.command()
+@click.argument("dir_path", type=str)
+def cli(dir_path):
+    """
+    Command line interface for the Anatomical Structure Translator.
 
+    Parameters:
+        dir_path (str): Path to the directory containing CSV files.
+
+    Returns:
+        None
+    """
+    translator = AnS()
+    translator.provide_data(dir_path)
+if __name__ == "__main__":
+    cli()

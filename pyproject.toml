@@ -26,6 +26,7 @@ dynamic = ["version"]
 
 [project.scripts]
 bkbit = "bkbit.cli:cli"
+gen-anatomicalstructure = "bkbit.data_translators.anatomical_structure_translator:cli"
 
 [project.optional-dependencies]
 test = [
