@@ -114,7 +114,7 @@ Each jsonld file will contain:
 gen-geneannotation [OPTIONS] GFF3_URL 
 ```
 
-#### Requirements
+#### Options
 <span style="color: red;">-a, --assembly_accession</span> <br> 
 &emsp;ID assigned to the genomic assembly used in the GFF3 file. <br>
 &emsp;<b>*Note*</b>: Must be provided when using ENSEMBL GFF3 files
