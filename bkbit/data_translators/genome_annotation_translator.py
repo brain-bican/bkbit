@@ -37,11 +37,11 @@ Usage:
     The module can be run as a standalone script by executing it with appropriate arguments and options:
     
     ```
-    python script_name.py <content_url> -a <assembly_accession> -s <assembly_strain> -l <log_level> -f
+    python genome_annotation_translator.py <content_url> -a <assembly_accession> -s <assembly_strain> -l <log_level> -f
     ```
     Example:
     ```
-    python script_name.py "https://example.com/path/to/gff3.gz" -a "GCF_000001405.39" -s "strain_name" -l "INFO" -f
+    python genome_annotation_translator.py "https://example.com/path/to/gff3.gz" -a "GCF_000001405.39" -s "strain_name" -l "INFO" -f True
     ```
 
     The script will download the GFF3 file from the specified URL, parse it, and serialize the extracted information into JSON-LD format.
