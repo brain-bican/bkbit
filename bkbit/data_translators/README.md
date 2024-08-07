@@ -11,8 +11,6 @@ gen-anatomicalstructure path/to/csv_directory
 
 ## Required Format of Data
 Each .csv must have the **specific column names** listed below in the **given order**.
-## Required Format of Data
-Each .csv must have the **specific column names** listed below in the **given order**.
 
 | File Name                            | Column Names                                                                                                |
 |--------------------------------------|-------------------------------------------------------------------------------------------------------------|
