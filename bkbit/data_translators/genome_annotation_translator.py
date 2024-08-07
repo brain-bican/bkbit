@@ -12,6 +12,19 @@ Classes:
 Functions:
     cli: Command line interface function to execute the module as a script.
 
+Usage:
+    The module can be run as a standalone script by executing it with appropriate arguments and options:
+    
+    ```
+    python genome_annotation_translator.py <content_url> -a <assembly_accession> -s <assembly_strain> -l <log_level> -f
+    ```
+    The script will download the GFF3 file from the specified URL, parse it, and serialize the extracted information into JSON-LD format.
+
+Example:
+    ```
+    python genome_annotation_translator.py "https://example.com/path/to/gff3.gz" -a "GCF_000001405.39" -s "strain_name" -l "INFO" -f True
+    ```
+    
 Dependencies:
     - re
     - hashlib
@@ -31,20 +44,7 @@ Dependencies:
     - pkg_resources
     - bkbit.models.genome_annotation as ga
     - bkbit.utils.setup_logger as setup_logger
-    - bkbit.utils.load_json as load_json
-
-Usage:
-    The module can be run as a standalone script by executing it with appropriate arguments and options:
-    
-    ```
-    python genome_annotation_translator.py <content_url> -a <assembly_accession> -s <assembly_strain> -l <log_level> -f
-    ```
-    Example:
-    ```
-    python genome_annotation_translator.py "https://example.com/path/to/gff3.gz" -a "GCF_000001405.39" -s "strain_name" -l "INFO" -f True
-    ```
-
-    The script will download the GFF3 file from the specified URL, parse it, and serialize the extracted information into JSON-LD format.
+    - bkbit.utils.load_json as load_json    
 """
 
 import re
