@@ -3,10 +3,10 @@ from enum import Enum
 import requests
 from bkbit.models import library_generation_auto as lg
 
-BICAN_TO_NIMP_FILE_PATH = "../utils/bican_to_nimp_slots.csv"
 API_URL_PREFIX = "https://brain-specimenportal.org/api/v1/nhash_ids/"
 INFO_URL_SUFFIX = "info?id="
 ANCESTORS_URL_SUFFIX = "ancestors?id="
+DESCENDANTS_URL_SUFFIX = "descendants?id="
 PARENTS_URL_SUFFIX = "parents?id="
 NHASH_ONLY_SUFFIX = "&nhash_only="
 
@@ -32,10 +32,20 @@ class SpecimenPortal:
         
     @staticmethod
     def get_field_type(annotation, collected_annotations=None):
- 
+        """
+        Determines the field type based on the provided annotation.
+
+        Args:
+            annotation: The annotation to determine the field type for.
+            collected_annotations: A dictionary to collect annotations encountered during recursion.
+
+        Returns:
+            A tuple containing a boolean indicating if the field is multivalued and the selected field type.
+        """
         is_multivalued = False
         primitive_types = {str, int, float, bool}
         selected_type = None
+
         if hasattr(annotation, "__args__"):
             arguments = annotation.__args__
             for arg in arguments:
@@ -51,6 +61,7 @@ class SpecimenPortal:
                 is_multivalued = True
         else:
             return False, annotation
+
         return is_multivalued, selected_type
 
     @staticmethod
@@ -113,17 +124,49 @@ class SpecimenPortal:
         raise requests.exceptions.HTTPError(
             f"Error getting data for NHash ID = {nhash_id}. Status Code: {response.status_code}"
         )
+
+    @staticmethod
+    def get_descendants(nhash_id, jwt_token, nhash_only=True, depth=None):
+        """
+        Retrieve information of all descendents of a record with the given NHash ID.
+
+        Parameters:
+            nhash_id (str): The NHash ID of the record.
+            jwt_token (str): The JWT token for authentication.
+            nhash_only (bool): Flag indicating whether to retrieve only NHash IDs or complete record information. Default is True.
+            depth (int): The depth of descendents to retrieve. Default is 1.
+
+        Returns:
+            dict: The JSON response containing information of all descendents.
+
+        Raises:
+            requests.exceptions.HTTPError: If there is an error getting data for the NHash ID.
+
+        """
+        headers = {"Authorization": f"Bearer {jwt_token}"}
+
+        response = requests.get(
+            f"{API_URL_PREFIX}{DESCENDANTS_URL_SUFFIX}{nhash_id}{NHASH_ONLY_SUFFIX}{nhash_only}",
+            headers=headers,
+            timeout=10,  # This is an appropriate timeout value.
+        )
+        if response.status_code == 200:
+            return response.json()
+
+        raise requests.exceptions.HTTPError(
+            f"Error getting data for NHash ID = {nhash_id}. Status Code: {response.status_code}"
+        )
     
-    def parse_nhash_id(self, nhash_id):
+    def parse_nhash_id_top_down(self, nhash_id):
         ancestor_tree = SpecimenPortal.get_ancestors(nhash_id, self.jwt_token).get(
             "data"
         )
-        stack = [nhash_id]
+        stack = [nhash_id] #! why not just set the stack to data.key()?
         while stack:
             current_nhash_id = stack.pop()
             if current_nhash_id not in self.generated_objects:
                 parents = (
-                    ancestor_tree.get(current_nhash_id).get("edges").get("has_parent")
+                    ancestor_tree.get(current_nhash_id,{}).get("edges",{}).get("has_parent")
                 )
                 data = SpecimenPortal.get_data(current_nhash_id, self.jwt_token).get(
                     "data"
@@ -133,6 +176,26 @@ class SpecimenPortal:
                     self.generated_objects[current_nhash_id] = bican_object
                 if parents is not None:
                     stack.extend(parents)
+
+    def parse_nhash_id_bottom_up(self, nhash_id):
+        descendant_tree = SpecimenPortal.get_descendants(nhash_id, self.jwt_token).get(
+            "data"
+        )
+        stack = [nhash_id] #! why not just set the stack to data.key()?
+        while stack:
+            current_nhash_id = stack.pop()
+            if current_nhash_id not in self.generated_objects:
+                children = (
+                    descendant_tree.get(current_nhash_id,{}).get("edges",{}).get("has_children")
+                )
+                data = SpecimenPortal.get_data(current_nhash_id, self.jwt_token).get(
+                    "data"
+                )
+                bican_object = self.generate_bican_object(data, children)
+                if bican_object is not None:
+                    self.generated_objects[current_nhash_id] = bican_object
+                if children is not None:
+                    stack.extend(children)
 
 
     @classmethod
@@ -165,7 +228,7 @@ class SpecimenPortal:
                 #! might want to check if "id" ia provided otherwise raise error 
                 assigned_attributes[schema_field_name] = "NIMP:" + str(data.get("id"))
                 continue
-            data_value = data.get("record", {}).get(nimp_field_name) #! Check if accesses the correct info
+            data_value = data.get("record", {}).get(nimp_field_name)
             if data_value is None:
                 assigned_attributes[schema_field_name] = schema_field_metadata.default
             elif field_type is str:
@@ -183,11 +246,8 @@ class SpecimenPortal:
                 assigned_attributes[schema_field_name] = bool(data_value)
             elif type(field_type) is type(Enum):
                 assigned_attributes[schema_field_name] = SpecimenPortal.__check_valueset_membership(field_type, data_value)
-            else:
-                #print(f"VALUE NOT SET: id={data.get('id')}, field={schema_field_name}, value={data_value}")
-                pass
 
-            #! check if the field is required; if missing raise an error
+            # check if the field is required; if missing raise an error
             if assigned_attributes[schema_field_name] is None and required:
                 raise ValueError(f"Missing required field: {schema_field_name}")
         
@@ -235,8 +295,8 @@ class SpecimenPortal:
             f.write(json.dumps(output_data, indent=2))
 
 if __name__ == "__main__":
-    temp = SpecimenPortal('eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcyNDE1MjY5OX0.GIelY0ZUjYCz1w8OjCwMIPgwiYy1GrQAYrMIVynjCjY')
-    #temp.parse_nhash_id('LP-LOMHPL202182')
-    temp.parse_nhash_id('DO-GICE7463')
-    #temp.parse_nhash_id('TI-DPXF326597')
+    temp = SpecimenPortal('eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcyNDE5NjU2Nn0.Mo-NzIJDXuz6ASABTZa1KUjCth_MM_yPbYxxnpS-DcA')
+    temp.parse_nhash_id_top_down('LP-LOMHPL202182')
+    #temp.parse_nhash_id_top_down('DO-GICE7463')
+    #temp.parse_nhash_id_top_down('TI-DPXF326597')
     temp.serialize_to_jsonld("output_temp_aug19.jsonld")
