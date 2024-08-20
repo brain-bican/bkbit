@@ -2,7 +2,9 @@ from collections import defaultdict
 import csv
 import json
 from enum import Enum
+import typing
 import requests
+from typing import get_origin, get_args
 from bkbit.models import library_generation_auto as lg
 
 BICAN_TO_NIMP_FILE_PATH = "../utils/bican_to_nimp_slots.csv"
@@ -11,18 +13,32 @@ INFO_URL_SUFFIX = "info?id="
 ANCESTORS_URL_SUFFIX = "ancestors?id="
 PARENTS_URL_SUFFIX = "parents?id="
 NHASH_ONLY_SUFFIX = "&nhash_only="
+# CATEGORY_TO_CLASS = {
+#     "librarypool": lg.LibraryPool,
+#     "libraryaliquot": lg.LibraryAliquot,
+#     "library": lg.Library,
+#     "amplifiedcdna": lg.AmplifiedCdna,
+#     "barcodedcellsample": lg.BarcodedCellSample,
+#     "enrichedcellsample": lg.EnrichedCellSample,
+#     "dissociatedcellsample": lg.DissociatedCellSample,
+#     "tissue": lg.TissueSample,
+#     "donor": lg.Donor,
+#     "specimendissectedroi": lg.DissectionRoiPolygon,
+#     "slab": lg.BrainSlab,
+# }
+
 CATEGORY_TO_CLASS = {
-    "librarypool": lg.LibraryPool,
-    "libraryaliquot": lg.LibraryAliquot,
-    "library": lg.Library,
-    "amplifiedcdna": lg.AmplifiedCdna,
-    "barcodedcellsample": lg.BarcodedCellSample,
-    "enrichedcellsample": lg.EnrichedCellSample,
-    "dissociatedcellsample": lg.DissociatedCellSample,
-    "tissue": lg.TissueSample,
-    "donor": lg.Donor,
-    "specimendissectedroi": lg.DissectionRoiPolygon,
-    "slab": lg.BrainSlab,
+    "Library Pool": lg.LibraryPool,
+    "Library Aliquot": lg.LibraryAliquot,
+    "Library": lg.Library,
+    "Amplified cDNA": lg.AmplifiedCdna,
+    "Barcoded Cell Sample": lg.BarcodedCellSample,
+    "Enriched Cell Sample": lg.EnrichedCellSample,
+    "Dissociated Cell Sample": lg.DissociatedCellSample,
+    "Tissue": lg.TissueSample,
+    "Donor": lg.Donor,
+    "Specimen Dissected ROI": lg.DissectionRoiPolygon,
+    "Slab": lg.BrainSlab,
 }
 
 class SpecimenPortal:
@@ -31,242 +47,356 @@ class SpecimenPortal:
         self.generated_objects = {}
         
     @staticmethod
-    def get_types_helper(annotation, collected_annotations=None):
-        if collected_annotations is None:
-            collected_annotations = set()
-        
+    def get_field_type(annotation, collected_annotations=None):
+ 
+        is_multivalued = False
+        primitive_types = {str, int, float, bool}
+        selected_type = None
         if hasattr(annotation, "__args__"):
             arguments = annotation.__args__
             for arg in arguments:
                 if arg != type(None):
-                    SpecimenPortal.get_types_helper(arg, collected_annotations)
-        #elif annotation in {str, int, float, bool} or isinstance(annotation, type(Enum)):
+                    nested_multivalued, nested_annotations = SpecimenPortal.get_field_type(arg, collected_annotations)
+                    is_multivalued = is_multivalued or nested_multivalued
+                    # Prioritize primitive types in case of Union
+                    if selected_type is None or (selected_type not in primitive_types and nested_annotations in primitive_types):
+                        selected_type = nested_annotations
+
+            # Check if the original annotation is a List or other multivalued type
+            if getattr(annotation, "_name", None) in {"List", "Set", "Tuple"}:
+                is_multivalued = True
         else:
-            collected_annotations.add(annotation)
+            return False, annotation
+        return is_multivalued, selected_type
+
+
+
+
+
+    # def get_field_type(annotation):
+    #     primitive_types = {str, int, float, bool}
+    #     is_multivalued = False
+    #     resolved_type = None
+
+    #     def resolve_to_primitive(arg):
+    #         if hasattr(arg, "__args__"):
+    #             for nested_arg in arg.__args__:
+    #                 primitive = resolve_to_primitive(nested_arg)
+    #                 if primitive in primitive_types:
+    #                     return primitive
+    #         return arg if arg in primitive_types else None
+
+    #     if hasattr(annotation, "__args__"):
+    #         for arg in annotation.__args__:
+    #             resolved_primitive = resolve_to_primitive(arg)
+    #             if resolved_primitive:
+    #                 resolved_type = resolved_primitive
+    #                 break
+
+    #         # Check if the original annotation is a List, Set, Tuple, or other multivalued type
+    #         if getattr(annotation, "_name", None) in {"List", "Set", "Tuple"}:
+    #             is_multivalued = True
+    #     else:
+    #         resolved_type = resolve_to_primitive(annotation)
+
+    #     return is_multivalued, resolved_type
+
+
+    # def get_field_type(annotation, collected_annotations=None):
+    #     if collected_annotations is None:
+    #         collected_annotations = set()
         
-        return collected_annotations
+    #     is_multivalued = False
+        
+    #     if hasattr(annotation, "__args__"):
+    #         arguments = annotation.__args__
+    #         for arg in arguments:
+    #             if arg != type(None):
+    #                 nested_multivalued, nested_annotations = SpecimenPortal.get_field_type(arg, collected_annotations)
+    #                 is_multivalued = is_multivalued or nested_multivalued
+    #                 collected_annotations.update(nested_annotations)
+            
+    #         # Check if the original annotation is a List or other multivalued type
+    #         if getattr(annotation, "_name", None) in {"List", "Set", "Tuple"}:
+    #             is_multivalued = True
+    #     else:
+    #         collected_annotations.add(annotation)
+        
+    #     return is_multivalued, collected_annotations
 
+    @staticmethod
+    def get_data(nhash_id, jwt_token):
+        """
+        Retrieve information of any record with a NHash ID in the system.
+
+        Parameters:
+            nhash_id (str): The NHash ID of the record to retrieve.
+            jwt_token (str): The JWT token for authentication.
+
+        Returns:
+            dict: The JSON response containing the information of the record.
+
+        Raises:
+            requests.exceptions.HTTPError: If there is an error retrieving the data.
+
+        """
+        headers = {"Authorization": f"Bearer {jwt_token}"}
+        response = requests.get(
+            f"{API_URL_PREFIX}{INFO_URL_SUFFIX}{nhash_id}",
+            headers=headers,
+            timeout=10,  # ? is this an appropriate timeout value?
+        )
+        if response.status_code == 200:
+            return response.json()
+
+        raise requests.exceptions.HTTPError(
+            f"Error getting data for NHash ID = {nhash_id}. Status Code: {response.status_code}"
+        )
+
+    @staticmethod
+    def get_ancestors(nhash_id, jwt_token, nhash_only=True, depth=None):
+        """
+        Retrieve information of all ancestors of a record with the given NHash ID.
+
+        Parameters:
+            nhash_id (str): The NHash ID of the record.
+            jwt_token (str): The JWT token for authentication.
+            nhash_only (bool): Flag indicating whether to retrieve only NHash IDs or complete record information. Default is True.
+            depth (int): The depth of ancestors to retrieve. Default is 1.
+
+        Returns:
+            dict: The JSON response containing information of all ancestors.
+
+        Raises:
+            requests.exceptions.HTTPError: If there is an error getting data for the NHash ID.
+
+        """
+        headers = {"Authorization": f"Bearer {jwt_token}"}
+
+        response = requests.get(
+            f"{API_URL_PREFIX}{ANCESTORS_URL_SUFFIX}{nhash_id}{NHASH_ONLY_SUFFIX}{nhash_only}",
+            headers=headers,
+            timeout=10,  # This is an appropriate timeout value.
+        )
+        if response.status_code == 200:
+            return response.json()
+
+        raise requests.exceptions.HTTPError(
+            f"Error getting data for NHash ID = {nhash_id}. Status Code: {response.status_code}"
+        )
     
-# class SpecimenPortal:
-#     @staticmethod
-#     def create_bican_to_nimp_mapping(csv_file):
-#         """
-#         Creates a mapping dictionary from a CSV file, where the keys are 'LinkML Slot or Attribute Name'
-#         and the values are 'NIMP Variable Name'.
+    def parse_nhash_id(self, nhash_id):
+        ancestor_tree = SpecimenPortal.get_ancestors(nhash_id, self.jwt_token).get(
+            "data"
+        )
+        stack = [nhash_id]
+        while stack:
+            current_nhash_id = stack.pop()
+            if current_nhash_id not in self.generated_objects:
+                parents = (
+                    ancestor_tree.get(current_nhash_id).get("edges").get("has_parent")
+                )
+                data = SpecimenPortal.get_data(current_nhash_id, self.jwt_token).get(
+                    "data"
+                )
+                bican_object = self.generate_bican_object(data, parents)
+                if bican_object is not None:
+                    self.generated_objects[current_nhash_id] = bican_object
+                if parents is not None:
+                    stack.extend(parents)
 
-#         Parameters:
-#             csv_file (str): The path to the CSV file.
 
-#         Returns:
-#             dict: A dictionary mapping 'LinkML Slot or Attribute Name' to 'NIMP Variable Name'.
+    @classmethod
+    def generate_bican_object(cls, data, was_derived_from: list[str] = None):
+        """
+        Generate a Bican object based on the provided data.
 
-#         """
-#         bican_to_nimp_attribute_mapping = {}
-#         nimp_to_bican_class_mapping = {}
-#         bican_slots_per_class = defaultdict(set)
+        Parameters:
+            data (dict): The data retrieved from the NIMP portal.
+            was_derived_from (list): A list of parent NHash IDs.
 
-#         with open(csv_file, "r", encoding="utf-8") as file:
-#             reader = csv.DictReader(file)
-#             for row in reader:
-#                 bican_name = (
-#                     row["SubGroup/LinkML Class Name"].lower()
-#                     + "_"
-#                     + row["LinkML Slot or Attribute Name"].lower()
-#                 )
-#                 nimp_name = row["NIMP Variable Name"]
-#                 bican_to_nimp_attribute_mapping[bican_name] = nimp_name
-#                 nimp_to_bican_class_mapping[
-#                     row["NIMP Category"].replace(" ", "").lower()
-#                 ] = row["SubGroup/LinkML Class Name"].lower()
-#                 bican_slots_per_class[row["SubGroup/LinkML Class Name"].lower()].add(
-#                     row["LinkML Slot or Attribute Name"].lower()
-#                 )
-#         return (
-#             bican_to_nimp_attribute_mapping,
-#             nimp_to_bican_class_mapping,
-#             bican_slots_per_class,
-#         )
+        Returns:
+            The generated Bican object.
 
-#     (
-#         bican_to_nimp_attribute_mapping,
-#         nimp_to_bican_class_mapping,
-#         bican_slots_per_class,
-#     ) = create_bican_to_nimp_mapping(BICAN_TO_NIMP_FILE_PATH)
+        Raises:
+            None.
 
-#     def __init__(self, jwt_token):
-#         self.jwt_token = jwt_token
-#         self.generated_objects = {}
+        """
+        category = data.get("category")
+        bican_class = CATEGORY_TO_CLASS.get(category)
 
-#     @staticmethod
-#     def get_data(nhash_id, jwt_token):
-#         """
-#         Retrieve information of any record with a NHash ID in the system.
+        assigned_attributes = {}
+        for schema_field_name, schema_field_metadata in bican_class.__fields__.items():
+            nimp_field_name = schema_field_metadata.json_schema_extra.get("linkml_meta", {}).get("local_names", {}).get("NIMP", {}).get("local_name_value", schema_field_name)
+            multivalued, field_type = SpecimenPortal.get_field_type(schema_field_metadata.annotation)
+            required = schema_field_metadata.is_required()
+            #! handle multivalued fields
+            #! handle was_derived_from
+            if nimp_field_name == "id": 
+                #! might want to check if "id" ia provided otherwise raise error 
+                assigned_attributes[schema_field_name] = "NIMP:" + str(data.get("id"))
+                continue
+            data_value = data.get("record", {}).get(nimp_field_name) #! Check if accesses the correct info
+            if data_value is None:
+                assigned_attributes[schema_field_name] = schema_field_metadata.default
+            elif field_type is str:
+                if schema_field_name == "id":
+                    assigned_attributes[schema_field_name] = "NIMP:" + str(data.get("id"))
+                elif multivalued:
+                    assigned_attributes[schema_field_name] = [str(item) for item in data_value]
+                else:
+                    assigned_attributes[schema_field_name] = str(data_value)
+            elif field_type is int:
+                assigned_attributes[schema_field_name] = int(float(data_value))
+            elif field_type is float:
+                assigned_attributes[schema_field_name] = float(data_value)
+            elif field_type is bool:
+                assigned_attributes[schema_field_name] = bool(data_value)
+            elif type(field_type) is type(Enum):
+                assigned_attributes[schema_field_name] = SpecimenPortal.__check_valueset_membership(field_type, data_value)
+            else:
+                #print(f"VALUE NOT SET: id={data.get('id')}, field={schema_field_name}, value={data_value}")
+                pass
 
-#         Parameters:
-#             nhash_id (str): The NHash ID of the record to retrieve.
-#             jwt_token (str): The JWT token for authentication.
+            #! check if the field is required; if missing raise an error
+            if assigned_attributes[schema_field_name] is None and required:
+                raise ValueError(f"Missing required field: {schema_field_name}")
+        
+        return bican_class(**assigned_attributes)
 
-#         Returns:
-#             dict: The JSON response containing the information of the record.
 
-#         Raises:
-#             requests.exceptions.HTTPError: If there is an error retrieving the data.
+    @staticmethod
+    def __check_valueset_membership(enum_type, nimp_value):
+        """
+        Check if the given value belongs to the specified enum.
 
-#         """
-#         headers = {"Authorization": f"Bearer {jwt_token}"}
-#         response = requests.get(
-#             f"{API_URL_PREFIX}{INFO_URL_SUFFIX}{nhash_id}",
-#             headers=headers,
-#             timeout=10,  # ? is this an appropriate timeout value?
-#         )
-#         if response.status_code == 200:
-#             return response.json()
+        Parameters:
+            enum_type(Enum): The enum class
+            nimp_value: The value to check for membership in the enum.
 
-#         raise requests.exceptions.HTTPError(
-#             f"Error getting data for NHash ID = {nhash_id}. Status Code: {response.status_code}"
-#         )
+        Returns:
+            The enum member if the value belongs to the enum, None otherwise.
+        """
+        for member in enum_type:
+            if member.value == nimp_value:
+                return member
+        return None
+    
+    def serialize_to_jsonld(
+        self, output_file: str, exclude_none: bool = True, exclude_unset: bool = False
+    ):
+        """
+        Serialize the object and write it to the specified output file.
 
-#     @staticmethod
-#     def get_ancestors(nhash_id, jwt_token, nhash_only=True, depth=1):
-#         """
-#         Retrieve information of all ancestors of a record with the given NHash ID.
+        Parameters:
+            output_file (str): The path of the output file.
 
-#         Parameters:
-#             nhash_id (str): The NHash ID of the record.
-#             jwt_token (str): The JWT token for authentication.
-#             nhash_only (bool): Flag indicating whether to retrieve only NHash IDs or complete record information. Default is True.
-#             depth (int): The depth of ancestors to retrieve. Default is 1.
+        Returns:
+            None
+        """
+        with open(output_file, "w", encoding="utf-8") as f:
+            data = []
+            for obj in self.generated_objects.values():
+                # data.append(obj.to_dict(exclude_none=exclude_none, exclude_unset=exclude_unset))
+                data.append(obj.__dict__)
+            output_data = {
+                "@context": "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/library_generation.context.jsonld",
+                "@graph": data,
+            }
+            f.write(json.dumps(output_data, indent=2))
 
-#         Returns:
-#             dict: The JSON response containing information of all ancestors.
+if __name__ == "__main__":
+    temp = SpecimenPortal('eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcyNDE1MjY5OX0.GIelY0ZUjYCz1w8OjCwMIPgwiYy1GrQAYrMIVynjCjY')
+    #temp.parse_nhash_id('LP-LOMHPL202182')
+    temp.parse_nhash_id('DO-GICE7463')
+    #temp.parse_nhash_id('TI-DPXF326597')
+    temp.serialize_to_jsonld("output_temp_aug19.jsonld")
 
-#         Raises:
-#             requests.exceptions.HTTPError: If there is an error getting data for the NHash ID.
 
-#         """
-#         headers = {"Authorization": f"Bearer {jwt_token}"}
-
-#         response = requests.get(
-#             f"{API_URL_PREFIX}{ANCESTORS_URL_SUFFIX}{nhash_id}{NHASH_ONLY_SUFFIX}{nhash_only}",
-#             headers=headers,
-#             timeout=10,  # This is an appropriate timeout value.
-#         )
-#         if response.status_code == 200:
-#             return response.json()
-
-#         raise requests.exceptions.HTTPError(
-#             f"Error getting data for NHash ID = {nhash_id}. Status Code: {response.status_code}"
-#         )
-
-#     @classmethod
-#     def generate_bican_object(cls, data, was_derived_from: list[str] = None):
-#         """
-#         Generate a Bican object based on the provided data.
-
-#         Parameters:
-#             data (dict): The data retrieved from the NIMP portal.
-#             was_derived_from (list): A list of parent NHash IDs.
-
-#         Returns:
-#             The generated Bican object.
-
-#         Raises:
-#             None.
-
-#         """
-#         # TODO: check if NHash ID is not found
-#         nhash_id = data.get("id")
-#         category = data.get("category").replace(" ", "").lower()
-#         bican_category = cls.nimp_to_bican_class_mapping.get(category)
-#         if bican_category is None:
-#             return None
-#         bican_class = CATEGORY_TO_CLASS.get(category)
-#         bican_object = bican_class(id="NIMP:" + nhash_id)
-#         # handle was_derived_from attribute. type of this attribute can either be Optional[str] or Optional[List[str]]
-#         if "List" in bican_class.__annotations__["was_derived_from"]:
-#             bican_object.was_derived_from = [
-#                 f"NIMP:{item}" for item in was_derived_from
-#             ]
-#         else:
-#             bican_object.was_derived_from = (
-#                 f"NIMP:{was_derived_from[0]}" if was_derived_from else None
-#             )
-#         class_attributes = SpecimenPortal.bican_slots_per_class.get(bican_category)
-#         if class_attributes is not None:
-#             for attribute in class_attributes:
-#                 if (
-#                     bican_category + "_" + attribute
-#                 ) in SpecimenPortal.bican_to_nimp_attribute_mapping:
-#                     bican_attribute_type = bican_class.__annotations__[attribute]
-#                     value = data.get("record").get(
-#                         SpecimenPortal.bican_to_nimp_attribute_mapping[
-#                             bican_category + "_" + attribute
-#                         ]
-#                     )
-#                     if value is not None and type(value) != bican_attribute_type:
-#                         if (
-#                             "AmplifiedCdnaRnaAmplificationPassFail"
-#                             in bican_attribute_type
-#                         ):
-#                             value = SpecimenPortal.__check_valueset_membership(
-#                                 "AmplifiedCdnaRnaAmplificationPassFail", value
-#                             ) 
-#                         elif "BarcodedCellSampleTechnique" in bican_attribute_type:
-#                             value = SpecimenPortal.__check_valueset_membership(
-#                                 "BarcodedCellSampleTechnique", value
-#                             )
-#                         elif (
-#                             "DissociatedCellSampleCellPrepType" in bican_attribute_type
-#                         ):
-#                             value = SpecimenPortal.__check_valueset_membership(
-#                                 "DissociatedCellSampleCellPrepType", value
-#                             )
-#                         elif (
-#                             "DissociatedCellSampleCellLabelBarcode"
-#                             in bican_attribute_type
-#                         ):
-#                             value = SpecimenPortal.__check_valueset_membership(
-#                                 "DissociatedCellSampleCellLabelBarcode", value
-#                             )
-#                         elif "LibraryTechnique" in bican_attribute_type:
-#                             value = SpecimenPortal.__check_valueset_membership(
-#                                 "LibraryTechnique", value
-#                             )
-#                         elif "LibraryPrepPassFail" in bican_attribute_type:
-#                             value = SpecimenPortal.__check_valueset_membership(
-#                                 "LibraryPrepPassFail", value
-#                             )
-#                         elif "LibraryR1R2Index" in bican_attribute_type:
-#                             value = SpecimenPortal.__check_valueset_membership(
-#                                 "LibraryR1R2Index", value
-#                             )
-#                         elif "Sex" in bican_attribute_type:
-#                             value = SpecimenPortal.__check_valueset_membership(
-#                                 "Sex", value
-#                             )
-#                         elif "AgeAtDeathReferencePoint" in bican_attribute_type:
-#                             value = SpecimenPortal.__check_valueset_membership(
-#                                 "AgeAtDeathReferencePoint", value
-#                             )
-#                         elif "AgeAtDeathUnit" in bican_attribute_type:
-#                             value = SpecimenPortal.__check_valueset_membership(
-#                                 "AgeAtDeathUnit", value
-#                             )
-#                         elif "str" in bican_attribute_type:
-#                             if "List" in bican_attribute_type:
-#                                 pass
-#                             else:
-#                                 value = str(value)
-#                         elif "int" in bican_attribute_type:
-#                             value = int(float(value))
-#                         elif "float" in bican_attribute_type:
-#                             value = float(value)
-#                         elif "bool" in bican_attribute_type:
-#                             value = bool(value)
-#                         else:
-#                             value = None
-#                     bican_object.__setattr__(attribute, value)
-#         return bican_object
+        # if "List" in bican_class.__annotations__["was_derived_from"]:
+        #     bican_object.was_derived_from = [
+        #         f"NIMP:{item}" for item in was_derived_from
+        #     ]
+        # else:
+        #     bican_object.was_derived_from = (
+        #         f"NIMP:{was_derived_from[0]}" if was_derived_from else None
+        #     )
+        # class_attributes = SpecimenPortal.bican_slots_per_class.get(bican_category)
+        # if class_attributes is not None:
+        #     for attribute in class_attributes:
+        #         if (
+        #             bican_category + "_" + attribute
+        #         ) in SpecimenPortal.bican_to_nimp_attribute_mapping:
+        #             bican_attribute_type = bican_class.__annotations__[attribute]
+        #             value = data.get("record").get(
+        #                 SpecimenPortal.bican_to_nimp_attribute_mapping[
+        #                     bican_category + "_" + attribute
+        #                 ]
+        #             )
+        #             if value is not None and type(value) != bican_attribute_type:
+        #                 if (
+        #                     "AmplifiedCdnaRnaAmplificationPassFail"
+        #                     in bican_attribute_type
+        #                 ):
+        #                     value = SpecimenPortal.__check_valueset_membership(
+        #                         "AmplifiedCdnaRnaAmplificationPassFail", value
+        #                     ) 
+        #                 elif "BarcodedCellSampleTechnique" in bican_attribute_type:
+        #                     value = SpecimenPortal.__check_valueset_membership(
+        #                         "BarcodedCellSampleTechnique", value
+        #                     )
+        #                 elif (
+        #                     "DissociatedCellSampleCellPrepType" in bican_attribute_type
+        #                 ):
+        #                     value = SpecimenPortal.__check_valueset_membership(
+        #                         "DissociatedCellSampleCellPrepType", value
+        #                     )
+        #                 elif (
+        #                     "DissociatedCellSampleCellLabelBarcode"
+        #                     in bican_attribute_type
+        #                 ):
+        #                     value = SpecimenPortal.__check_valueset_membership(
+        #                         "DissociatedCellSampleCellLabelBarcode", value
+        #                     )
+        #                 elif "LibraryTechnique" in bican_attribute_type:
+        #                     value = SpecimenPortal.__check_valueset_membership(
+        #                         "LibraryTechnique", value
+        #                     )
+        #                 elif "LibraryPrepPassFail" in bican_attribute_type:
+        #                     value = SpecimenPortal.__check_valueset_membership(
+        #                         "LibraryPrepPassFail", value
+        #                     )
+        #                 elif "LibraryR1R2Index" in bican_attribute_type:
+        #                     value = SpecimenPortal.__check_valueset_membership(
+        #                         "LibraryR1R2Index", value
+        #                     )
+        #                 elif "Sex" in bican_attribute_type:
+        #                     value = SpecimenPortal.__check_valueset_membership(
+        #                         "Sex", value
+        #                     )
+        #                 elif "AgeAtDeathReferencePoint" in bican_attribute_type:
+        #                     value = SpecimenPortal.__check_valueset_membership(
+        #                         "AgeAtDeathReferencePoint", value
+        #                     )
+        #                 elif "AgeAtDeathUnit" in bican_attribute_type:
+        #                     value = SpecimenPortal.__check_valueset_membership(
+        #                         "AgeAtDeathUnit", value
+        #                     )
+        #                 elif "str" in bican_attribute_type:
+        #                     if "List" in bican_attribute_type:
+        #                         pass
+        #                     else:
+        #                         value = str(value)
+        #                 elif "int" in bican_attribute_type:
+        #                     value = int(float(value))
+        #                 elif "float" in bican_attribute_type:
+        #                     value = float(value)
+        #                 elif "bool" in bican_attribute_type:
+        #                     value = bool(value)
+        #                 else:
+        #                     value = None
+        #             bican_object.__setattr__(attribute, value)
+        # return bican_object
 
 #     @staticmethod
 #     def __check_valueset_membership(enum_name, nimp_value):
@@ -286,25 +416,7 @@ class SpecimenPortal:
 #             return valueset.get(nimp_value)
 #         return None
 
-#     def parse_nhash_id(self, nhash_id):
-#         ancestor_tree = SpecimenPortal.get_ancestors(nhash_id, self.jwt_token).get(
-#             "data"
-#         )
-#         stack = [nhash_id]
-#         while stack:
-#             current_nhash_id = stack.pop()
-#             if current_nhash_id not in self.generated_objects:
-#                 parents = (
-#                     ancestor_tree.get(current_nhash_id).get("edges").get("has_parent")
-#                 )
-#                 data = SpecimenPortal.get_data(current_nhash_id, self.jwt_token).get(
-#                     "data"
-#                 )
-#                 bican_object = self.generate_bican_object(data, parents)
-#                 if bican_object is not None:
-#                     self.generated_objects[current_nhash_id] = bican_object
-#                 if parents is not None:
-#                     stack.extend(parents)
+
 
 #     def serialize_to_jsonld(
 #         self, output_file: str, exclude_none: bool = True, exclude_unset: bool = False
