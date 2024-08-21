@@ -29,6 +29,7 @@ class SpecimenPortal:
     def __init__(self, jwt_token):
         self.jwt_token = jwt_token
         self.generated_objects = {}
+        self.og_objects = {}
         
     @staticmethod
     def get_field_type(annotation, collected_annotations=None):
@@ -157,46 +158,57 @@ class SpecimenPortal:
             f"Error getting data for NHash ID = {nhash_id}. Status Code: {response.status_code}"
         )
     
-    def parse_nhash_id_top_down(self, nhash_id):
-        ancestor_tree = SpecimenPortal.get_ancestors(nhash_id, self.jwt_token).get(
-            "data"
-        )
-        stack = [nhash_id] #! why not just set the stack to data.key()?
-        while stack:
-            current_nhash_id = stack.pop()
-            if current_nhash_id not in self.generated_objects:
-                parents = (
-                    ancestor_tree.get(current_nhash_id,{}).get("edges",{}).get("has_parent")
-                )
-                data = SpecimenPortal.get_data(current_nhash_id, self.jwt_token).get(
-                    "data"
-                )
-                bican_object = self.generate_bican_object(data, parents)
-                if bican_object is not None:
-                    self.generated_objects[current_nhash_id] = bican_object
-                if parents is not None:
-                    stack.extend(parents)
-
     def parse_nhash_id_bottom_up(self, nhash_id):
-        descendant_tree = SpecimenPortal.get_descendants(nhash_id, self.jwt_token).get(
+        # Traverse the nodes all the way to the root (Donor)
+        ancestors = SpecimenPortal.get_ancestors(nhash_id, self.jwt_token).get(
+            "data", {}
+        )
+        for curr_nhash_id, curr_value in ancestors.items():
+            curr_data = SpecimenPortal.get_data(curr_nhash_id, self.jwt_token).get(
+                "data"
+            )
+            parents = curr_value.get("edges",{}).get("has_parent")
+            generated_object = self.generate_bican_object(curr_data, parents)
+            if generated_object is not None:
+                self.generated_objects[curr_nhash_id] = generated_object
+            
+    def parse_nhash_id_top_down(self, nhash_id):
+        # Traverse the nodes all the way to the leaves (Library Pool)
+        descendants = SpecimenPortal.get_descendants(nhash_id, self.jwt_token).get(
             "data"
         )
-        stack = [nhash_id] #! why not just set the stack to data.key()?
-        while stack:
-            current_nhash_id = stack.pop()
-            if current_nhash_id not in self.generated_objects:
-                children = (
-                    descendant_tree.get(current_nhash_id,{}).get("edges",{}).get("has_children")
-                )
-                data = SpecimenPortal.get_data(current_nhash_id, self.jwt_token).get(
-                    "data"
-                )
-                bican_object = self.generate_bican_object(data, children)
-                if bican_object is not None:
-                    self.generated_objects[current_nhash_id] = bican_object
-                if children is not None:
-                    stack.extend(children)
+        for curr_nhash_id in descendants.keys():
+            curr_data = SpecimenPortal.get_data(curr_nhash_id, self.jwt_token).get(
+                "data"
+            )
+            ancestors = SpecimenPortal.get_ancestors(curr_nhash_id, self.jwt_token).get(
+                "data", {}
+            )
+            parents = ancestors.get(curr_nhash_id).get("edges",{}).get("has_parent")
+            generated_object = self.generate_bican_object(curr_data, parents)
+            if generated_object is not None:
+                self.generated_objects[curr_nhash_id] = generated_object
 
+
+    # def parse_nhash_id_og(self, nhash_id):
+    #     ancestor_tree = SpecimenPortal.get_ancestors(nhash_id, self.jwt_token).get(
+    #         "data"
+    #     )
+    #     stack = [nhash_id] #! why not just set the stack to data.key()?
+    #     while stack:
+    #         current_nhash_id = stack.pop()
+    #         if current_nhash_id not in self.og_objects:
+    #             parents = (
+    #                 ancestor_tree.get(current_nhash_id,{}).get("edges",{}).get("has_parent")
+    #             )
+    #             data = SpecimenPortal.get_data(current_nhash_id, self.jwt_token).get(
+    #                 "data"
+    #             )
+    #             bican_object = self.generate_bican_object(data, parents)
+    #             if bican_object is not None:
+    #                 self.og_objects[current_nhash_id] = bican_object
+    #             if parents is not None:
+    #                 stack.extend(parents)
 
     @classmethod
     def generate_bican_object(cls, data, was_derived_from: list[str] = None):
@@ -224,8 +236,8 @@ class SpecimenPortal:
             required = schema_field_metadata.is_required()
             #! handle multivalued fields
             #! handle was_derived_from
-            if nimp_field_name == "id": 
-                #! might want to check if "id" ia provided otherwise raise error 
+            if nimp_field_name == "id":
+                #! might want to check if "id" ia provided otherwise raise error
                 assigned_attributes[schema_field_name] = "NIMP:" + str(data.get("id"))
                 continue
             data_value = data.get("record", {}).get(nimp_field_name)
@@ -296,7 +308,10 @@ class SpecimenPortal:
 
 if __name__ == "__main__":
     temp = SpecimenPortal('eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcyNDE5NjU2Nn0.Mo-NzIJDXuz6ASABTZa1KUjCth_MM_yPbYxxnpS-DcA')
-    temp.parse_nhash_id_top_down('LP-LOMHPL202182')
+    temp.parse_nhash_id_bottom_up('LP-LOMHPL202182')
+    temp.parse_nhash_id_og('LP-LOMHPL202182')
+    print("ARE THEY THE SAME:")
+    print(temp.og_objects == temp.generated_objects)
     #temp.parse_nhash_id_top_down('DO-GICE7463')
     #temp.parse_nhash_id_top_down('TI-DPXF326597')
-    temp.serialize_to_jsonld("output_temp_aug19.jsonld")
+    temp.serialize_to_jsonld("output_temp_aug20.jsonld")
