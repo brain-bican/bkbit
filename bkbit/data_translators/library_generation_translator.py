@@ -26,12 +26,13 @@ CATEGORY_TO_CLASS = {
     "Slab": lg.BrainSlab,
 }
 
+
 class SpecimenPortal:
     def __init__(self, jwt_token):
         self.jwt_token = jwt_token
         self.generated_objects = {}
         self.og_objects = {}
-        
+
     @staticmethod
     def get_field_type(annotation, collected_annotations=None):
         """
@@ -52,10 +53,15 @@ class SpecimenPortal:
             arguments = annotation.__args__
             for arg in arguments:
                 if arg != type(None):
-                    nested_multivalued, nested_annotations = SpecimenPortal.get_field_type(arg, collected_annotations)
+                    nested_multivalued, nested_annotations = (
+                        SpecimenPortal.get_field_type(arg, collected_annotations)
+                    )
                     is_multivalued = is_multivalued or nested_multivalued
                     # Prioritize primitive types in case of Union
-                    if selected_type is None or (selected_type not in primitive_types and nested_annotations in primitive_types):
+                    if selected_type is None or (
+                        selected_type not in primitive_types
+                        and nested_annotations in primitive_types
+                    ):
                         selected_type = nested_annotations
 
             # Check if the original annotation is a List or other multivalued type
@@ -65,22 +71,26 @@ class SpecimenPortal:
             return False, annotation
 
         return is_multivalued, selected_type
-    
+
     def parse_nhash_id_bottom_up(self, nhash_id):
         # Traverse the nodes all the way to the root (Donor)
         ancestors = get_ancestors(nhash_id, self.jwt_token).get("data", {})
-        
-        for curr_nhash_id, curr_value in tqdm(ancestors.items(), desc="Processing ancestors and generating respective BICAN objects", unit="ancestor"):
+
+        for curr_nhash_id, curr_value in tqdm(
+            ancestors.items(),
+            desc="Processing ancestors and generating respective BICAN objects",
+            unit="ancestor",
+        ):
             curr_data = get_data(curr_nhash_id, self.jwt_token).get("data")
             parents = curr_value.get("edges", {}).get("has_parent")
             generated_object = self.generate_bican_object(curr_data, parents)
             if generated_object is not None:
                 self.generated_objects[curr_nhash_id] = generated_object
-            
+
     def parse_nhash_id_top_down(self, nhash_id):
         # Traverse the nodes all the way to the leaves (Library Pool)
         descendants = get_descendants(nhash_id, self.jwt_token).get("data")
-        
+
         for curr_nhash_id in tqdm(descendants.keys(), desc="Processing descendants"):
             curr_data = get_data(curr_nhash_id, self.jwt_token).get("data")
             ancestors = get_ancestors(curr_nhash_id, self.jwt_token).get("data", {})
@@ -110,8 +120,15 @@ class SpecimenPortal:
 
         assigned_attributes = {}
         for schema_field_name, schema_field_metadata in bican_class.__fields__.items():
-            nimp_field_name = schema_field_metadata.json_schema_extra.get("linkml_meta", {}).get("local_names", {}).get("NIMP", {}).get("local_name_value", schema_field_name)
-            multivalued, field_type = SpecimenPortal.get_field_type(schema_field_metadata.annotation)
+            nimp_field_name = (
+                schema_field_metadata.json_schema_extra.get("linkml_meta", {})
+                .get("local_names", {})
+                .get("NIMP", {})
+                .get("local_name_value", schema_field_name)
+            )
+            multivalued, field_type = SpecimenPortal.get_field_type(
+                schema_field_metadata.annotation
+            )
             required = schema_field_metadata.is_required()
             #! handle multivalued fields
             if nimp_field_name == "id":
@@ -129,7 +146,9 @@ class SpecimenPortal:
                 assigned_attributes[schema_field_name] = schema_field_metadata.default
             elif field_type is str:
                 if multivalued:
-                    assigned_attributes[schema_field_name] = [str(item) for item in data_value]
+                    assigned_attributes[schema_field_name] = [
+                        str(item) for item in data_value
+                    ]
                 else:
                     assigned_attributes[schema_field_name] = str(data_value)
                 # if schema_field_name == "id":
@@ -145,14 +164,15 @@ class SpecimenPortal:
             elif field_type is bool:
                 assigned_attributes[schema_field_name] = bool(data_value)
             elif type(field_type) is type(Enum):
-                assigned_attributes[schema_field_name] = SpecimenPortal.__check_valueset_membership(field_type, data_value)
+                assigned_attributes[schema_field_name] = (
+                    SpecimenPortal.__check_valueset_membership(field_type, data_value)
+                )
 
             # check if the field is required; if missing raise an error
             if assigned_attributes[schema_field_name] is None and required:
                 raise ValueError(f"Missing required field: {schema_field_name}")
-        
-        return bican_class(**assigned_attributes)
 
+        return bican_class(**assigned_attributes)
 
     @staticmethod
     def __check_valueset_membership(enum_type, nimp_value):
@@ -170,7 +190,7 @@ class SpecimenPortal:
             if member.value == nimp_value:
                 return member
         return None
-    
+
     def serialize_to_jsonld(
         self, output_file: str, exclude_none: bool = True, exclude_unset: bool = False
     ):
@@ -194,12 +214,15 @@ class SpecimenPortal:
             }
             f.write(json.dumps(output_data, indent=2))
 
+
 if __name__ == "__main__":
-    temp = SpecimenPortal('eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcyNjAyMjI1MH0.thiFdWeypQkw7Arewy7-MUGXOu081CnFTEawOyouJOE')
-    temp.parse_nhash_id_bottom_up('LP-LOMHPL202182')
-    #temp.parse_nhash_id_og('LP-LOMHPL202182')
-    #print("ARE THEY THE SAME:")
-    #print(temp.og_objects == temp.generated_objects)
-    #temp.parse_nhash_id_top_down('DO-GICE7463')
-    #temp.parse_nhash_id_top_down('TI-DPXF326597')
+    temp = SpecimenPortal(
+        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcyNjAyMjI1MH0.thiFdWeypQkw7Arewy7-MUGXOu081CnFTEawOyouJOE"
+    )
+    temp.parse_nhash_id_bottom_up("LP-LOMHPL202182")
+    # temp.parse_nhash_id_og('LP-LOMHPL202182')
+    # print("ARE THEY THE SAME:")
+    # print(temp.og_objects == temp.generated_objects)
+    # temp.parse_nhash_id_top_down('DO-GICE7463')
+    # temp.parse_nhash_id_top_down('TI-DPXF326597')
     temp.serialize_to_jsonld("output_temp_sept10.jsonld")
