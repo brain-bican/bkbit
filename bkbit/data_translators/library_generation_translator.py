@@ -1,6 +1,5 @@
 import json
 from enum import Enum
-import requests
 from tqdm import tqdm
 from bkbit.models import library_generation as lg
 from bkbit.utils.nimp_api_endpoints import get_data, get_ancestors, get_descendants
@@ -67,25 +66,11 @@ class SpecimenPortal:
 
         return is_multivalued, selected_type
     
-    # def parse_nhash_id_bottom_up(self, nhash_id):
-    #     # Traverse the nodes all the way to the root (Donor)
-    #     ancestors = get_ancestors(nhash_id, self.jwt_token).get(
-    #         "data", {}
-    #     )
-    #     for curr_nhash_id, curr_value in ancestors.items():
-    #         curr_data = get_data(curr_nhash_id, self.jwt_token).get(
-    #             "data"
-    #         )
-    #         parents = curr_value.get("edges",{}).get("has_parent")
-    #         generated_object = self.generate_bican_object(curr_data, parents)
-    #         if generated_object is not None:
-    #             self.generated_objects[curr_nhash_id] = generated_object
     def parse_nhash_id_bottom_up(self, nhash_id):
         # Traverse the nodes all the way to the root (Donor)
         ancestors = get_ancestors(nhash_id, self.jwt_token).get("data", {})
         
-        # Initialize tqdm progress bar
-        for curr_nhash_id, curr_value in tqdm(ancestors.items(), desc="Processing ancestors"):
+        for curr_nhash_id, curr_value in tqdm(ancestors.items(), desc="Processing ancestors and generating respective BICAN objects", unit="ancestor"):
             curr_data = get_data(curr_nhash_id, self.jwt_token).get("data")
             parents = curr_value.get("edges", {}).get("has_parent")
             generated_object = self.generate_bican_object(curr_data, parents)
@@ -94,41 +79,15 @@ class SpecimenPortal:
             
     def parse_nhash_id_top_down(self, nhash_id):
         # Traverse the nodes all the way to the leaves (Library Pool)
-        descendants = get_descendants(nhash_id, self.jwt_token).get(
-            "data"
-        )
-        for curr_nhash_id in descendants.keys():
-            curr_data = get_data(curr_nhash_id, self.jwt_token).get(
-                "data"
-            )
-            ancestors = get_ancestors(curr_nhash_id, self.jwt_token).get(
-                "data", {}
-            )
-            parents = ancestors.get(curr_nhash_id).get("edges",{}).get("has_parent")
+        descendants = get_descendants(nhash_id, self.jwt_token).get("data")
+        
+        for curr_nhash_id in tqdm(descendants.keys(), desc="Processing descendants"):
+            curr_data = get_data(curr_nhash_id, self.jwt_token).get("data")
+            ancestors = get_ancestors(curr_nhash_id, self.jwt_token).get("data", {})
+            parents = ancestors.get(curr_nhash_id).get("edges", {}).get("has_parent")
             generated_object = self.generate_bican_object(curr_data, parents)
             if generated_object is not None:
                 self.generated_objects[curr_nhash_id] = generated_object
-
-
-    # def parse_nhash_id_og(self, nhash_id):
-    #     ancestor_tree = SpecimenPortal.get_ancestors(nhash_id, self.jwt_token).get(
-    #         "data"
-    #     )
-    #     stack = [nhash_id] #! why not just set the stack to data.key()?
-    #     while stack:
-    #         current_nhash_id = stack.pop()
-    #         if current_nhash_id not in self.og_objects:
-    #             parents = (
-    #                 ancestor_tree.get(current_nhash_id,{}).get("edges",{}).get("has_parent")
-    #             )
-    #             data = SpecimenPortal.get_data(current_nhash_id, self.jwt_token).get(
-    #                 "data"
-    #             )
-    #             bican_object = self.generate_bican_object(data, parents)
-    #             if bican_object is not None:
-    #                 self.og_objects[current_nhash_id] = bican_object
-    #             if parents is not None:
-    #                 stack.extend(parents)
 
     @classmethod
     def generate_bican_object(cls, data, was_derived_from: list[str] = None):
@@ -155,9 +114,8 @@ class SpecimenPortal:
             multivalued, field_type = SpecimenPortal.get_field_type(schema_field_metadata.annotation)
             required = schema_field_metadata.is_required()
             #! handle multivalued fields
-            #! handle was_derived_from
             if nimp_field_name == "id":
-                #! might want to check if "id" ia provided otherwise raise error
+                #! might want to check if "id" is provided otherwise raise error
                 assigned_attributes[schema_field_name] = "NIMP:" + str(data.get("id"))
                 continue
             if nimp_field_name == "was_derived_from" and was_derived_from is not None:
@@ -245,98 +203,3 @@ if __name__ == "__main__":
     #temp.parse_nhash_id_top_down('DO-GICE7463')
     #temp.parse_nhash_id_top_down('TI-DPXF326597')
     temp.serialize_to_jsonld("output_temp_sept10.jsonld")
-
-
-
-    # @staticmethod
-    # def get_data(nhash_id, jwt_token):
-    #     """
-    #     Retrieve information of any record with a NHash ID in the system.
-
-    #     Parameters:
-    #         nhash_id (str): The NHash ID of the record to retrieve.
-    #         jwt_token (str): The JWT token for authentication.
-
-    #     Returns:
-    #         dict: The JSON response containing the information of the record.
-
-    #     Raises:
-    #         requests.exceptions.HTTPError: If there is an error retrieving the data.
-
-    #     """
-    #     headers = {"Authorization": f"Bearer {jwt_token}"}
-    #     response = requests.get(
-    #         f"{API_URL_PREFIX}{INFO_URL_SUFFIX}{nhash_id}",
-    #         headers=headers,
-    #         timeout=10,  # ? is this an appropriate timeout value?
-    #     )
-    #     if response.status_code == 200:
-    #         return response.json()
-
-    #     raise requests.exceptions.HTTPError(
-    #         f"Error getting data for NHash ID = {nhash_id}. Status Code: {response.status_code}"
-    #     )
-
-    # @staticmethod
-    # def get_ancestors(nhash_id, jwt_token, nhash_only=True, depth=None):
-    #     """
-    #     Retrieve information of all ancestors of a record with the given NHash ID.
-
-    #     Parameters:
-    #         nhash_id (str): The NHash ID of the record.
-    #         jwt_token (str): The JWT token for authentication.
-    #         nhash_only (bool): Flag indicating whether to retrieve only NHash IDs or complete record information. Default is True.
-    #         depth (int): The depth of ancestors to retrieve. Default is 1.
-
-    #     Returns:
-    #         dict: The JSON response containing information of all ancestors.
-
-    #     Raises:
-    #         requests.exceptions.HTTPError: If there is an error getting data for the NHash ID.
-
-    #     """
-    #     headers = {"Authorization": f"Bearer {jwt_token}"}
-
-    #     response = requests.get(
-    #         f"{API_URL_PREFIX}{ANCESTORS_URL_SUFFIX}{nhash_id}{NHASH_ONLY_SUFFIX}{nhash_only}",
-    #         headers=headers,
-    #         timeout=10,  # This is an appropriate timeout value.
-    #     )
-    #     if response.status_code == 200:
-    #         return response.json()
-
-    #     raise requests.exceptions.HTTPError(
-    #         f"Error getting data for NHash ID = {nhash_id}. Status Code: {response.status_code}"
-    #     )
-
-    # @staticmethod
-    # def get_descendants(nhash_id, jwt_token, nhash_only=True, depth=None):
-    #     """
-    #     Retrieve information of all descendents of a record with the given NHash ID.
-
-    #     Parameters:
-    #         nhash_id (str): The NHash ID of the record.
-    #         jwt_token (str): The JWT token for authentication.
-    #         nhash_only (bool): Flag indicating whether to retrieve only NHash IDs or complete record information. Default is True.
-    #         depth (int): The depth of descendents to retrieve. Default is 1.
-
-    #     Returns:
-    #         dict: The JSON response containing information of all descendents.
-
-    #     Raises:
-    #         requests.exceptions.HTTPError: If there is an error getting data for the NHash ID.
-
-    #     """
-    #     headers = {"Authorization": f"Bearer {jwt_token}"}
-
-    #     response = requests.get(
-    #         f"{API_URL_PREFIX}{DESCENDANTS_URL_SUFFIX}{nhash_id}{NHASH_ONLY_SUFFIX}{nhash_only}",
-    #         headers=headers,
-    #         timeout=10,  # This is an appropriate timeout value.
-    #     )
-    #     if response.status_code == 200:
-    #         return response.json()
-
-    #     raise requests.exceptions.HTTPError(
-    #         f"Error getting data for NHash ID = {nhash_id}. Status Code: {response.status_code}"
-    #     )
