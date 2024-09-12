@@ -19,6 +19,7 @@ CATEGORY_TO_CLASS = {
     "Specimen Dissected ROI": lg.DissectionRoiPolygon,
     "Slab": lg.BrainSlab,
 }
+JW_TOKEN_OS_VAR_NAME = 'jwt_token'
 
 
 class SpecimenPortal:
@@ -218,16 +219,13 @@ class SpecimenPortal:
 
 ##OPTIONS##
 # Option #1: The JWT token for authentication to NIMP Portal.
-@click.option('--jwt_token', '-j', required=False, help='The JWT token for authentication to NIMP Portal. Can either provide the JWT token directly or use the environment variable')
+@click.option('--jwt_token', '-j', required=False, default=os.getenv(JW_TOKEN_OS_VAR_NAME), help='The JWT token for authentication to NIMP Portal. Can either provide the JWT token directly or use the environment variable')
 # Option #2: Which direction to parse the nhash id. Default is bottom-up.
 @click.option('--direction', '-d', type=click.Choice(['toDonor', 'toLibraryPool']), default='toDonor', help='The direction to parse the NHash ID. Default is toDonor.')
 
 def specimenportal2jsonld(nhash_id: str, jwt_token: str, direction: str = 'toDonor'):
-    os_jwt_token = os.getenv('jwt_token')
-    if not jwt_token and not os_jwt_token:
+    if not jwt_token or jwt_token == "":
         raise ValueError("JWT token is required")
-    if os_jwt_token is not None:
-        jwt_token = os_jwt_token
     sp_obj = SpecimenPortal(jwt_token)
     if direction == 'toDonor':
         sp_obj.parse_nhash_id_bottom_up(nhash_id)
