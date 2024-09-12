@@ -1,16 +1,10 @@
 import json
 from enum import Enum
+import os
 from tqdm import tqdm
+import click
 from bkbit.models import library_generation as lg
 from bkbit.utils.nimp_api_endpoints import get_data, get_ancestors, get_descendants
-
-API_URL_PREFIX = "https://brain-specimenportal.org/api/v1/nhash_ids/"
-INFO_URL_SUFFIX = "info?id="
-ANCESTORS_URL_SUFFIX = "ancestors?id="
-DESCENDANTS_URL_SUFFIX = "descendants?id="
-PARENTS_URL_SUFFIX = "parents?id="
-NHASH_ONLY_SUFFIX = "&nhash_only="
-
 
 CATEGORY_TO_CLASS = {
     "Library Pool": lg.LibraryPool,
@@ -192,7 +186,7 @@ class SpecimenPortal:
         return None
 
     def serialize_to_jsonld(
-        self, output_file: str, exclude_none: bool = True, exclude_unset: bool = False
+        self, exclude_none: bool = True, exclude_unset: bool = False
     ):
         """
         Serialize the object and write it to the specified output file.
@@ -203,26 +197,46 @@ class SpecimenPortal:
         Returns:
             None
         """
-        with open(output_file, "w", encoding="utf-8") as f:
-            data = []
-            for obj in self.generated_objects.values():
-                # data.append(obj.to_dict(exclude_none=exclude_none, exclude_unset=exclude_unset))
-                data.append(obj.__dict__)
-            output_data = {
-                "@context": "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/library_generation.context.jsonld",
-                "@graph": data,
-            }
-            f.write(json.dumps(output_data, indent=2))
+
+        data = []
+        for obj in self.generated_objects.values():
+            # data.append(obj.to_dict(exclude_none=exclude_none, exclude_unset=exclude_unset))
+            data.append(obj.__dict__)
+        output_data = {
+            "@context": "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/library_generation.context.jsonld",
+            "@graph": data,
+        }
+        print(json.dumps(output_data, indent=2))
+
+
+
+@click.command()
+
+##ARGUMENTS##
+# Argument #1: The nhash id of the record to retrieve.
+@click.argument('nhash_id')
+
+##OPTIONS##
+# Option #1: The JWT token for authentication to NIMP Portal.
+@click.option('--jwt_token', '-j', required=False, help='The JWT token for authentication to NIMP Portal. Can either provide the JWT token directly or use the environment variable')
+# Option #2: Which direction to parse the nhash id. Default is bottom-up.
+@click.option('--direction', '-d', type=click.Choice(['toDonor', 'toLibraryPool']), default='toDonor', help='The direction to parse the NHash ID. Default is toDonor.')
+
+def specimenportal2jsonld(nhash_id: str, jwt_token: str, direction: str = 'toDonor'):
+    os_jwt_token = os.getenv('jwt_token')
+    if not jwt_token and not os_jwt_token:
+        raise ValueError("JWT token is required")
+    if os_jwt_token is not None:
+        jwt_token = os_jwt_token
+    sp_obj = SpecimenPortal(jwt_token)
+    if direction == 'toDonor':
+        sp_obj.parse_nhash_id_bottom_up(nhash_id)
+    else:
+        sp_obj.parse_nhash_id_top_down(nhash_id)
+    sp_obj.serialize_to_jsonld()
 
 
 if __name__ == "__main__":
-    temp = SpecimenPortal(
-        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMTAsImV4cCI6MTcyNjAyMjI1MH0.thiFdWeypQkw7Arewy7-MUGXOu081CnFTEawOyouJOE"
-    )
-    temp.parse_nhash_id_bottom_up("LP-LOMHPL202182")
-    # temp.parse_nhash_id_og('LP-LOMHPL202182')
-    # print("ARE THEY THE SAME:")
-    # print(temp.og_objects == temp.generated_objects)
-    # temp.parse_nhash_id_top_down('DO-GICE7463')
-    # temp.parse_nhash_id_top_down('TI-DPXF326597')
-    temp.serialize_to_jsonld("output_temp_sept10.jsonld")
+    # example inputs: 'DO-GICE7463','LP-LOMHPL202182'
+    specimenportal2jsonld()
+    
