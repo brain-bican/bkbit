@@ -26,7 +26,6 @@ dynamic = ["version"]
 
 [project.scripts]
 bkbit = "bkbit.cli:cli"
-gen-geneannotation = "bkbit.data_translators.genome_annotation_translator:cli"
 
 [project.optional-dependencies]
 test = [
@@ -37,10 +36,7 @@ docs = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/brain-bican/bkbit"
-
-[tool.setuptools.package-data]
-"bkbit" = ["utils/ncbi_taxonomy/*.json"]
+"Homepage" = "https://github.com/atlaskb/bkbit"
 
 [tool.setuptools_scm]
 write_to = "bkbit/_version.py"
