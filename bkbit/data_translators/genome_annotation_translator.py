@@ -927,7 +927,10 @@ class Gff3:
     is_flag=True,
     help="Log to a file instead of the console.",
 )
-def cli(content_url, assembly_accession, assembly_strain, log_level, log_to_file):
+def gff2jsonld(content_url, assembly_accession, assembly_strain, log_level, log_to_file):
+    '''
+    Creates GeneAnnotation objects from a GFF3 file and serializes them to JSON-LD format.
+    '''
     gff3 = Gff3(
         content_url, assembly_accession, assembly_strain, log_level, log_to_file
     )
@@ -936,4 +939,4 @@ def cli(content_url, assembly_accession, assembly_strain, log_level, log_to_file
 
 
 if __name__ == "__main__":
-    cli()
+    gff2jsonld()
