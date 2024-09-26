@@ -2,6 +2,7 @@ import json
 from enum import Enum
 import os
 from tqdm import tqdm
+from multiprocessing import Pool
 import click
 from bkbit.models import library_generation as lg
 from bkbit.utils.nimp_api_endpoints import get_data, get_ancestors, get_descendants
@@ -20,13 +21,13 @@ CATEGORY_TO_CLASS = {
     "Slab": lg.BrainSlab,
 }
 JW_TOKEN_OS_VAR_NAME = 'jwt_token'
+CONTEXT = "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/library_generation.context.jsonld"
 
 
 class SpecimenPortal:
     def __init__(self, jwt_token):
         self.jwt_token = jwt_token
         self.generated_objects = {}
-        self.og_objects = {}
 
     @staticmethod
     def get_field_type(annotation, collected_annotations=None):
@@ -204,11 +205,37 @@ class SpecimenPortal:
             # data.append(obj.to_dict(exclude_none=exclude_none, exclude_unset=exclude_unset))
             data.append(obj.__dict__)
         output_data = {
-            "@context": "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/library_generation.context.jsonld",
+            "@context": CONTEXT,
             "@graph": data,
         }
-        print(json.dumps(output_data, indent=2))
+        return json.dumps(output_data, indent=2)
+        #print(json.dumps(output_data, indent=2))
 
+def __parse_single_nashid(jwt_token, nhash_id, direction, save_to_file=False):
+    print(f"Processing nhash in process: {os.getpid()}")
+    sp_obj = SpecimenPortal(jwt_token)
+    if direction == 'toDonor':
+        try:   #! TEST IF THIS IS THE CORRECT WAY TO HANDLE ERRORS
+            sp_obj.parse_nhash_id_bottom_up(nhash_id)
+        except Exception as e:
+            print(f"Error parsing NHash ID {nhash_id}: {e}")
+    else:
+        try:
+            sp_obj.parse_nhash_id_top_down(nhash_id)
+        except Exception as e:
+            print(f"Error parsing NHash ID {nhash_id}: {e}")
+    if save_to_file:
+        with open(f"{nhash_id}.jsonld", 'w') as f:
+            f.write(sp_obj.serialize_to_jsonld())
+    else:
+        print(sp_obj.serialize_to_jsonld())
+
+def __parse_multiple_nashids(jwt_token, file_path, direction):
+    with open(file_path, 'r') as file:
+        nhashids = [line.strip() for line in file.readlines()]
+    with Pool() as pool:
+        results = pool.starmap(__parse_single_nashid, [(jwt_token, nhash_id, direction, True) for nhash_id in nhashids])
+    return results
 
 
 @click.command()
@@ -226,12 +253,12 @@ class SpecimenPortal:
 def specimenportal2jsonld(nhash_id: str, jwt_token: str, direction: str = 'toDonor'):
     if not jwt_token or jwt_token == "":
         raise ValueError("JWT token is required")
-    sp_obj = SpecimenPortal(jwt_token)
-    if direction == 'toDonor':
-        sp_obj.parse_nhash_id_bottom_up(nhash_id)
-    else:
-        sp_obj.parse_nhash_id_top_down(nhash_id)
-    sp_obj.serialize_to_jsonld()
+    if os.path.isfile(nhash_id):
+        __parse_multiple_nashids(jwt_token, nhash_id, direction)
+    else:   
+        __parse_single_nashid(jwt_token, nhash_id, direction)
+
+
 
 
 if __name__ == "__main__":
