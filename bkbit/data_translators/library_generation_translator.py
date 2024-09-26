@@ -20,7 +20,7 @@ CATEGORY_TO_CLASS = {
     "Specimen Dissected ROI": lg.DissectionRoiPolygon,
     "Slab": lg.BrainSlab,
 }
-JW_TOKEN_OS_VAR_NAME = "jwt_token"
+JWT_TOKEN_OS_VAR_NAME = "jwt_token"
 CONTEXT = "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/library_generation.context.jsonld"
 
 
@@ -263,7 +263,7 @@ def __parse_multiple_nashids(jwt_token, file_path, direction):
     "--jwt_token",
     "-j",
     required=False,
-    default=os.getenv(JW_TOKEN_OS_VAR_NAME),
+    default=os.getenv(JWT_TOKEN_OS_VAR_NAME),
     help="The JWT token for authentication to NIMP Portal. Can either provide the JWT token directly or use the environment variable",
 )
 # Option #2: Which direction to parse the nhash id. Default is bottom-up.
