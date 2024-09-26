@@ -20,7 +20,7 @@ CATEGORY_TO_CLASS = {
     "Specimen Dissected ROI": lg.DissectionRoiPolygon,
     "Slab": lg.BrainSlab,
 }
-JW_TOKEN_OS_VAR_NAME = 'jwt_token'
+JW_TOKEN_OS_VAR_NAME = "jwt_token"
 CONTEXT = "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/library_generation.context.jsonld"
 
 
@@ -70,11 +70,13 @@ class SpecimenPortal:
 
     def parse_nhash_id_bottom_up(self, nhash_id):
         # Traverse the nodes all the way to the root (Donor)
-        ancestors = get_ancestors(nhash_id, self.jwt_token).get("data", {})
-
+        ancestors = get_ancestors(nhash_id, self.jwt_token)
+        if "error" in ancestors:
+            raise ValueError(ancestors["error"])
         for curr_nhash_id, curr_value in tqdm(
-            ancestors.items(),
-            desc="Processing ancestors and generating respective BICAN objects",
+            ancestors.get("data", {}).items(),
+            desc="Processing ancestors and generating respective BICAN objects for NHash ID: "
+            + nhash_id,
             unit="ancestor",
         ):
             curr_data = get_data(curr_nhash_id, self.jwt_token).get("data")
@@ -85,9 +87,15 @@ class SpecimenPortal:
 
     def parse_nhash_id_top_down(self, nhash_id):
         # Traverse the nodes all the way to the leaves (Library Pool)
-        descendants = get_descendants(nhash_id, self.jwt_token).get("data")
-
-        for curr_nhash_id in tqdm(descendants.keys(), desc="Processing descendants"):
+        descendants = get_descendants(nhash_id, self.jwt_token)
+        if "error" in descendants:
+            raise ValueError(descendants["error"])
+        for curr_nhash_id in tqdm(
+            descendants.get("data", {}).keys(),
+            desc="Processing descendants and generating respective BICAN objects for NHash ID: "
+            + nhash_id,
+            unit="descendant",
+        ):
             curr_data = get_data(curr_nhash_id, self.jwt_token).get("data")
             ancestors = get_ancestors(curr_nhash_id, self.jwt_token).get("data", {})
             parents = ancestors.get(curr_nhash_id).get("edges", {}).get("has_parent")
@@ -209,32 +217,37 @@ class SpecimenPortal:
             "@graph": data,
         }
         return json.dumps(output_data, indent=2)
-        #print(json.dumps(output_data, indent=2))
+
 
 def __parse_single_nashid(jwt_token, nhash_id, direction, save_to_file=False):
-    print(f"Processing nhash in process: {os.getpid()}")
     sp_obj = SpecimenPortal(jwt_token)
-    if direction == 'toDonor':
-        try:   #! TEST IF THIS IS THE CORRECT WAY TO HANDLE ERRORS
+    if direction == "toDonor":
+        try: 
             sp_obj.parse_nhash_id_bottom_up(nhash_id)
         except Exception as e:
-            print(f"Error parsing NHash ID {nhash_id}: {e}")
+            print(f"ERROR PARSING {nhash_id}: {e}")
+            return
     else:
         try:
             sp_obj.parse_nhash_id_top_down(nhash_id)
         except Exception as e:
-            print(f"Error parsing NHash ID {nhash_id}: {e}")
+            print(f"ERROR PARSING {nhash_id}: {e}")
+            return
     if save_to_file:
-        with open(f"{nhash_id}.jsonld", 'w') as f:
+        with open(f"{nhash_id}.jsonld", "w") as f:
             f.write(sp_obj.serialize_to_jsonld())
     else:
         print(sp_obj.serialize_to_jsonld())
 
+
 def __parse_multiple_nashids(jwt_token, file_path, direction):
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         nhashids = [line.strip() for line in file.readlines()]
     with Pool() as pool:
-        results = pool.starmap(__parse_single_nashid, [(jwt_token, nhash_id, direction, True) for nhash_id in nhashids])
+        results = pool.starmap(
+            __parse_single_nashid,
+            [(jwt_token, nhash_id, direction, True) for nhash_id in nhashids],
+        )
     return results
 
 
@@ -242,26 +255,34 @@ def __parse_multiple_nashids(jwt_token, file_path, direction):
 
 ##ARGUMENTS##
 # Argument #1: The nhash id of the record to retrieve.
-@click.argument('nhash_id')
+@click.argument("nhash_id")
 
 ##OPTIONS##
 # Option #1: The JWT token for authentication to NIMP Portal.
-@click.option('--jwt_token', '-j', required=False, default=os.getenv(JW_TOKEN_OS_VAR_NAME), help='The JWT token for authentication to NIMP Portal. Can either provide the JWT token directly or use the environment variable')
+@click.option(
+    "--jwt_token",
+    "-j",
+    required=False,
+    default=os.getenv(JW_TOKEN_OS_VAR_NAME),
+    help="The JWT token for authentication to NIMP Portal. Can either provide the JWT token directly or use the environment variable",
+)
 # Option #2: Which direction to parse the nhash id. Default is bottom-up.
-@click.option('--direction', '-d', type=click.Choice(['toDonor', 'toLibraryPool']), default='toDonor', help='The direction to parse the NHash ID. Default is toDonor.')
-
-def specimenportal2jsonld(nhash_id: str, jwt_token: str, direction: str = 'toDonor'):
+@click.option(
+    "--direction",
+    "-d",
+    type=click.Choice(["toDonor", "toLibraryPool"]),
+    default="toDonor",
+    help="The direction to parse the NHash ID. Default is toDonor.",
+)
+def specimenportal2jsonld(nhash_id: str, jwt_token: str, direction: str = "toDonor"):
     if not jwt_token or jwt_token == "":
         raise ValueError("JWT token is required")
     if os.path.isfile(nhash_id):
         __parse_multiple_nashids(jwt_token, nhash_id, direction)
-    else:   
+    else:
         __parse_single_nashid(jwt_token, nhash_id, direction)
-
-
 
 
 if __name__ == "__main__":
     # example inputs: 'DO-GICE7463','LP-LOMHPL202182'
     specimenportal2jsonld()
-    
