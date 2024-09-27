@@ -70,20 +70,28 @@ class SpecimenPortal:
 
     def parse_nhash_id_bottom_up(self, nhash_id):
         # Traverse the nodes all the way to the root (Donor)
-        ancestors = get_ancestors(nhash_id, self.jwt_token)
-        if "error" in ancestors:
-            raise ValueError(ancestors["error"])
+        try:
+            ancestors = get_ancestors(nhash_id, self.jwt_token)
+            if "error" in ancestors:
+                raise ValueError(ancestors["error"])
+        except Exception as e:
+            print(f"ERROR PARSING {nhash_id}: {e}")
+            return
         for curr_nhash_id, curr_value in tqdm(
             ancestors.get("data", {}).items(),
             desc="Processing ancestors and generating respective BICAN objects for NHash ID: "
             + nhash_id,
             unit="ancestor",
         ):
-            curr_data = get_data(curr_nhash_id, self.jwt_token).get("data")
-            parents = curr_value.get("edges", {}).get("has_parent")
-            generated_object = self.generate_bican_object(curr_data, parents)
-            if generated_object is not None:
-                self.generated_objects[curr_nhash_id] = generated_object
+            try:
+                curr_data = get_data(curr_nhash_id, self.jwt_token).get("data")
+                parents = curr_value.get("edges", {}).get("has_parent")
+                generated_object = self.generate_bican_object(curr_data, parents)
+                if generated_object is not None:
+                    self.generated_objects[curr_nhash_id] = generated_object
+            except Exception as e:
+                print(f"ERROR PARSING IN HERE {curr_nhash_id}: {e}")
+                continue
 
     def parse_nhash_id_top_down(self, nhash_id):
         # Traverse the nodes all the way to the leaves (Library Pool)
@@ -96,12 +104,17 @@ class SpecimenPortal:
             + nhash_id,
             unit="descendant",
         ):
-            curr_data = get_data(curr_nhash_id, self.jwt_token).get("data")
-            ancestors = get_ancestors(curr_nhash_id, self.jwt_token).get("data", {})
-            parents = ancestors.get(curr_nhash_id).get("edges", {}).get("has_parent")
-            generated_object = self.generate_bican_object(curr_data, parents)
-            if generated_object is not None:
-                self.generated_objects[curr_nhash_id] = generated_object
+            try:
+                curr_data = get_data(curr_nhash_id, self.jwt_token).get("data")
+                ancestors = get_ancestors(curr_nhash_id, self.jwt_token).get("data", {})
+                parents = ancestors.get(curr_nhash_id).get("edges", {}).get("has_parent")
+                generated_object = self.generate_bican_object(curr_data, parents)
+                if generated_object is not None:
+                    self.generated_objects[curr_nhash_id] = generated_object
+            except Exception as e:
+                print(f"ERROR PARSING IN HERE {curr_nhash_id}: {e}")
+                continue
+
 
     @classmethod
     def generate_bican_object(cls, data, was_derived_from: list[str] = None):
@@ -121,6 +134,8 @@ class SpecimenPortal:
         """
         category = data.get("category")
         bican_class = CATEGORY_TO_CLASS.get(category)
+        if bican_class is None:
+            raise ValueError(f"Unsupported category: {category}. nhash id: {data.get("id", None)}")
 
         assigned_attributes = {}
         for schema_field_name, schema_field_metadata in bican_class.__fields__.items():
@@ -222,11 +237,12 @@ class SpecimenPortal:
 def __parse_single_nashid(jwt_token, nhash_id, direction, save_to_file=False):
     sp_obj = SpecimenPortal(jwt_token)
     if direction == "toDonor":
-        try: 
-            sp_obj.parse_nhash_id_bottom_up(nhash_id)
-        except Exception as e:
-            print(f"ERROR PARSING {nhash_id}: {e}")
-            return
+        sp_obj.parse_nhash_id_bottom_up(nhash_id)
+        # try: 
+        #     sp_obj.parse_nhash_id_bottom_up(nhash_id)
+        # except Exception as e:
+        #     print(f"ERROR PARSING {nhash_id}: {e}")
+        #     return
     else:
         try:
             sp_obj.parse_nhash_id_top_down(nhash_id)
