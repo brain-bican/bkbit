@@ -1,8 +1,8 @@
 import json
 from enum import Enum
 import os
-from tqdm import tqdm
 from multiprocessing import Pool
+from tqdm import tqdm
 import click
 from bkbit.models import library_generation as lg
 from bkbit.utils.nimp_api_endpoints import get_data, get_ancestors, get_descendants
@@ -69,13 +69,29 @@ class SpecimenPortal:
         return is_multivalued, selected_type
 
     def parse_nhash_id_bottom_up(self, nhash_id):
+        """
+        Parses the given nhash_id from bottom to top, retrieving ancestors and generating respective BICAN objects.
+
+        Args:
+            nhash_id (str): The nhash_id to parse.
+
+        Returns:
+            None: If there is an error retrieving ancestors or generating objects.
+
+        Raises:
+            ValueError: If there is an error retrieving ancestors or generating objects.
+
+        """
         # Traverse the nodes all the way to the root (Donor)
         try:
             ancestors = get_ancestors(nhash_id, self.jwt_token)
             if "error" in ancestors:
                 raise ValueError(ancestors["error"])
+        except ValueError as e:
+            print(f"ValueError retrieving ancestors for '{nhash_id}': {e}")
+            return
         except Exception as e:
-            print(f"ERROR PARSING {nhash_id}: {e}")
+            print(f"Unexpected error retrieving ancestors for '{nhash_id}': {e}")
             return
         for curr_nhash_id, curr_value in tqdm(
             ancestors.get("data", {}).items(),
@@ -89,15 +105,38 @@ class SpecimenPortal:
                 generated_object = self.generate_bican_object(curr_data, parents)
                 if generated_object is not None:
                     self.generated_objects[curr_nhash_id] = generated_object
+            except ValueError as e:
+                print(f"ValueError generating object for '{curr_nhash_id}': {e}")
+                continue
             except Exception as e:
-                print(f"ERROR PARSING IN HERE {curr_nhash_id}: {e}")
+                print(f"Unexpected error generating object for '{curr_nhash_id}': {e}")
                 continue
 
     def parse_nhash_id_top_down(self, nhash_id):
+        """
+        Parses the given nhash_id in a top-down manner, traversing the nodes all the way to the leaves (Library Pool).
+
+        Args:
+            nhash_id (str): The nhash_id to be parsed.
+
+        Returns:
+            None: If an error occurs while retrieving descendants or generating objects.
+
+        Raises:
+            ValueError: If an error occurs while retrieving descendants.
+            Exception: If an unexpected error occurs while retrieving descendants or generating objects.
+        """
         # Traverse the nodes all the way to the leaves (Library Pool)
-        descendants = get_descendants(nhash_id, self.jwt_token)
-        if "error" in descendants:
-            raise ValueError(descendants["error"])
+        try:
+            descendants = get_descendants(nhash_id, self.jwt_token)
+            if "error" in descendants:
+                raise ValueError(descendants["error"])
+        except ValueError as e:
+            print(f"ValueError retrieving descendants for '{nhash_id}': {e}")
+            return
+        except Exception as e:
+            print(f"Unexpected error retrieving descendants for '{nhash_id}': {e}")
+            return
         for curr_nhash_id in tqdm(
             descendants.get("data", {}).keys(),
             desc="Processing descendants and generating respective BICAN objects for NHash ID: "
@@ -107,14 +146,18 @@ class SpecimenPortal:
             try:
                 curr_data = get_data(curr_nhash_id, self.jwt_token).get("data")
                 ancestors = get_ancestors(curr_nhash_id, self.jwt_token).get("data", {})
-                parents = ancestors.get(curr_nhash_id).get("edges", {}).get("has_parent")
+                parents = (
+                    ancestors.get(curr_nhash_id).get("edges", {}).get("has_parent")
+                )
                 generated_object = self.generate_bican_object(curr_data, parents)
                 if generated_object is not None:
                     self.generated_objects[curr_nhash_id] = generated_object
-            except Exception as e:
-                print(f"ERROR PARSING IN HERE {curr_nhash_id}: {e}")
+            except ValueError as e:
+                print(f"ValueError generating object for '{curr_nhash_id}': {e}")
                 continue
-
+            except Exception as e:
+                print(f"Unexpected error generating object for '{curr_nhash_id}': {e}")
+                continue
 
     @classmethod
     def generate_bican_object(cls, data, was_derived_from: list[str] = None):
@@ -135,7 +178,7 @@ class SpecimenPortal:
         category = data.get("category")
         bican_class = CATEGORY_TO_CLASS.get(category)
         if bican_class is None:
-            raise ValueError(f"Unsupported category: {category}. nhash id: {data.get("id", None)}")
+            raise ValueError(f"Unsupported category: {category}.")
 
         assigned_attributes = {}
         for schema_field_name, schema_field_metadata in bican_class.__fields__.items():
@@ -235,20 +278,26 @@ class SpecimenPortal:
 
 
 def __parse_single_nashid(jwt_token, nhash_id, direction, save_to_file=False):
+    """
+    Parse a single nashid using the SpecimenPortal class.
+
+    Parameters:
+    - jwt_token (str): The JWT token for authentication.
+    - nhash_id (str): The nashid to parse.
+    - direction (str): The direction of parsing. Can be "toDonor" or any other value.
+    - save_to_file (bool): Whether to save the parsed data to a file. Default is False.
+
+    Returns:
+    - None
+
+    Raises:
+    - None
+    """
     sp_obj = SpecimenPortal(jwt_token)
     if direction == "toDonor":
         sp_obj.parse_nhash_id_bottom_up(nhash_id)
-        # try: 
-        #     sp_obj.parse_nhash_id_bottom_up(nhash_id)
-        # except Exception as e:
-        #     print(f"ERROR PARSING {nhash_id}: {e}")
-        #     return
     else:
-        try:
-            sp_obj.parse_nhash_id_top_down(nhash_id)
-        except Exception as e:
-            print(f"ERROR PARSING {nhash_id}: {e}")
-            return
+        sp_obj.parse_nhash_id_top_down(nhash_id)
     if save_to_file:
         with open(f"{nhash_id}.jsonld", "w") as f:
             f.write(sp_obj.serialize_to_jsonld())
@@ -257,6 +306,18 @@ def __parse_single_nashid(jwt_token, nhash_id, direction, save_to_file=False):
 
 
 def __parse_multiple_nashids(jwt_token, file_path, direction):
+    """
+    Parse multiple nashids from a file.
+
+    Args:
+        jwt_token (str): The JWT token.
+        file_path (str): The path to the file containing the nashids.
+        direction (str): The direction of the parsing.
+
+    Returns:
+        list: A list of results from parsing each nashid.
+
+    """
     with open(file_path, "r") as file:
         nhashids = [line.strip() for line in file.readlines()]
     with Pool() as pool:
@@ -268,7 +329,6 @@ def __parse_multiple_nashids(jwt_token, file_path, direction):
 
 
 @click.command()
-
 ##ARGUMENTS##
 # Argument #1: The nhash id of the record to retrieve.
 @click.argument("nhash_id")
@@ -291,6 +351,20 @@ def __parse_multiple_nashids(jwt_token, file_path, direction):
     help="The direction to parse the NHash ID. Default is toDonor.",
 )
 def specimenportal2jsonld(nhash_id: str, jwt_token: str, direction: str = "toDonor"):
+    """
+    Convert the specimen portal data to JSON-LD format.
+
+    Args:
+        nhash_id (str): The nhash ID of the specimen.
+        jwt_token (str): The JWT token for authentication.
+        direction (str, optional): The direction of conversion. Defaults to "toDonor".
+
+    Raises:
+        ValueError: If JWT token is missing or empty.
+
+    Returns:
+        None
+    """
     if not jwt_token or jwt_token == "":
         raise ValueError("JWT token is required")
     if os.path.isfile(nhash_id):
