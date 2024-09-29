@@ -1,34 +1,40 @@
+import uuid
 import click
 import csv
 import json
-import os
 from multiprocessing import Pool
+from bkbit.models import library_generation as lg
+CONTEXT = "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/library_generation.context.jsonld"
 
-class digitalObject:
-    def __init__(self, file_name, checksum, file_type, archive, archive_uri, project_id):
-        self.file_name = file_name
-        self.checksum = checksum
-        self.file_type = file_type
-        self.archive = archive
-        self.archive_uri = archive_uri
-        self.project_id = project_id
 
 def process_row(row):
     
     """Function to process each row and return a digitalObject instance and the Specimen ID."""
     # print(f"processing row in process: {os.getpid()}")  
-    obj = digitalObject(
-        file_name=row['File Name'],
-        checksum=row['Checksum'],
-        file_type=row['File Type'],
-        archive=row['Archive'],
-        archive_uri=row['Archive URI'],
-        project_id=row['Project ID']
+    # File Name Format -> [Sample Name]_S[0-9]_L00[Lane Number]_[Read Type]_001.fastq.gz
+    read_type = row['File Name'].split('.')[0].split('_')[-2]
+    id = row['Archive'] + ':' + row['File Name']
+    library_aliquot_nhashid = 'NIMP' + ":" + row['Specimen ID']
+    # Generate Checksum Object
+    uuid_value = uuid.uuid4()
+    # Construct a URN with the UUID
+    urn = f"urn:uuid:{uuid_value}"
+    checksum_obj = lg.Checksum(id=urn, checksum_algorithm=lg.DigestType.MD5, value=row['Checksum'])
+
+    digital_obj = lg.DigitalAsset(
+        id = id,
+        was_derived_from = library_aliquot_nhashid,
+        name=row['File Name'],
+        format=row['File Type'],
+        data_type = read_type,
+        content_url=[row['Archive URI']],
+        digest = [urn]
+
     )
-    return obj, row['Specimen ID']
+    return digital_obj, checksum_obj, row['Specimen ID']
 
 def process_csv(file_path):
-    digital_objects = []
+    digital_and_checksum_objects = []
     specimen_ids = set()
 
     # Read CSV file and gather all rows
@@ -41,11 +47,20 @@ def process_csv(file_path):
         results = pool.map(process_row, rows)
 
     # Collect results
-    for obj, specimen_id in results:
-        digital_objects.append(obj)
+    for digital_obj, checksum_obj, specimen_id in results:
+        digital_and_checksum_objects.append(digital_obj)
+        digital_and_checksum_objects.append(checksum_obj)
         specimen_ids.add(specimen_id)
 
-    return digital_objects, specimen_ids
+    return digital_and_checksum_objects, specimen_ids
+
+def serialize_to_jsonld(objects):
+    serialized_objects = [obj.__dict__ for obj in objects]
+    output_data = {
+            "@context": CONTEXT,
+            "@graph": serialized_objects,
+    }
+    return json.dumps(output_data, indent=2)
 
 @click.command()
 ##ARGUMENTS##
@@ -57,17 +72,12 @@ def process_csv(file_path):
 @click.option('--list_library_aliquots', is_flag=True, help='List all library aliquots in the file manifest.')  
 
 def filemanifest2jsonld(file_manifest_path: str, list_library_aliquots: bool):
-    digital_objects, specimen_ids = process_csv(file_manifest_path)
-    # print(f"Processed {len(digital_objects)} digital objects")
-    # print(f"Unique Specimen IDs: {specimen_ids}")
-    # print(f"Number of unique Specimen IDs: {len(specimen_ids)}")
-    # print(f"Number of unique PIDs: {len(PID)}")
+    digital_and_checksum_objects, specimen_ids = process_csv(file_manifest_path)
     if list_library_aliquots:
         with open('file_manifest_library_aliquots.txt', 'w') as f:
             for specimen_id in specimen_ids:
                 f.write(f"{specimen_id}\n")
-    serialized_objects = [obj.__dict__ for obj in digital_objects]
-    print(json.dumps(serialized_objects, indent=2))
+    print(serialize_to_jsonld(digital_and_checksum_objects))
 
 
 if __name__ == "__main__":
