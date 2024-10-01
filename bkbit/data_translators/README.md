@@ -71,7 +71,7 @@ LA-JFCEST535498UIPMOH349083.jsonld
 ```
 
 
-#### Example 4: Parse a <b>file</b> containing multiple records and their respective descendants 
+#### Example 4: Parse a <b>file</b> containing record(s) and their respective descendants 
 ```python
 # Install bkbit 
 pip install bkbit
