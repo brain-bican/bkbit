@@ -28,7 +28,7 @@ pip install bkbit
 # Set SpecimenPortal Personal API Token
 export jwt_token='specimen_portal_personal_api_token'
 
-# Run speciment2jsonld command 
+# Run specimen2jsonld command 
 bkbit specimen2jsonld 'LP-CVFLMQ819998' > output.jsonld
 ```
 
@@ -40,7 +40,7 @@ pip install bkbit
 # Set SpecimenPortal Personal API Token
 export jwt_token='specimen_portal_personal_api_token'
 
-# Run speciment2jsonld command 
+# Run specimen2jsonld command. Important: include 'descendants' flag
 bkbit specimen2jsonld -d 'DO-GICE7463' > output.jsonld
 ```
 
@@ -59,7 +59,7 @@ LA-TZWCWB265559FVVNTS329147
 LA-IAXCCV360563HBFKKM103455
 LA-JFCEST535498UIPMOH349083
 
-# Run speciment2jsonld command 
+# Run specimen2jsonld command 
 bkbit specimen2jsonld input_nhash_ids.txt 
 
 # Expected output 
@@ -86,7 +86,7 @@ DO-XIQQ6047
 DO-WFFF3774
 DO-RMRL6873
 
-# Run speciment2jsonld command 
+# Run specimenjsonld command. Important: include 'descendants' flag
 bkbit specimen2jsonld -d input_nhash_ids.txt 
 
 # Expected output 
