@@ -277,14 +277,14 @@ class SpecimenPortal:
         return json.dumps(output_data, indent=2)
 
 
-def __parse_single_nashid(jwt_token, nhash_id, direction, save_to_file=False):
+def __parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):
     """
     Parse a single nashid using the SpecimenPortal class.
 
     Parameters:
     - jwt_token (str): The JWT token for authentication.
     - nhash_id (str): The nashid to parse.
-    - direction (str): The direction of parsing. Can be "toDonor" or any other value.
+    - descendants (bool): The direction of parsing. True for descendants, False for ancestors.
     - save_to_file (bool): Whether to save the parsed data to a file. Default is False.
 
     Returns:
@@ -294,7 +294,7 @@ def __parse_single_nashid(jwt_token, nhash_id, direction, save_to_file=False):
     - None
     """
     sp_obj = SpecimenPortal(jwt_token)
-    if direction == "toDonor":
+    if descendants == False:
         sp_obj.parse_nhash_id_bottom_up(nhash_id)
     else:
         sp_obj.parse_nhash_id_top_down(nhash_id)
@@ -305,14 +305,14 @@ def __parse_single_nashid(jwt_token, nhash_id, direction, save_to_file=False):
         print(sp_obj.serialize_to_jsonld())
 
 
-def __parse_multiple_nashids(jwt_token, file_path, direction):
+def __parse_multiple_nashids(jwt_token, file_path, descendants):
     """
     Parse multiple nashids from a file.
 
     Args:
         jwt_token (str): The JWT token.
         file_path (str): The path to the file containing the nashids.
-        direction (str): The direction of the parsing.
+        descendants (bool): The direction of parsing. True for descendants, False for ancestors.
 
     Returns:
         list: A list of results from parsing each nashid.
@@ -323,7 +323,7 @@ def __parse_multiple_nashids(jwt_token, file_path, direction):
     with Pool() as pool:
         results = pool.starmap(
             __parse_single_nashid,
-            [(jwt_token, nhash_id, direction, True) for nhash_id in nhashids],
+            [(jwt_token, nhash_id, descendants, True) for nhash_id in nhashids],
         )
     return results
 
@@ -334,30 +334,16 @@ def __parse_multiple_nashids(jwt_token, file_path, direction):
 @click.argument("nhash_id")
 
 ##OPTIONS##
-# Option #1: The JWT token for authentication to NIMP Portal.
-@click.option(
-    "--jwt_token",
-    "-j",
-    required=False,
-    default=os.getenv(JWT_TOKEN_OS_VAR_NAME),
-    help="The JWT token for authentication to NIMP Portal. Can either provide the JWT token directly or use the environment variable",
-)
-# Option #2: Which direction to parse the nhash id. Default is bottom-up.
-@click.option(
-    "--direction",
-    "-d",
-    type=click.Choice(["toDonor", "toLibraryPool"]),
-    default="toDonor",
-    help="The direction to parse the NHash ID. Default is toDonor.",
-)
-def specimenportal2jsonld(nhash_id: str, jwt_token: str, direction: str = "toDonor"):
+# Option #1: Which direction to parse the nhash id. Default is ancestors.
+@click.option('--descendants', '-d', is_flag=True, help='Parse the given nhash_id and all of its children down to Library Pool.')
+
+def specimen2jsonld(nhash_id: str, descendants: bool):
     """
     Convert the specimen portal data to JSON-LD format.
 
     Args:
         nhash_id (str): The nhash ID of the specimen.
-        jwt_token (str): The JWT token for authentication.
-        direction (str, optional): The direction of conversion. Defaults to "toDonor".
+        descendants (bool): Which direction to parse the nhash id. Default is ancestors.
 
     Raises:
         ValueError: If JWT token is missing or empty.
@@ -365,14 +351,15 @@ def specimenportal2jsonld(nhash_id: str, jwt_token: str, direction: str = "toDon
     Returns:
         None
     """
+    jwt_token = os.getenv(JWT_TOKEN_OS_VAR_NAME)
     if not jwt_token or jwt_token == "":
         raise ValueError("JWT token is required")
     if os.path.isfile(nhash_id):
-        __parse_multiple_nashids(jwt_token, nhash_id, direction)
+        __parse_multiple_nashids(jwt_token, nhash_id, descendants)
     else:
-        __parse_single_nashid(jwt_token, nhash_id, direction)
+        __parse_single_nashid(jwt_token, nhash_id, descendants)
 
 
 if __name__ == "__main__":
     # example inputs: 'DO-GICE7463','LP-LOMHPL202182'
-    specimenportal2jsonld()
+    specimen2jsonld()
