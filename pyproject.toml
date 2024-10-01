@@ -6,7 +6,7 @@ build-backend = 'setuptools.build_meta'
 [project]
 name = "bkbit"
 authors = [
-  { name="bkbit developers"},
+  { name="brain-bican-bkbit developers"},
 ]
 description = "A library for using brain-bican data models"
 readme = "README.md"
