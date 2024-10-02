@@ -60,12 +60,15 @@ from datetime import datetime
 from collections import defaultdict
 import subprocess
 import gzip
+import sys
 from tqdm import tqdm
 import click
 import pkg_resources
 from bkbit.models import genome_annotation as ga
 from bkbit.utils.setup_logger import setup_logger
 from bkbit.utils.load_json import load_json
+
+
 
 ## CONSTANTS ##
 
@@ -88,22 +91,10 @@ DEFAULT_HASH = ("MD5",)
 LOG_FILE_NAME = (
     "gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log"
 )
-SCIENTIFIC_NAME_TO_TAXONID = load_json(
-    pkg_resources.resource_filename(
-        __name__, "../utils/ncbi_taxonomy/scientific_name_to_taxid.json"
-    )
-)
-TAXON_SCIENTIFIC_NAME = load_json(
-    pkg_resources.resource_filename(
-        __name__, "../utils/ncbi_taxonomy/taxid_to_scientific_name.json"
-    )
-)
-TAXON_COMMON_NAME = load_json(
-    pkg_resources.resource_filename(
-        __name__, "../utils/ncbi_taxonomy/taxid_to_common_name.json"
-    )
-)
-
+TAXON_DIR_PATH = "../utils/ncbi_taxonomy/"
+SCIENTIFIC_NAME_TO_TAXONID_PATH = pkg_resources.resource_filename(__name__, TAXON_DIR_PATH + "scientific_name_to_taxid.json")
+TAXON_SCIENTIFIC_NAME_PATH = pkg_resources.resource_filename(__name__, TAXON_DIR_PATH + "taxid_to_scientific_name.json")
+TAXON_COMMON_NAME_PATH = pkg_resources.resource_filename(__name__, TAXON_DIR_PATH + "taxid_to_common_name.json")
 
 class Gff3:
     """
@@ -184,6 +175,15 @@ class Gff3:
         - hash_functions (tuple[str]): A tuple of hash functions to use for generating checksums. Defaults to ('MD5').
         """
         self.logger = setup_logger(LOG_FILE_NAME, log_level, log_to_file)
+        try:
+            self.scientific_name_to_taxonid = load_json(SCIENTIFIC_NAME_TO_TAXONID_PATH)
+            self.taxon_scientific_name = load_json(TAXON_SCIENTIFIC_NAME_PATH)
+            self.taxon_common_name = load_json(TAXON_COMMON_NAME_PATH)
+        except FileNotFoundError as e:
+            self.logger.critical("NCBI Taxonomy not downloaded. Run 'bkbit download_ncbi_taxonomy' command first." )
+            print(e)
+            sys.exit(2)
+
         self.content_url = content_url
 
         ## STEP 1: Parse the content URL to get metadata
@@ -215,7 +215,7 @@ class Gff3:
             taxon_id = url_metadata.get("taxonid")
             assembly_id = url_metadata.get("assembly_accession")
         elif self.authority.value == ga.AuthorityType.ENSEMBL.value:
-            taxon_id = SCIENTIFIC_NAME_TO_TAXONID.get(
+            taxon_id = self.scientific_name_to_taxonid.get(
                 url_metadata.get("scientific_name").replace("_", " ")
             )
             if assembly_accession is None:
@@ -367,8 +367,8 @@ class Gff3:
         """
         return ga.OrganismTaxon(
             id=TAXON_PREFIX + ":" + taxon_id,
-            full_name=TAXON_SCIENTIFIC_NAME[taxon_id],
-            name=TAXON_COMMON_NAME[taxon_id],
+            full_name=self.taxon_scientific_name[taxon_id],
+            name=self.taxon_common_name[taxon_id],
             iri=PREFIX_MAP[TAXON_PREFIX] + taxon_id,
         )
 

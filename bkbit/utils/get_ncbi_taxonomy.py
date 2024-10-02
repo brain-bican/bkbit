@@ -22,6 +22,16 @@ import zipfile
 import io
 import os
 import requests
+import pkg_resources
+import click
+
+NCBI_TAXON_URL = "https://ftp.ncbi.nih.gov/pub/taxonomy/taxdmp.zip"
+OUTPUT_DIR_NAME = "ncbi_taxonomy"
+OUTPUT_DIR_PATH = pkg_resources.resource_filename(__name__, OUTPUT_DIR_NAME)
+SCIENTIFIC_NAME_TO_TAXONID_PATH = pkg_resources.resource_filename(__name__, "ncbi_taxonomy/scientific_name_to_taxid.json")
+TAXON_SCIENTIFIC_NAME_PATH = pkg_resources.resource_filename(__name__, "ncbi_taxonomy/taxid_to_scientific_name.json")
+TAXON_COMMON_NAME_PATH = pkg_resources.resource_filename(__name__, "ncbi_taxonomy/taxid_to_common_name.json")
+
 
 
 def download_and_extract_zip_in_memory(url):
@@ -128,17 +138,50 @@ def process_and_save_taxdmp_in_memory(url, output_dir):
     ) as f:
         json.dump(taxid_to_common_name, f, indent=4)
 
-    # with open(
-    #     os.path.join(output_dir, "taxid_to_scientific_name.json"), "w", encoding="utf-8"
-    # ) as f:
-    #     json.dump(taxid_to_scientific_name, f, indent=4)
+    with open(
+        os.path.join(output_dir, "taxid_to_scientific_name.json"), "w", encoding="utf-8"
+    ) as f:
+        json.dump(taxid_to_scientific_name, f, indent=4)
 
-    # with open(
-    #     os.path.join(output_dir, "scientific_name_to_taxid.json"), "w", encoding="utf-8"
-    # ) as f:
-    #     json.dump(scientific_name_to_taxid, f, indent=4)
+    with open(
+        os.path.join(output_dir, "scientific_name_to_taxid.json"), "w", encoding="utf-8"
+    ) as f:
+        json.dump(scientific_name_to_taxid, f, indent=4)
 
+
+    
+def load_json(file_path):
+    """
+    Load JSON data from a file.
+
+    Args:
+        file_path (str): The path to the JSON file.
+
+    Returns:
+        dict: The loaded JSON data.
+
+    """
+    with open(file_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+@click.command()
+@click.option("--reload", '-r', is_flag=True, help="Reload NCBI taxonomy data")
+
+def download_ncbi_taxonomy(reload=False):
+
+    """
+    Load JSON data from a file.
+
+    Args:
+        file_path (str): The path to the JSON file.
+
+    Returns:
+        dict: The loaded JSON data as a dictionary.
+    """
+    if reload or not os.path.exists(SCIENTIFIC_NAME_TO_TAXONID_PATH) or not os.path.exists(TAXON_SCIENTIFIC_NAME_PATH) or not os.path.exists(TAXON_COMMON_NAME_PATH):
+        process_and_save_taxdmp_in_memory(NCBI_TAXON_URL, OUTPUT_DIR_PATH)
+    else:
+        print("PRINT already downloaded")
 
 if __name__ == "__main__":
-    URL = "https://ftp.ncbi.nih.gov/pub/taxonomy/taxdmp.zip"
-    process_and_save_taxdmp_in_memory(URL, "ncbi_taxonomy")
+    download_ncbi_taxonomy() 
