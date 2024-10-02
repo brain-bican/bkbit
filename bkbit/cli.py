@@ -1,6 +1,8 @@
 import click
 from bkbit.model_converters.sheets_converter import schema2model
+from bkbit.data_translators.library_generation_translator import specimen2jsonld
 from bkbit.model_converters.yaml2sheet_converter import yaml2cvs
+from bkbit.data_translators.file_manifest_translator import filemanifest2jsonld
 
 @click.group()
 def cli():
@@ -9,7 +11,9 @@ def cli():
 
 # Add commands to the CLI group
 cli.add_command(schema2model)
+cli.add_command(specimen2jsonld)
 cli.add_command(yaml2cvs)
+cli.add_command(filemanifest2jsonld)
 
 if __name__ == '__main__':
     cli()
