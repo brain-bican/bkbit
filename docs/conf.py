@@ -20,6 +20,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
+    'm2r'
 ]
 # display documentation both from a class docstring and its __init__ methods’s.
 autoclass_content = 'both'
@@ -36,3 +37,4 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # other themes = 'sphinx_rtd_theme', 'classic', 'furo'
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+source_suffix = ['.rst', '.md']
