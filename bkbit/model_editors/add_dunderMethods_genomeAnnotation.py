@@ -1,8 +1,10 @@
 import re
-
+import pkg_resources
 # Read the file
-file_path = "bkbit/models/genome_annotation.py"
-with open(file_path, "r") as file:
+genome_annotation_model = pkg_resources.resource_filename(__name__, "../models/genome_annotation.py")
+
+#file_path = "bkbit/models/genome_annotation.py"
+with open(genome_annotation_model, "r") as file:
     content = file.read()
 
 # Define the patterns to check if the functions already exist
@@ -23,7 +25,7 @@ if class_match:
         content = content.replace(class_match.group(), class_match.group() + "\n\n    def __hash__(self):\n        return hash(tuple([self.id, self.name, self.molecular_type, self.description]))\n    ")
 
     # Write the updated content back to the file
-    with open(file_path, "w") as file:
+    with open(genome_annotation_model, "w") as file:
         file.write(content)
 else:
     print("GeneAnnotation class not found in the file.")
