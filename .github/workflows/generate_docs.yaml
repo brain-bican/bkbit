@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - create_docs_20241003
 
 jobs:
   publish_bkbit_docs:
