@@ -19,6 +19,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinx.ext.githubpages",
 ]
 # display documentation both from a class docstring and its __init__ methods’s.
 autoclass_content = 'both'
