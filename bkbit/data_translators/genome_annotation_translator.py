@@ -7,10 +7,10 @@ Module for downloading, parsing, and processing GFF3 files from NCBI and Ensembl
 4. Serialize the extracted information into JSON-LD format for further use.
 
 Classes:
-    Gff3: A class to handle the entire process of downloading, parsing, and processing GFF3 files.
+    Gff3: The Gff3 class is designed to handle the complete lifecycle of downloading, parsing, and processing GFF3 files from NCBI or Ensembl repositories. It extracts gene annotations and serializes the data into JSON-LD format.
 
 Functions:
-    cli: Command line interface function to execute the module as a script.
+    gff2jsonld: The gff2jsonld function is responsible for creating GeneAnnotation objects from a provided GFF3 file and serializing the extracted information into the JSON-LD format.
 
 Usage:
     The module can be run as a standalone script by executing it with appropriate arguments and options:
@@ -18,6 +18,7 @@ Usage:
     ```
     python genome_annotation_translator.py <content_url> -a <assembly_accession> -s <assembly_strain> -l <log_level> -f
     ```
+    
     The script will download the GFF3 file from the specified URL, parse it, and serialize the extracted information into JSON-LD format.
 
 Example:
@@ -180,7 +181,7 @@ class Gff3:
             self.taxon_scientific_name = load_json(TAXON_SCIENTIFIC_NAME_PATH)
             self.taxon_common_name = load_json(TAXON_COMMON_NAME_PATH)
         except FileNotFoundError as e:
-            self.logger.critical("NCBI Taxonomy not downloaded. Run 'bkbit download_ncbi_taxonomy' command first." )
+            self.logger.critical("NCBI Taxonomy not downloaded. Run 'bkbit download-ncbi-taxonomy' command first." )
             print(e)
             sys.exit(2)
 
