@@ -14,10 +14,12 @@ This package contains tools to use the BICAN Knowledgebase Data Models.
    install
 
 .. toctree::
-   :maxdepth: 2
-   :caption: USAGE
+   :maxdepth: 4
+   :caption: DATA TRANSLATORS
 
-   data_translators
+   specimen_file_manifest
+   specimen_metadata
+   genome_annotation
 
 .. toctree::
    :maxdepth: 1
@@ -25,11 +27,9 @@ This package contains tools to use the BICAN Knowledgebase Data Models.
 
    modules
 
-   
-
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
+.. * :ref:`search`
