@@ -30,26 +30,6 @@ Command Line
         The NHASH_ID of the specimen or a file containing a list of NHASH_IDs. 
         If a file is provided, the file should contain one NHASH_ID per line.
 
-``filemanifest2jsonld``
-,,,,,,,,,,,,,,,,,,,,,
-
-.. code-block:: bash
-
-    $ bkbit specimen2jsonld [OPTIONS] NHASH_ID_OR_FILE
-
-**Options**
-
-    ``-d, --decendants``
-        A boolean flag that, when provided, generates BICAN objects for the given NHASH_ID and all of its descendants. 
-        If this flag is not set (DEFAULT), then the ancestors will be processed.
-
-**Arguments**
-
-    ``NHASH_ID_OR_FILE``
-        The NHASH_ID of the specimen or a file containing a list of NHASH_IDs. 
-        If a file is provided, the file should contain one NHASH_ID per line.
-
-
 Environment Variables 
 .............
 
@@ -70,6 +50,9 @@ Example 1: Parse a single record and its ancestors
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 .. code-block:: bash
+    
+    # If first time running specimen2jsonld or if token is expired, set jwt_token environment variable
+    $ export jwt_token=specimen_portal_personal_api_token
 
     # Run specimen2jsonld command 
     $ bkbit specimen2jsonld 'LP-CVFLMQ819998' > output.jsonld
@@ -79,6 +62,9 @@ Example 2: Parse a single record and its descendants
 
 .. code-block:: bash
 
+    # If first time running specimen2jsonld or if token is expired, set jwt_token environment variable
+    $ export jwt_token=specimen_portal_personal_api_token
+
     # Run specimen2jsonld command. Important: include '--descendants' flag
     $ bkbit specimen2jsonld -d 'DO-GICE7463' > output.jsonld
 
@@ -86,6 +72,9 @@ Example 3: Parse a file containing record(s) and their respective ancestors
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 .. code-block:: bash
+
+    # If first time running specimen2jsonld or if token is expired, set jwt_token environment variable
+    $ export jwt_token=specimen_portal_personal_api_token
 
     # Contents of input file 
     $ cat input_nhash_ids.txt
@@ -106,6 +95,9 @@ Example 4: Parse a file containing record(s) and their respective descendants
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 .. code-block:: bash
+
+    # If first time running specimen2jsonld or if token is expired, set jwt_token environment variable
+    $ export jwt_token=specimen_portal_personal_api_token
 
     # Contents of input file 
     $ cat input_nhash_ids.txt

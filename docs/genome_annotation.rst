@@ -64,6 +64,7 @@ Example 1: NCBI GFF3 file
 
 .. code-block:: bash
 
+    # Run gff2jsonld command
     $ bkbit gff2jsonld 'https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/9823/106/GCF_000003025.6_Sscrofa11.1/GCF_000003025.6_Sscrofa11.1_genomic.gff.gz' > output.jsonld
 
 
@@ -72,4 +73,5 @@ Example 2: ENSEMBL GFF3 file
 
 .. code-block:: bash
 
+    # Run gff2jsonld command
     $ bkbit gff2jsonld -a 'GCF_003339765.1' 'https://ftp.ensembl.org/pub/release-104/gff3/macaca_mulatta/Macaca_mulatta.Mmul_10.104.gff3.gz' > output.jsonld

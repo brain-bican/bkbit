@@ -14,7 +14,7 @@ This package contains tools to use the BICAN Knowledgebase Data Models.
    install
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 1
    :caption: DATA TRANSLATORS
 
    specimen_file_manifest
