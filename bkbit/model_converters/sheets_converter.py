@@ -7,6 +7,7 @@ import requests
 
 from linkml_runtime.linkml_model.meta import SchemaDefinition, SlotDefinition
 from linkml_runtime.utils.schema_as_dict import schema_as_dict
+from linkml_runtime.utils.schemaview import SchemaView
 from schemasheets import schemamaker as sm
 import pandas as pd
 
@@ -132,6 +133,18 @@ def bican_fix(schema: SchemaDefinition) -> SchemaDefinition:
     # removing names from the slots
     if "name" in schema.slots:
         del schema.slots["name"]
+
+    # removing slots that are from the imported schemas
+    slots_from_imports = []
+    for el in schema.imports:
+        if Path(f"{el}.yaml").exists():
+            sv = SchemaView(f'{el}.yaml')
+            slots_from_imports.extend(sv.schema.slots.keys())
+    slots_to_remove = list(set(schema.slots) & set(slots_from_imports))
+
+    for nm in slots_to_remove:
+        del schema.slots[nm]
+
     # removing empty subsets that are from imported biolink schema
     biolink_subsets = []
     for nm, subs in schema.subsets.items():
