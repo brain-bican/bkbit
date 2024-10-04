@@ -21,7 +21,7 @@ Usage:
     The module can be run as a standalone script using the command-line interface with the appropriate arguments and options:
 
     ```
-    python specimen_portal.py <nhash_id> -d
+    python specimen_portal.py <nhash_id> [-d]
     ```
 
     This script will parse the nhash ID and serialize the generated data into JSON-LD format, with the option to parse descendants or ancestors.
@@ -95,18 +95,15 @@ class SpecimenPortal:
         serialize_to_jsonld(exclude_none=True, exclude_unset=False):
             Serializes the generated objects into JSON-LD format for further use or storage.
 
+        parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):
+            Parses a single nhash ID and optionally saves the result to a JSON-LD file.
+
+        parse_multiple_nashids(jwt_token, file_path, descendants):
+            Parses multiple nhash IDs from a file and saves the results to JSON-LD files.
+
     Static Methods:
         __check_valueset_membership(enum_type, nimp_value):
             Checks if a given value belongs to a specified enum.
-    
-    Private Methods:
-        __parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):
-            Parses a single nhash ID and optionally saves the result to a JSON-LD file.
-
-        __parse_multiple_nashids(jwt_token, file_path, descendants):
-        Parses multiple nhash IDs from a file and saves the results to JSON-LD files.
-        
-
     """
     def __init__(self, jwt_token):
         self.jwt_token = jwt_token
@@ -360,7 +357,7 @@ class SpecimenPortal:
         return json.dumps(output_data, indent=2)
 
 
-def __parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):
+def parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):
     """
     Parse a single nashid using the SpecimenPortal class.
 
@@ -388,7 +385,7 @@ def __parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):
         print(sp_obj.serialize_to_jsonld())
 
 
-def __parse_multiple_nashids(jwt_token, file_path, descendants):
+def parse_multiple_nashids(jwt_token, file_path, descendants):
     """
     Parse multiple nashids from a file.
 
@@ -405,7 +402,7 @@ def __parse_multiple_nashids(jwt_token, file_path, descendants):
         nhashids = [line.strip() for line in file.readlines()]
     with Pool() as pool:
         results = pool.starmap(
-            __parse_single_nashid,
+            parse_single_nashid,
             [(jwt_token, nhash_id, descendants, True) for nhash_id in nhashids],
         )
     return results
@@ -438,9 +435,9 @@ def specimen2jsonld(nhash_id: str, descendants: bool):
     if not jwt_token or jwt_token == "":
         raise ValueError("JWT token is required")
     if os.path.isfile(nhash_id):
-        __parse_multiple_nashids(jwt_token, nhash_id, descendants)
+        parse_multiple_nashids(jwt_token, nhash_id, descendants)
     else:
-        __parse_single_nashid(jwt_token, nhash_id, descendants)
+        parse_single_nashid(jwt_token, nhash_id, descendants)
 
 
 if __name__ == "__main__":

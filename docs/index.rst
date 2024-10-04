@@ -8,13 +8,24 @@ Brain Knowledge Base Interaction Toolkit Documentation
 This package contains tools to use the BICAN Knowledgebase Data Models.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 1
+   :caption: GETTING STARTED
 
    install
-   bkbit-quickstart
-   contributing
+
+.. toctree::
+   :maxdepth: 2
+   :caption: USAGE
+
+   data_translators
+
+.. toctree::
+   :maxdepth: 1
+   :caption: REFERENCE
+
    modules
+
+   
 
 Indices and tables
 ==================
