@@ -3,17 +3,22 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-bkbit documentation
-===================
-
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
-
+Brain Knowledge Base Interaction Toolkit Documentation
+===============================================================
+This package contains tools to use the BICAN Knowledgebase Data Models.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   install
+   bkbit-quickstart
+   contributing
    modules
 
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

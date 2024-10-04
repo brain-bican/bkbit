@@ -20,6 +20,7 @@ jobs:
         run: |
           pip install -e .
           pip install sphinx sphinx_rtd_theme
+          pip install m2r
       - name: Sphinx build
         run: |
           sphinx-apidoc -o docs bkbit --separate
