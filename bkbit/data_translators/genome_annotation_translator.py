@@ -98,7 +98,7 @@ TAXON_COMMON_NAME_PATH = pkg_resources.resource_filename(__name__, TAXON_DIR_PAT
 
 class Gff3:
     """
-    A class to handle the downloading, parsing, and processing of GFF3 files from NCBI and Ensembl repositories.
+    The Gff3 class is responsible for downloading, parsing, and processing of GFF3 files from NCBI and Ensembl repositories.
 
     Attributes:
         content_url (str): The URL of the GFF file.
