@@ -23,6 +23,18 @@ This package contains tools to use the BICAN Knowledgebase Data Models.
 
 .. toctree::
    :maxdepth: 1
+   :caption: MODEL CONVERTERS
+
+   spreadsheet_converter
+
+.. toctree::
+   :maxdepth: 1
+   :caption: MODEL EDITORS
+
+   linkml_trimmer
+
+.. toctree::
+   :maxdepth: 1
    :caption: REFERENCE
 
    modules

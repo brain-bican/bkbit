@@ -8,6 +8,16 @@ Overview
 
 Generates a JSON-LD file containing specimen file data using the BICAN Library Generation Schema. 
 
+The input file manifest must be in CSV format and contain the following columns:
+
+        - Project ID	
+        - Specimen ID	
+        - File Name	
+        - Checksum	
+        - File Type	
+        - Archive	
+        - Archive URI
+
 Command Line
 .............
 
@@ -27,16 +37,7 @@ Command Line
 **Arguments**
 
     ``FILE_MANIFEST_CSV``
-        Required argument. 
-        FILE_MANIFEST_CSV can be optained from Brain Knowledge Platform and **must** contains the following columns:
-
-            - Project ID	
-            - Specimen ID	
-            - File Name	
-            - Checksum	
-            - File Type	
-            - Archive	
-            - Archive URI
+        Required argument
 
 Examples
 .........
