@@ -16,7 +16,7 @@ Command Line
 
     .. code-block:: bash
         
-        $ bkbit linkml-trimmer [OPTIONS] CLASSES SCHEMA
+        $ bkbit linkml-trimmer [OPTIONS] SCHEMA
 
 Options
 ,,,,,,,
