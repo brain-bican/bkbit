@@ -36,12 +36,14 @@ Environment Variables
 jwt_token
 ,,,,,,,,,
 
-    You **must** set the SpecimenPortal Personal API Token as an environment variable before running ``bkbit specimen2jsonld``. Once set, the token will be used to authenticate with the Specimen Portal API and retrieve the specimen metadata.
+Token is used to authenticate with the Specimen Portal API and retrieve the specimen metadata.
 
-    .. code-block:: bash
+.. note::
+    You **must** set the Specimen Portal Personal API Token as an environment variable **before** running ``bkbit specimen2jsonld``. 
 
-        $ export jwt_token=specimen_portal_personal_api_token
+.. code-block:: bash
 
+    $ export jwt_token=specimen_portal_personal_api_token
 
 Examples 
 .........

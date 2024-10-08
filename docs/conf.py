@@ -37,4 +37,12 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # other themes = 'sphinx_rtd_theme', 'classic', 'furo'
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
-source_suffix = ['.rst', '.md']
+html_show_sourcelink = False
+html_context = {
+    "display_github": True, # Integrate GitHub
+    "github_user": "brain-bican", # Username
+    "github_repo": "bkbit", # Repo name
+    "github_version": "main", # Version
+    "conf_py_path": "/docs/", # Path in the checkout to the docs root
+}
+# source_suffix = ['.rst', '.md']
