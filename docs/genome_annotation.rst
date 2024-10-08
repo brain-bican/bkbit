@@ -31,7 +31,9 @@ Options
 
     ``-a, --assembly_accession <assembly_accession>``
         ID assigned to the genomic assembly used in the GFF3 file.
-        **Note: Must be provided when using ENSEMBL GFF3 files**
+
+    .. note::
+        Must be provided when using ENSEMBL GFF3 files
 
     ``-s, --assembly_strain <assembly_strain>``
         Specific strain of the organism associated with the GFF3 file.
