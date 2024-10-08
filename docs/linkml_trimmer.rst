@@ -21,25 +21,24 @@ Command Line
 Options
 ,,,,,,,
 
+    ``-c, --classes <classes>``
+        **Required option**
+        
+        List of 'classes' to include in the trimmed schema.
+
+        **Note**: Classes must be separated by commas and enclosed in quotes.
     ``-s, --slots <slots>``
         List of 'slots' to include in the trimmed schema.
 
-        **Note: Slots must be separated by commas and enclosed in quotes.**
+        **Note**: Slots must be separated by commas and enclosed in quotes.
 
     ``-e, --enums <enums>``
         List of 'enums' to include in the trimmed schema.
 
-        **Note: Enums must be separated by commas and enclosed in quotes.**
+        **Note**: Enums must be separated by commas and enclosed in quotes.
     
 Arguments
 ,,,,,,,,,
-
-    ``CLASSES``
-        Required argument
-
-        List of 'classes' to include in the trimmed schema.
-
-        **Note: Classes must be separated by commas and enclosed in quotes.**
 
     ``SCHEMA``
         Required argument
@@ -53,5 +52,4 @@ Example 1: Trim `Biolink Schema <https://biolink.github.io/biolink-model/>`_
 
 .. code-block:: bash
 
-    $ classes =  ['gene', 'genome', 'organism taxon', 'thing with taxon', 'material sample', 'procedure', 'entity', 'activity', 'named thing']
-    $ bkbit classes biolink.yaml > bican-biolink.yaml
+    $ bkbit linkml-trimmer --classes "gene, genome, organism taxon, thing with taxon, material sample, procedure, entity, activity, named thing" biolink.yaml > bican-biolink.yaml

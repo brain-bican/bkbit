@@ -5,6 +5,7 @@ from bkbit.model_converters.yaml2sheet_converter import yaml2cvs
 from bkbit.data_translators.file_manifest_translator import filemanifest2jsonld
 from bkbit.data_translators.genome_annotation_translator import gff2jsonld
 from bkbit.utils.get_ncbi_taxonomy import download_ncbi_taxonomy
+from bkbit.model_editors.linkml_trimmer import linkml_trimmer
 
 @click.group()
 def cli():
@@ -18,6 +19,7 @@ cli.add_command(yaml2cvs)
 cli.add_command(filemanifest2jsonld)
 cli.add_command(gff2jsonld)
 cli.add_command(download_ncbi_taxonomy)
+cli.add_command(linkml_trimmer)
 
 if __name__ == '__main__':
     cli()
