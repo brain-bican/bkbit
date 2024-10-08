@@ -1,0 +1,550 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bkbit.data_translators.genome_annotation_translator module &mdash; bkbit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=7ab3649f" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bkbit.data_translators.library_generation_translator module" href="bkbit.data_translators.library_generation_translator.html" />
+    <link rel="prev" title="bkbit.data_translators.file_manifest_translator module" href="bkbit.data_translators.file_manifest_translator.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            bkbit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">DATA TRANSLATORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="specimen_file_manifest.html">Specimen File Manifest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specimen_metadata.html">Specimen Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genome_annotation.html">Annotated Genome Data</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL CONVERTERS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="spreadsheet_converter.html">Spreadsheet to LinkML Schema</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL EDITORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="linkml_trimmer.html">LinkML Schema Trimmer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">REFERENCE</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">bkbit</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="bkbit.html">bkbit package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="bkbit.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="bkbit.data_translators.html">bkbit.data_translators package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.model_converters.html">bkbit.model_converters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.model_editors.html">bkbit.model_editors package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.models.html">bkbit.models package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.utils.html">bkbit.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.html#module-bkbit">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">bkbit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">bkbit</a></li>
+          <li class="breadcrumb-item"><a href="bkbit.html">bkbit package</a></li>
+          <li class="breadcrumb-item"><a href="bkbit.data_translators.html">bkbit.data_translators package</a></li>
+      <li class="breadcrumb-item active">bkbit.data_translators.genome_annotation_translator module</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/brain-bican/bkbit/blob/main/docs/bkbit.data_translators.genome_annotation_translator.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-bkbit.data_translators.genome_annotation_translator">
+<span id="bkbit-data-translators-genome-annotation-translator-module"></span><h1>bkbit.data_translators.genome_annotation_translator module<a class="headerlink" href="#module-bkbit.data_translators.genome_annotation_translator" title="Link to this heading"></a></h1>
+<p>Module for downloading, parsing, and processing GFF3 files from NCBI and Ensembl repositories. This module provides functionality to:</p>
+<ol class="arabic simple">
+<li><p>Download a GFF3 file from a specified URL and calculate its checksums.</p></li>
+<li><p>Parse the GFF3 file to extract gene annotations.</p></li>
+<li><p>Generate various metadata objects such as organism taxon, genome assembly, and genome annotation.</p></li>
+<li><p>Serialize the extracted information into JSON-LD format for further use.</p></li>
+</ol>
+<dl>
+<dt>Classes:</dt><dd><p>Gff3: The Gff3 class is designed to handle the complete lifecycle of downloading, parsing, and processing GFF3 files from NCBI or Ensembl repositories. It extracts gene annotations and serializes the data into JSON-LD format.</p>
+</dd>
+<dt>Functions:</dt><dd><p>gff2jsonld: The gff2jsonld function is responsible for creating GeneAnnotation objects from a provided GFF3 file and serializing the extracted information into the JSON-LD format.</p>
+</dd>
+<dt>Usage:</dt><dd><p>The module can be run as a standalone script by executing it with appropriate arguments and options:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">python</span> <span class="pre">genome_annotation_translator.py</span> <span class="pre">&lt;content_url&gt;</span> <span class="pre">-a</span> <span class="pre">&lt;assembly_accession&gt;</span> <span class="pre">-s</span> <span class="pre">&lt;assembly_strain&gt;</span> <span class="pre">-l</span> <span class="pre">&lt;log_level&gt;</span> <span class="pre">-f</span>
+<span class="pre">`</span></code></p>
+<p>The script will download the GFF3 file from the specified URL, parse it, and serialize the extracted information into JSON-LD format.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">python</span> <span class="pre">genome_annotation_translator.py</span> <span class="pre">&quot;https://example.com/path/to/gff3.gz&quot;</span> <span class="pre">-a</span> <span class="pre">&quot;GCF_000001405.39&quot;</span> <span class="pre">-s</span> <span class="pre">&quot;strain_name&quot;</span> <span class="pre">-l</span> <span class="pre">&quot;INFO&quot;</span> <span class="pre">-f</span> <span class="pre">True</span>
+<span class="pre">`</span></code></p>
+<dl class="simple">
+<dt>Dependencies:</dt><dd><ul class="simple">
+<li><p>re</p></li>
+<li><p>hashlib</p></li>
+<li><p>tempfile</p></li>
+<li><p>uuid</p></li>
+<li><p>urllib</p></li>
+<li><p>urllib.request</p></li>
+<li><p>urllib.parse</p></li>
+<li><p>os</p></li>
+<li><p>json</p></li>
+<li><p>datetime</p></li>
+<li><p>collections.defaultdict</p></li>
+<li><p>subprocess</p></li>
+<li><p>gzip</p></li>
+<li><p>tqdm</p></li>
+<li><p>click</p></li>
+<li><p>pkg_resources</p></li>
+<li><p>bkbit.models.genome_annotation as ga</p></li>
+<li><p>bkbit.utils.setup_logger as setup_logger</p></li>
+<li><p>bkbit.utils.load_json as load_json</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.genome_annotation_translator.</span></span><span class="sig-name descname"><span class="pre">Gff3</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembly_accession</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembly_strain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'WARNING'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_to_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The Gff3 class is responsible for downloading, parsing, and processing of GFF3 files from NCBI and Ensembl repositories.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.content_url">
+<span class="sig-name descname"><span class="pre">content_url</span></span><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.content_url" title="Link to this definition"></a></dt>
+<dd><p>The URL of the GFF file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.assembly_accession">
+<span class="sig-name descname"><span class="pre">assembly_accession</span></span><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.assembly_accession" title="Link to this definition"></a></dt>
+<dd><p>The ID of the genome assembly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.assembly_strain">
+<span class="sig-name descname"><span class="pre">assembly_strain</span></span><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.assembly_strain" title="Link to this definition"></a></dt>
+<dd><p>The strain of the genome assembly. Defaults to None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.log_level">
+<span class="sig-name descname"><span class="pre">log_level</span></span><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.log_level" title="Link to this definition"></a></dt>
+<dd><p>The logging level. Defaults to ‘WARNING’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.log_to_file">
+<span class="sig-name descname"><span class="pre">log_to_file</span></span><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.log_to_file" title="Link to this definition"></a></dt>
+<dd><p>Flag to log messages to a file. Defaults to False.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembly_accession</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembly_strain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'WARNING'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_to_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes the Gff3 class with the provided parameters.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.parse_url">
+<span class="sig-name descname"><span class="pre">parse_url</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.parse_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.parse_url" title="Link to this definition"></a></dt>
+<dd><p>Parses the content URL and extracts information about the genome annotation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.__download_gff_file">
+<span class="sig-name descname"><span class="pre">__download_gff_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.__download_gff_file" title="Link to this definition"></a></dt>
+<dd><p>Downloads a GFF file from a given URL and calculates the MD5, SHA256, and SHA1 hashes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.generate_organism_taxon">
+<span class="sig-name descname"><span class="pre">generate_organism_taxon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">taxon_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.generate_organism_taxon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.generate_organism_taxon" title="Link to this definition"></a></dt>
+<dd><p>Generates an organism taxon object based on the provided taxon ID.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.assign_authority_type">
+<span class="sig-name descname"><span class="pre">assign_authority_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">authority</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.assign_authority_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.assign_authority_type" title="Link to this definition"></a></dt>
+<dd><p>Assigns the authority type based on the given authority string.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.generate_genome_assembly">
+<span class="sig-name descname"><span class="pre">generate_genome_assembly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assembly_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembly_version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembly_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembly_strain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.generate_genome_assembly"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.generate_genome_assembly" title="Link to this definition"></a></dt>
+<dd><p>Generates a genome assembly object based on the provided parameters.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.generate_genome_annotation">
+<span class="sig-name descname"><span class="pre">generate_genome_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">genome_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">genome_version</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.generate_genome_annotation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.generate_genome_annotation" title="Link to this definition"></a></dt>
+<dd><p>Generates a genome annotation object based on the provided parameters.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.generate_digest">
+<span class="sig-name descname"><span class="pre">generate_digest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hash_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hash_functions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DEFAULT_HASH</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.generate_digest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.generate_digest" title="Link to this definition"></a></dt>
+<dd><p>Generates checksum digests for the GFF file using the specified hash functions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.__get_line_count">
+<span class="sig-name descname"><span class="pre">__get_line_count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.__get_line_count" title="Link to this definition"></a></dt>
+<dd><p>Returns the line count of a file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.parse">
+<span class="sig-name descname"><span class="pre">parse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feature_filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">DEFAULT_FEATURE_FILTER</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.parse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.parse" title="Link to this definition"></a></dt>
+<dd><p>Parses the GFF file and extracts gene annotations based on the provided feature filter.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.generate_ensembl_gene_annotation">
+<span class="sig-name descname"><span class="pre">generate_ensembl_gene_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curr_line_num</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.generate_ensembl_gene_annotation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.generate_ensembl_gene_annotation" title="Link to this definition"></a></dt>
+<dd><p>Generates a GeneAnnotation object for Ensembl based on the provided attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.generate_ncbi_gene_annotation">
+<span class="sig-name descname"><span class="pre">generate_ncbi_gene_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curr_line_num</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.generate_ncbi_gene_annotation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.generate_ncbi_gene_annotation" title="Link to this definition"></a></dt>
+<dd><p>Generates a GeneAnnotation object for NCBI based on the provided attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.__get_attribute">
+<span class="sig-name descname"><span class="pre">__get_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curr_line_num</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.__get_attribute" title="Link to this definition"></a></dt>
+<dd><p>Retrieves the value of a specific attribute from the given attributes dictionary.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.__resolve_ncbi_gene_annotation">
+<span class="sig-name descname"><span class="pre">__resolve_ncbi_gene_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_gene_annotation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curr_line_num</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.__resolve_ncbi_gene_annotation" title="Link to this definition"></a></dt>
+<dd><p>Resolves conflicts between existing and new gene annotations based on certain conditions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.__merge_values">
+<span class="sig-name descname"><span class="pre">__merge_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.__merge_values" title="Link to this definition"></a></dt>
+<dd><p>Merges values from a list of lists into a dictionary of sets.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.genome_annotation_translator.Gff3.serialize_to_jsonld">
+<span class="sig-name descname"><span class="pre">serialize_to_jsonld</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exclude_none</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_unset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.serialize_to_jsonld"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.genome_annotation_translator.Gff3.serialize_to_jsonld" title="Link to this definition"></a></dt>
+<dd><p>Serializes the object and either writes it to the specified output file or prints it to the CLI.</p>
+</dd></dl>
+
+<p>Initializes an instance of the GFFTranslator class.</p>
+<p>Parameters:
+- content_url (str): The URL of the GFF file.
+- assembly_id (str): The ID of the genome assembly.
+- assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
+- hash_functions (tuple[str]): A tuple of hash functions to use for generating checksums. Defaults to (‘MD5’).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">assign_authority_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">authority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.assign_authority_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd><p>Assigns the authority type based on the given authority string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>authority</strong> (<em>str</em>) – The authority string to be assigned.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The corresponding authority type.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ga.AuthorityType</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – If the authority is not supported. Only NCBI and Ensembl authorities are supported.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">generate_digest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hash_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hash_functions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">('MD5',)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum" title="bkbit.models.genome_annotation.Checksum"><span class="pre">Checksum</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.generate_digest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd><p>Generates checksum digests for the GFF file using the specified hash functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hash_functions</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – A list of hash functions to use for generating the digests.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of Checksum objects containing the generated digests.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[ga.Checksum]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If an unsupported hash algorithm is provided.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">generate_ensembl_gene_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curr_line_num</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.generate_ensembl_gene_annotation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd><p>Generates a GeneAnnotation object for Ensembl based on the provided attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>attributes</strong> (<em>dict</em>) – A dictionary containing the attributes of the gene.</p></li>
+<li><p><strong>curr_line_num</strong> (<em>int</em>) – The line number of the current row in the input file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The generated GeneAnnotation object if it is not a duplicate,
+otherwise None.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation" title="bkbit.models.genome_annotation.GeneAnnotation">GeneAnnotation</a> or None</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>None</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">generate_genome_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">genome_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">genome_version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.generate_genome_annotation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd><p>Generates a genome annotation object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>genome_label</strong> (<em>str</em>) – The label of the genome.</p></li>
+<li><p><strong>genome_version</strong> (<em>str</em>) – The version of the genome.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The generated genome annotation.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ga.GenomeAnnotation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">generate_genome_assembly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assembly_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembly_version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembly_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembly_strain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.generate_genome_assembly"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd><p>Generate a genome assembly object.</p>
+<p>Parameters:
+assembly_id (str): The ID of the assembly.
+assembly_version (str): The version of the assembly.
+assembly_label (str): The label of the assembly.
+assembly_strain (str, optional): The strain of the assembly. Defaults to None.</p>
+<p>Returns:
+ga.GenomeAssembly: The generated genome assembly object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">generate_ncbi_gene_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curr_line_num</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.generate_ncbi_gene_annotation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd><p>Generates a GeneAnnotation object for NCBI based on the provided attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>attributes</strong> (<em>dict</em>) – A dictionary containing the attributes of the gene.</p></li>
+<li><p><strong>curr_line_num</strong> (<em>int</em>) – The line number of the current row in the input file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The generated GeneAnnotation object if it is not a duplicate,
+otherwise None.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation" title="bkbit.models.genome_annotation.GeneAnnotation">GeneAnnotation</a> or None</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>None</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">generate_organism_taxon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">taxon_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.generate_organism_taxon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd><p>Generates an organism taxon object based on the provided taxon ID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>taxon_id</strong> (<em>str</em>) – The taxon ID of the organism.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The generated organism taxon object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ga.OrganismTaxon</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">parse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feature_filter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">('gene',</span> <span class="pre">'pseudogene',</span> <span class="pre">'ncRNA_gene')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.parse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dd><p>Parses the GFF file and extracts gene annotations based on the provided feature filter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>feature_filter</strong> (<em>tuple</em><em>[</em><em>str</em><em>]</em>) – Tuple of feature types to include in the gene annotations.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>FileNotFoundError</strong> – If the GFF file does not exist.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">parse_url</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.parse_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dd><p>Parses the content URL and extracts information about the genome annotation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>‘authority’: The authority type (NCBI or ENSEMBL).</p></li>
+<li><p>’taxonid’: The taxon ID of the genome.</p></li>
+<li><p>’release_version’: The release version of the genome annotation.</p></li>
+<li><p>’assembly_accession’: The assembly accession of the genome.</p></li>
+<li><p>’assembly_name’: The name of the assembly.</p></li>
+<li><p>’species’: The species name (only for ENSEMBL URLs).</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing the following information</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">serialize_to_jsonld</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exclude_none</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_unset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/genome_annotation_translator.html#Gff3.serialize_to_jsonld"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<dd><p>Serialize the object and either write it to the specified output file or print it to the CLI.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>exclude_none</strong> (<em>bool</em>) – Whether to exclude None values in the output.</p></li>
+<li><p><strong>exclude_unset</strong> (<em>bool</em>) – Whether to exclude unset values in the output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="bkbit.data_translators.file_manifest_translator.html" class="btn btn-neutral float-left" title="bkbit.data_translators.file_manifest_translator module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="bkbit.data_translators.library_generation_translator.html" class="btn btn-neutral float-right" title="bkbit.data_translators.library_generation_translator module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, BICAN.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
