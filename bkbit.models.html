@@ -1,0 +1,868 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bkbit.models package &mdash; bkbit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bkbit.models.anatomical_structure module" href="bkbit.models.anatomical_structure.html" />
+    <link rel="prev" title="bkbit.model_editors.linkml_trimmer module" href="bkbit.model_editors.linkml_trimmer.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            bkbit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">DATA TRANSLATORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="specimen_file_manifest.html">Specimen File Manifest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specimen_metadata.html">Specimen Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genome_annotation.html">Annotated Genome Data</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL CONVERTERS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="spreadsheet_converter.html">Spreadsheet to LinkML Schema</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL EDITORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="linkml_trimmer.html">LinkML Schema Trimmer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">REFERENCE</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">bkbit</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="bkbit.html">bkbit package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="bkbit.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="bkbit.data_translators.html">bkbit.data_translators package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.model_converters.html">bkbit.model_converters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.model_editors.html">bkbit.model_editors package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">bkbit.models package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.utils.html">bkbit.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.html#module-bkbit">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">bkbit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">bkbit</a></li>
+          <li class="breadcrumb-item"><a href="bkbit.html">bkbit package</a></li>
+      <li class="breadcrumb-item active">bkbit.models package</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/brain-bican/bkbit/blob/main/docs/bkbit.models.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="bkbit-models-package">
+<h1>bkbit.models package<a class="headerlink" href="#bkbit-models-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="bkbit.models.anatomical_structure.html">bkbit.models.anatomical_structure module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ANATOMICALDIRECTION"><code class="docutils literal notranslate"><span class="pre">ANATOMICALDIRECTION</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ANATOMICALDIRECTION.anterior_to_posterior"><code class="docutils literal notranslate"><span class="pre">ANATOMICALDIRECTION.anterior_to_posterior</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ANATOMICALDIRECTION.inferior_to_superior"><code class="docutils literal notranslate"><span class="pre">ANATOMICALDIRECTION.inferior_to_superior</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ANATOMICALDIRECTION.left_to_right"><code class="docutils literal notranslate"><span class="pre">ANATOMICALDIRECTION.left_to_right</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ANATOMICALDIRECTION.posterior_to_anterior"><code class="docutils literal notranslate"><span class="pre">ANATOMICALDIRECTION.posterior_to_anterior</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ANATOMICALDIRECTION.superior_to_inferior"><code class="docutils literal notranslate"><span class="pre">ANATOMICALDIRECTION.superior_to_inferior</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalAnnotationSet"><code class="docutils literal notranslate"><span class="pre">AnatomicalAnnotationSet</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalAnnotationSet.category"><code class="docutils literal notranslate"><span class="pre">AnatomicalAnnotationSet.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalAnnotationSet.description"><code class="docutils literal notranslate"><span class="pre">AnatomicalAnnotationSet.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalAnnotationSet.id"><code class="docutils literal notranslate"><span class="pre">AnatomicalAnnotationSet.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalAnnotationSet.linkml_meta"><code class="docutils literal notranslate"><span class="pre">AnatomicalAnnotationSet.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalAnnotationSet.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">AnatomicalAnnotationSet.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalAnnotationSet.model_config"><code class="docutils literal notranslate"><span class="pre">AnatomicalAnnotationSet.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalAnnotationSet.model_fields"><code class="docutils literal notranslate"><span class="pre">AnatomicalAnnotationSet.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalAnnotationSet.name"><code class="docutils literal notranslate"><span class="pre">AnatomicalAnnotationSet.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalAnnotationSet.parameterizes"><code class="docutils literal notranslate"><span class="pre">AnatomicalAnnotationSet.parameterizes</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalAnnotationSet.revision_of"><code class="docutils literal notranslate"><span class="pre">AnatomicalAnnotationSet.revision_of</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalAnnotationSet.version"><code class="docutils literal notranslate"><span class="pre">AnatomicalAnnotationSet.version</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalSpace"><code class="docutils literal notranslate"><span class="pre">AnatomicalSpace</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalSpace.category"><code class="docutils literal notranslate"><span class="pre">AnatomicalSpace.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalSpace.description"><code class="docutils literal notranslate"><span class="pre">AnatomicalSpace.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalSpace.id"><code class="docutils literal notranslate"><span class="pre">AnatomicalSpace.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalSpace.linkml_meta"><code class="docutils literal notranslate"><span class="pre">AnatomicalSpace.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalSpace.measures"><code class="docutils literal notranslate"><span class="pre">AnatomicalSpace.measures</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalSpace.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">AnatomicalSpace.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalSpace.model_config"><code class="docutils literal notranslate"><span class="pre">AnatomicalSpace.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalSpace.model_fields"><code class="docutils literal notranslate"><span class="pre">AnatomicalSpace.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalSpace.name"><code class="docutils literal notranslate"><span class="pre">AnatomicalSpace.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalSpace.revision_of"><code class="docutils literal notranslate"><span class="pre">AnatomicalSpace.revision_of</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.AnatomicalSpace.version"><code class="docutils literal notranslate"><span class="pre">AnatomicalSpace.version</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ConfiguredBaseModel"><code class="docutils literal notranslate"><span class="pre">ConfiguredBaseModel</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ConfiguredBaseModel.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ConfiguredBaseModel.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ConfiguredBaseModel.model_config"><code class="docutils literal notranslate"><span class="pre">ConfiguredBaseModel.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ConfiguredBaseModel.model_fields"><code class="docutils literal notranslate"><span class="pre">ConfiguredBaseModel.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.DISTANCEUNIT"><code class="docutils literal notranslate"><span class="pre">DISTANCEUNIT</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.DISTANCEUNIT.meter"><code class="docutils literal notranslate"><span class="pre">DISTANCEUNIT.meter</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.DISTANCEUNIT.micrometer"><code class="docutils literal notranslate"><span class="pre">DISTANCEUNIT.micrometer</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.DISTANCEUNIT.millimeter"><code class="docutils literal notranslate"><span class="pre">DISTANCEUNIT.millimeter</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset"><code class="docutils literal notranslate"><span class="pre">ImageDataset</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.category"><code class="docutils literal notranslate"><span class="pre">ImageDataset.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.description"><code class="docutils literal notranslate"><span class="pre">ImageDataset.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.id"><code class="docutils literal notranslate"><span class="pre">ImageDataset.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.linkml_meta"><code class="docutils literal notranslate"><span class="pre">ImageDataset.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ImageDataset.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.model_config"><code class="docutils literal notranslate"><span class="pre">ImageDataset.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.model_fields"><code class="docutils literal notranslate"><span class="pre">ImageDataset.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.name"><code class="docutils literal notranslate"><span class="pre">ImageDataset.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.revision_of"><code class="docutils literal notranslate"><span class="pre">ImageDataset.revision_of</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.unit"><code class="docutils literal notranslate"><span class="pre">ImageDataset.unit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.version"><code class="docutils literal notranslate"><span class="pre">ImageDataset.version</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.x_direction"><code class="docutils literal notranslate"><span class="pre">ImageDataset.x_direction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.x_resolution"><code class="docutils literal notranslate"><span class="pre">ImageDataset.x_resolution</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.x_size"><code class="docutils literal notranslate"><span class="pre">ImageDataset.x_size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.y_direction"><code class="docutils literal notranslate"><span class="pre">ImageDataset.y_direction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.y_resolution"><code class="docutils literal notranslate"><span class="pre">ImageDataset.y_resolution</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.y_size"><code class="docutils literal notranslate"><span class="pre">ImageDataset.y_size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.z_direction"><code class="docutils literal notranslate"><span class="pre">ImageDataset.z_direction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.z_resolution"><code class="docutils literal notranslate"><span class="pre">ImageDataset.z_resolution</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ImageDataset.z_size"><code class="docutils literal notranslate"><span class="pre">ImageDataset.z_size</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.LinkMLMeta"><code class="docutils literal notranslate"><span class="pre">LinkMLMeta</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.LinkMLMeta.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">LinkMLMeta.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.LinkMLMeta.model_config"><code class="docutils literal notranslate"><span class="pre">LinkMLMeta.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.LinkMLMeta.model_fields"><code class="docutils literal notranslate"><span class="pre">LinkMLMeta.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.LinkMLMeta.root"><code class="docutils literal notranslate"><span class="pre">LinkMLMeta.root</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.NamedThing"><code class="docutils literal notranslate"><span class="pre">NamedThing</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.NamedThing.category"><code class="docutils literal notranslate"><span class="pre">NamedThing.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.NamedThing.description"><code class="docutils literal notranslate"><span class="pre">NamedThing.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.NamedThing.id"><code class="docutils literal notranslate"><span class="pre">NamedThing.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.NamedThing.linkml_meta"><code class="docutils literal notranslate"><span class="pre">NamedThing.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.NamedThing.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">NamedThing.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.NamedThing.model_config"><code class="docutils literal notranslate"><span class="pre">NamedThing.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.NamedThing.model_fields"><code class="docutils literal notranslate"><span class="pre">NamedThing.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.NamedThing.name"><code class="docutils literal notranslate"><span class="pre">NamedThing.name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotation"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotation</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotation.internal_identifier"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotation.internal_identifier</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotation.linkml_meta"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotation.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotation.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotation.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotation.model_config"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotation.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotation.model_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotation.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotation.part_of_anatomical_annotation_set"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotation.part_of_anatomical_annotation_set</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotation.voxel_count"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotation.voxel_count</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotationTermMap"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotationTermMap</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotationTermMap.linkml_meta"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotationTermMap.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotationTermMap.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotationTermMap.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotationTermMap.model_config"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotationTermMap.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotationTermMap.model_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotationTermMap.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotationTermMap.subject_parcellation_annotation"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotationTermMap.subject_parcellation_annotation</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAnnotationTermMap.subject_parcellation_term"><code class="docutils literal notranslate"><span class="pre">ParcellationAnnotationTermMap.subject_parcellation_term</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas.category"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas.description"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas.has_anatomical_annotation_set"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas.has_anatomical_annotation_set</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas.has_anatomical_space"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas.has_anatomical_space</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas.has_parcellation_terminology"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas.has_parcellation_terminology</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas.id"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas.linkml_meta"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas.model_config"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas.model_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas.name"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas.revision_of"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas.revision_of</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas.specialization_of"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas.specialization_of</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationAtlas.version"><code class="docutils literal notranslate"><span class="pre">ParcellationAtlas.version</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorAssignment"><code class="docutils literal notranslate"><span class="pre">ParcellationColorAssignment</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorAssignment.color"><code class="docutils literal notranslate"><span class="pre">ParcellationColorAssignment.color</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorAssignment.linkml_meta"><code class="docutils literal notranslate"><span class="pre">ParcellationColorAssignment.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorAssignment.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationColorAssignment.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorAssignment.model_config"><code class="docutils literal notranslate"><span class="pre">ParcellationColorAssignment.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorAssignment.model_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationColorAssignment.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorAssignment.part_of_parcellation_color_scheme"><code class="docutils literal notranslate"><span class="pre">ParcellationColorAssignment.part_of_parcellation_color_scheme</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorAssignment.subject_parcellation_term"><code class="docutils literal notranslate"><span class="pre">ParcellationColorAssignment.subject_parcellation_term</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorScheme"><code class="docutils literal notranslate"><span class="pre">ParcellationColorScheme</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorScheme.category"><code class="docutils literal notranslate"><span class="pre">ParcellationColorScheme.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorScheme.description"><code class="docutils literal notranslate"><span class="pre">ParcellationColorScheme.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorScheme.id"><code class="docutils literal notranslate"><span class="pre">ParcellationColorScheme.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorScheme.linkml_meta"><code class="docutils literal notranslate"><span class="pre">ParcellationColorScheme.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorScheme.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationColorScheme.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorScheme.model_config"><code class="docutils literal notranslate"><span class="pre">ParcellationColorScheme.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorScheme.model_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationColorScheme.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorScheme.name"><code class="docutils literal notranslate"><span class="pre">ParcellationColorScheme.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorScheme.revision_of"><code class="docutils literal notranslate"><span class="pre">ParcellationColorScheme.revision_of</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorScheme.subject_parcellation_terminology"><code class="docutils literal notranslate"><span class="pre">ParcellationColorScheme.subject_parcellation_terminology</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationColorScheme.version"><code class="docutils literal notranslate"><span class="pre">ParcellationColorScheme.version</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerm"><code class="docutils literal notranslate"><span class="pre">ParcellationTerm</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerm.category"><code class="docutils literal notranslate"><span class="pre">ParcellationTerm.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerm.description"><code class="docutils literal notranslate"><span class="pre">ParcellationTerm.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerm.has_parent_parcellation_term"><code class="docutils literal notranslate"><span class="pre">ParcellationTerm.has_parent_parcellation_term</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerm.id"><code class="docutils literal notranslate"><span class="pre">ParcellationTerm.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerm.linkml_meta"><code class="docutils literal notranslate"><span class="pre">ParcellationTerm.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerm.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationTerm.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerm.model_config"><code class="docutils literal notranslate"><span class="pre">ParcellationTerm.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerm.model_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationTerm.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerm.name"><code class="docutils literal notranslate"><span class="pre">ParcellationTerm.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerm.ordinal"><code class="docutils literal notranslate"><span class="pre">ParcellationTerm.ordinal</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerm.part_of_parcellation_term_set"><code class="docutils literal notranslate"><span class="pre">ParcellationTerm.part_of_parcellation_term_set</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerm.symbol"><code class="docutils literal notranslate"><span class="pre">ParcellationTerm.symbol</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTermSet"><code class="docutils literal notranslate"><span class="pre">ParcellationTermSet</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTermSet.category"><code class="docutils literal notranslate"><span class="pre">ParcellationTermSet.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTermSet.description"><code class="docutils literal notranslate"><span class="pre">ParcellationTermSet.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTermSet.has_parent_parcellation_term_set"><code class="docutils literal notranslate"><span class="pre">ParcellationTermSet.has_parent_parcellation_term_set</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTermSet.id"><code class="docutils literal notranslate"><span class="pre">ParcellationTermSet.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTermSet.linkml_meta"><code class="docutils literal notranslate"><span class="pre">ParcellationTermSet.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTermSet.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationTermSet.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTermSet.model_config"><code class="docutils literal notranslate"><span class="pre">ParcellationTermSet.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTermSet.model_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationTermSet.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTermSet.name"><code class="docutils literal notranslate"><span class="pre">ParcellationTermSet.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTermSet.ordinal"><code class="docutils literal notranslate"><span class="pre">ParcellationTermSet.ordinal</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTermSet.part_of_parcellation_terminology"><code class="docutils literal notranslate"><span class="pre">ParcellationTermSet.part_of_parcellation_terminology</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerminology"><code class="docutils literal notranslate"><span class="pre">ParcellationTerminology</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerminology.category"><code class="docutils literal notranslate"><span class="pre">ParcellationTerminology.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerminology.description"><code class="docutils literal notranslate"><span class="pre">ParcellationTerminology.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerminology.id"><code class="docutils literal notranslate"><span class="pre">ParcellationTerminology.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerminology.linkml_meta"><code class="docutils literal notranslate"><span class="pre">ParcellationTerminology.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerminology.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationTerminology.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerminology.model_config"><code class="docutils literal notranslate"><span class="pre">ParcellationTerminology.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerminology.model_fields"><code class="docutils literal notranslate"><span class="pre">ParcellationTerminology.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerminology.name"><code class="docutils literal notranslate"><span class="pre">ParcellationTerminology.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerminology.revision_of"><code class="docutils literal notranslate"><span class="pre">ParcellationTerminology.revision_of</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.ParcellationTerminology.version"><code class="docutils literal notranslate"><span class="pre">ParcellationTerminology.version</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.VersionedNamedThing"><code class="docutils literal notranslate"><span class="pre">VersionedNamedThing</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.VersionedNamedThing.category"><code class="docutils literal notranslate"><span class="pre">VersionedNamedThing.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.VersionedNamedThing.description"><code class="docutils literal notranslate"><span class="pre">VersionedNamedThing.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.VersionedNamedThing.id"><code class="docutils literal notranslate"><span class="pre">VersionedNamedThing.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.VersionedNamedThing.linkml_meta"><code class="docutils literal notranslate"><span class="pre">VersionedNamedThing.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.VersionedNamedThing.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">VersionedNamedThing.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.VersionedNamedThing.model_config"><code class="docutils literal notranslate"><span class="pre">VersionedNamedThing.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.VersionedNamedThing.model_fields"><code class="docutils literal notranslate"><span class="pre">VersionedNamedThing.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.VersionedNamedThing.name"><code class="docutils literal notranslate"><span class="pre">VersionedNamedThing.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.VersionedNamedThing.revision_of"><code class="docutils literal notranslate"><span class="pre">VersionedNamedThing.revision_of</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.anatomical_structure.html#bkbit.models.anatomical_structure.VersionedNamedThing.version"><code class="docutils literal notranslate"><span class="pre">VersionedNamedThing.version</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="bkbit.models.genome_annotation.html">bkbit.models.genome_annotation module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity"><code class="docutils literal notranslate"><span class="pre">Activity</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.category"><code class="docutils literal notranslate"><span class="pre">Activity.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.deprecated"><code class="docutils literal notranslate"><span class="pre">Activity.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.description"><code class="docutils literal notranslate"><span class="pre">Activity.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.full_name"><code class="docutils literal notranslate"><span class="pre">Activity.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.has_attribute"><code class="docutils literal notranslate"><span class="pre">Activity.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.id"><code class="docutils literal notranslate"><span class="pre">Activity.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.iri"><code class="docutils literal notranslate"><span class="pre">Activity.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.linkml_meta"><code class="docutils literal notranslate"><span class="pre">Activity.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Activity.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.model_config"><code class="docutils literal notranslate"><span class="pre">Activity.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.model_fields"><code class="docutils literal notranslate"><span class="pre">Activity.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.name"><code class="docutils literal notranslate"><span class="pre">Activity.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.provided_by"><code class="docutils literal notranslate"><span class="pre">Activity.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.synonym"><code class="docutils literal notranslate"><span class="pre">Activity.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.type"><code class="docutils literal notranslate"><span class="pre">Activity.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Activity.xref"><code class="docutils literal notranslate"><span class="pre">Activity.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ActivityAndBehavior"><code class="docutils literal notranslate"><span class="pre">ActivityAndBehavior</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ActivityAndBehavior.linkml_meta"><code class="docutils literal notranslate"><span class="pre">ActivityAndBehavior.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ActivityAndBehavior.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ActivityAndBehavior.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ActivityAndBehavior.model_config"><code class="docutils literal notranslate"><span class="pre">ActivityAndBehavior.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ActivityAndBehavior.model_fields"><code class="docutils literal notranslate"><span class="pre">ActivityAndBehavior.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Annotation"><code class="docutils literal notranslate"><span class="pre">Annotation</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Annotation.linkml_meta"><code class="docutils literal notranslate"><span class="pre">Annotation.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Annotation.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Annotation.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Annotation.model_config"><code class="docutils literal notranslate"><span class="pre">Annotation.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Annotation.model_fields"><code class="docutils literal notranslate"><span class="pre">Annotation.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.AnnotationCollection"><code class="docutils literal notranslate"><span class="pre">AnnotationCollection</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.AnnotationCollection.annotations"><code class="docutils literal notranslate"><span class="pre">AnnotationCollection.annotations</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.AnnotationCollection.genome_annotations"><code class="docutils literal notranslate"><span class="pre">AnnotationCollection.genome_annotations</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.AnnotationCollection.genome_assemblies"><code class="docutils literal notranslate"><span class="pre">AnnotationCollection.genome_assemblies</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.AnnotationCollection.linkml_meta"><code class="docutils literal notranslate"><span class="pre">AnnotationCollection.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.AnnotationCollection.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">AnnotationCollection.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.AnnotationCollection.model_config"><code class="docutils literal notranslate"><span class="pre">AnnotationCollection.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.AnnotationCollection.model_fields"><code class="docutils literal notranslate"><span class="pre">AnnotationCollection.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute"><code class="docutils literal notranslate"><span class="pre">Attribute</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.category"><code class="docutils literal notranslate"><span class="pre">Attribute.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.deprecated"><code class="docutils literal notranslate"><span class="pre">Attribute.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.description"><code class="docutils literal notranslate"><span class="pre">Attribute.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.full_name"><code class="docutils literal notranslate"><span class="pre">Attribute.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.has_attribute"><code class="docutils literal notranslate"><span class="pre">Attribute.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.has_attribute_type"><code class="docutils literal notranslate"><span class="pre">Attribute.has_attribute_type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.has_qualitative_value"><code class="docutils literal notranslate"><span class="pre">Attribute.has_qualitative_value</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.has_quantitative_value"><code class="docutils literal notranslate"><span class="pre">Attribute.has_quantitative_value</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.id"><code class="docutils literal notranslate"><span class="pre">Attribute.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.iri"><code class="docutils literal notranslate"><span class="pre">Attribute.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.linkml_meta"><code class="docutils literal notranslate"><span class="pre">Attribute.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Attribute.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.model_config"><code class="docutils literal notranslate"><span class="pre">Attribute.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.model_fields"><code class="docutils literal notranslate"><span class="pre">Attribute.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.name"><code class="docutils literal notranslate"><span class="pre">Attribute.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.provided_by"><code class="docutils literal notranslate"><span class="pre">Attribute.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.synonym"><code class="docutils literal notranslate"><span class="pre">Attribute.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.type"><code class="docutils literal notranslate"><span class="pre">Attribute.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Attribute.xref"><code class="docutils literal notranslate"><span class="pre">Attribute.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.AuthorityType"><code class="docutils literal notranslate"><span class="pre">AuthorityType</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.AuthorityType.ENSEMBL"><code class="docutils literal notranslate"><span class="pre">AuthorityType.ENSEMBL</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.AuthorityType.NCBI"><code class="docutils literal notranslate"><span class="pre">AuthorityType.NCBI</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BioType"><code class="docutils literal notranslate"><span class="pre">BioType</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BioType.noncoding"><code class="docutils literal notranslate"><span class="pre">BioType.noncoding</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BioType.protein_coding"><code class="docutils literal notranslate"><span class="pre">BioType.protein_coding</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.category"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.deprecated"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.description"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.full_name"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.has_attribute"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.id"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.in_taxon"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.in_taxon</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.in_taxon_label"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.in_taxon_label</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.iri"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.linkml_meta"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.model_config"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.model_fields"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.name"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.provided_by"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.synonym"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.type"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.BiologicalEntity.xref"><code class="docutils literal notranslate"><span class="pre">BiologicalEntity.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum"><code class="docutils literal notranslate"><span class="pre">Checksum</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum.category"><code class="docutils literal notranslate"><span class="pre">Checksum.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum.checksum_algorithm"><code class="docutils literal notranslate"><span class="pre">Checksum.checksum_algorithm</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum.deprecated"><code class="docutils literal notranslate"><span class="pre">Checksum.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum.description"><code class="docutils literal notranslate"><span class="pre">Checksum.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum.has_attribute"><code class="docutils literal notranslate"><span class="pre">Checksum.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum.id"><code class="docutils literal notranslate"><span class="pre">Checksum.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum.iri"><code class="docutils literal notranslate"><span class="pre">Checksum.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum.linkml_meta"><code class="docutils literal notranslate"><span class="pre">Checksum.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Checksum.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum.model_config"><code class="docutils literal notranslate"><span class="pre">Checksum.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum.model_fields"><code class="docutils literal notranslate"><span class="pre">Checksum.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum.name"><code class="docutils literal notranslate"><span class="pre">Checksum.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum.type"><code class="docutils literal notranslate"><span class="pre">Checksum.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Checksum.value"><code class="docutils literal notranslate"><span class="pre">Checksum.value</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ChemicalEntityOrGeneOrGeneProduct"><code class="docutils literal notranslate"><span class="pre">ChemicalEntityOrGeneOrGeneProduct</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ChemicalEntityOrGeneOrGeneProduct.linkml_meta"><code class="docutils literal notranslate"><span class="pre">ChemicalEntityOrGeneOrGeneProduct.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ChemicalEntityOrGeneOrGeneProduct.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ChemicalEntityOrGeneOrGeneProduct.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ChemicalEntityOrGeneOrGeneProduct.model_config"><code class="docutils literal notranslate"><span class="pre">ChemicalEntityOrGeneOrGeneProduct.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ChemicalEntityOrGeneOrGeneProduct.model_fields"><code class="docutils literal notranslate"><span class="pre">ChemicalEntityOrGeneOrGeneProduct.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ConfiguredBaseModel"><code class="docutils literal notranslate"><span class="pre">ConfiguredBaseModel</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ConfiguredBaseModel.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ConfiguredBaseModel.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ConfiguredBaseModel.model_config"><code class="docutils literal notranslate"><span class="pre">ConfiguredBaseModel.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ConfiguredBaseModel.model_fields"><code class="docutils literal notranslate"><span class="pre">ConfiguredBaseModel.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset"><code class="docutils literal notranslate"><span class="pre">Dataset</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.category"><code class="docutils literal notranslate"><span class="pre">Dataset.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.creation_date"><code class="docutils literal notranslate"><span class="pre">Dataset.creation_date</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.deprecated"><code class="docutils literal notranslate"><span class="pre">Dataset.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.description"><code class="docutils literal notranslate"><span class="pre">Dataset.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.format"><code class="docutils literal notranslate"><span class="pre">Dataset.format</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.full_name"><code class="docutils literal notranslate"><span class="pre">Dataset.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.has_attribute"><code class="docutils literal notranslate"><span class="pre">Dataset.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.id"><code class="docutils literal notranslate"><span class="pre">Dataset.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.iri"><code class="docutils literal notranslate"><span class="pre">Dataset.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.license"><code class="docutils literal notranslate"><span class="pre">Dataset.license</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.linkml_meta"><code class="docutils literal notranslate"><span class="pre">Dataset.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Dataset.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.model_config"><code class="docutils literal notranslate"><span class="pre">Dataset.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.model_fields"><code class="docutils literal notranslate"><span class="pre">Dataset.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.name"><code class="docutils literal notranslate"><span class="pre">Dataset.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.provided_by"><code class="docutils literal notranslate"><span class="pre">Dataset.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.rights"><code class="docutils literal notranslate"><span class="pre">Dataset.rights</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.synonym"><code class="docutils literal notranslate"><span class="pre">Dataset.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.type"><code class="docutils literal notranslate"><span class="pre">Dataset.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Dataset.xref"><code class="docutils literal notranslate"><span class="pre">Dataset.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.DigestType"><code class="docutils literal notranslate"><span class="pre">DigestType</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.DigestType.MD5"><code class="docutils literal notranslate"><span class="pre">DigestType.MD5</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.DigestType.SHA1"><code class="docutils literal notranslate"><span class="pre">DigestType.SHA1</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.DigestType.SHA256"><code class="docutils literal notranslate"><span class="pre">DigestType.SHA256</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Entity"><code class="docutils literal notranslate"><span class="pre">Entity</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Entity.category"><code class="docutils literal notranslate"><span class="pre">Entity.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Entity.deprecated"><code class="docutils literal notranslate"><span class="pre">Entity.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Entity.description"><code class="docutils literal notranslate"><span class="pre">Entity.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Entity.has_attribute"><code class="docutils literal notranslate"><span class="pre">Entity.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Entity.id"><code class="docutils literal notranslate"><span class="pre">Entity.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Entity.iri"><code class="docutils literal notranslate"><span class="pre">Entity.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Entity.linkml_meta"><code class="docutils literal notranslate"><span class="pre">Entity.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Entity.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Entity.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Entity.model_config"><code class="docutils literal notranslate"><span class="pre">Entity.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Entity.model_fields"><code class="docutils literal notranslate"><span class="pre">Entity.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Entity.name"><code class="docutils literal notranslate"><span class="pre">Entity.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Entity.type"><code class="docutils literal notranslate"><span class="pre">Entity.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene"><code class="docutils literal notranslate"><span class="pre">Gene</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.category"><code class="docutils literal notranslate"><span class="pre">Gene.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.deprecated"><code class="docutils literal notranslate"><span class="pre">Gene.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.description"><code class="docutils literal notranslate"><span class="pre">Gene.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.full_name"><code class="docutils literal notranslate"><span class="pre">Gene.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.has_attribute"><code class="docutils literal notranslate"><span class="pre">Gene.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.has_biological_sequence"><code class="docutils literal notranslate"><span class="pre">Gene.has_biological_sequence</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.id"><code class="docutils literal notranslate"><span class="pre">Gene.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.in_taxon"><code class="docutils literal notranslate"><span class="pre">Gene.in_taxon</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.in_taxon_label"><code class="docutils literal notranslate"><span class="pre">Gene.in_taxon_label</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.iri"><code class="docutils literal notranslate"><span class="pre">Gene.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.linkml_meta"><code class="docutils literal notranslate"><span class="pre">Gene.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Gene.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.model_config"><code class="docutils literal notranslate"><span class="pre">Gene.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.model_fields"><code class="docutils literal notranslate"><span class="pre">Gene.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.name"><code class="docutils literal notranslate"><span class="pre">Gene.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.provided_by"><code class="docutils literal notranslate"><span class="pre">Gene.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.symbol"><code class="docutils literal notranslate"><span class="pre">Gene.symbol</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.synonym"><code class="docutils literal notranslate"><span class="pre">Gene.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.type"><code class="docutils literal notranslate"><span class="pre">Gene.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Gene.xref"><code class="docutils literal notranslate"><span class="pre">Gene.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.category"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.deprecated"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.description"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.full_name"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.has_attribute"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.has_biological_sequence"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.has_biological_sequence</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.id"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.in_taxon"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.in_taxon</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.in_taxon_label"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.in_taxon_label</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.iri"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.linkml_meta"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.model_config"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.model_fields"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.molecular_type"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.molecular_type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.name"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.provided_by"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.referenced_in"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.referenced_in</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.source_id"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.source_id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.symbol"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.symbol</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.synonym"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.type"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneAnnotation.xref"><code class="docutils literal notranslate"><span class="pre">GeneAnnotation.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneOrGeneProduct"><code class="docutils literal notranslate"><span class="pre">GeneOrGeneProduct</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneOrGeneProduct.linkml_meta"><code class="docutils literal notranslate"><span class="pre">GeneOrGeneProduct.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneOrGeneProduct.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">GeneOrGeneProduct.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneOrGeneProduct.model_config"><code class="docutils literal notranslate"><span class="pre">GeneOrGeneProduct.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneOrGeneProduct.model_fields"><code class="docutils literal notranslate"><span class="pre">GeneOrGeneProduct.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GeneOrGeneProduct.name"><code class="docutils literal notranslate"><span class="pre">GeneOrGeneProduct.name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome"><code class="docutils literal notranslate"><span class="pre">Genome</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.category"><code class="docutils literal notranslate"><span class="pre">Genome.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.deprecated"><code class="docutils literal notranslate"><span class="pre">Genome.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.description"><code class="docutils literal notranslate"><span class="pre">Genome.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.full_name"><code class="docutils literal notranslate"><span class="pre">Genome.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.has_attribute"><code class="docutils literal notranslate"><span class="pre">Genome.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.has_biological_sequence"><code class="docutils literal notranslate"><span class="pre">Genome.has_biological_sequence</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.id"><code class="docutils literal notranslate"><span class="pre">Genome.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.in_taxon"><code class="docutils literal notranslate"><span class="pre">Genome.in_taxon</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.in_taxon_label"><code class="docutils literal notranslate"><span class="pre">Genome.in_taxon_label</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.iri"><code class="docutils literal notranslate"><span class="pre">Genome.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.linkml_meta"><code class="docutils literal notranslate"><span class="pre">Genome.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Genome.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.model_config"><code class="docutils literal notranslate"><span class="pre">Genome.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.model_fields"><code class="docutils literal notranslate"><span class="pre">Genome.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.name"><code class="docutils literal notranslate"><span class="pre">Genome.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.provided_by"><code class="docutils literal notranslate"><span class="pre">Genome.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.synonym"><code class="docutils literal notranslate"><span class="pre">Genome.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.type"><code class="docutils literal notranslate"><span class="pre">Genome.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Genome.xref"><code class="docutils literal notranslate"><span class="pre">Genome.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.authority"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.authority</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.category"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.content_url"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.content_url</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.deprecated"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.description"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.digest"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.digest</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.full_name"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.has_attribute"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.has_biological_sequence"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.has_biological_sequence</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.id"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.in_taxon"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.in_taxon</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.in_taxon_label"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.in_taxon_label</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.iri"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.linkml_meta"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.model_config"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.model_fields"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.name"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.provided_by"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.reference_assembly"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.reference_assembly</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.synonym"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.type"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.version"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.version</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAnnotation.xref"><code class="docutils literal notranslate"><span class="pre">GenomeAnnotation.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.category"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.deprecated"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.description"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.full_name"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.has_attribute"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.id"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.in_taxon"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.in_taxon</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.in_taxon_label"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.in_taxon_label</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.iri"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.linkml_meta"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.model_config"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.model_fields"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.name"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.provided_by"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.strain"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.strain</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.synonym"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.type"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.version"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.version</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomeAssembly.xref"><code class="docutils literal notranslate"><span class="pre">GenomeAssembly.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomicEntity"><code class="docutils literal notranslate"><span class="pre">GenomicEntity</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomicEntity.has_biological_sequence"><code class="docutils literal notranslate"><span class="pre">GenomicEntity.has_biological_sequence</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomicEntity.linkml_meta"><code class="docutils literal notranslate"><span class="pre">GenomicEntity.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomicEntity.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">GenomicEntity.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomicEntity.model_config"><code class="docutils literal notranslate"><span class="pre">GenomicEntity.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.GenomicEntity.model_fields"><code class="docutils literal notranslate"><span class="pre">GenomicEntity.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.category"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.creation_date"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.creation_date</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.deprecated"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.description"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.format"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.format</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.full_name"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.has_attribute"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.id"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.iri"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.license"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.license</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.linkml_meta"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.model_config"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.model_fields"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.name"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.provided_by"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.rights"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.rights</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.synonym"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.type"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.InformationContentEntity.xref"><code class="docutils literal notranslate"><span class="pre">InformationContentEntity.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.LinkMLMeta"><code class="docutils literal notranslate"><span class="pre">LinkMLMeta</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.LinkMLMeta.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">LinkMLMeta.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.LinkMLMeta.model_config"><code class="docutils literal notranslate"><span class="pre">LinkMLMeta.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.LinkMLMeta.model_fields"><code class="docutils literal notranslate"><span class="pre">LinkMLMeta.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.LinkMLMeta.root"><code class="docutils literal notranslate"><span class="pre">LinkMLMeta.root</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MacromolecularMachineMixin"><code class="docutils literal notranslate"><span class="pre">MacromolecularMachineMixin</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MacromolecularMachineMixin.linkml_meta"><code class="docutils literal notranslate"><span class="pre">MacromolecularMachineMixin.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MacromolecularMachineMixin.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">MacromolecularMachineMixin.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MacromolecularMachineMixin.model_config"><code class="docutils literal notranslate"><span class="pre">MacromolecularMachineMixin.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MacromolecularMachineMixin.model_fields"><code class="docutils literal notranslate"><span class="pre">MacromolecularMachineMixin.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MacromolecularMachineMixin.name"><code class="docutils literal notranslate"><span class="pre">MacromolecularMachineMixin.name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample"><code class="docutils literal notranslate"><span class="pre">MaterialSample</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.category"><code class="docutils literal notranslate"><span class="pre">MaterialSample.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.deprecated"><code class="docutils literal notranslate"><span class="pre">MaterialSample.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.description"><code class="docutils literal notranslate"><span class="pre">MaterialSample.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.full_name"><code class="docutils literal notranslate"><span class="pre">MaterialSample.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.has_attribute"><code class="docutils literal notranslate"><span class="pre">MaterialSample.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.id"><code class="docutils literal notranslate"><span class="pre">MaterialSample.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.iri"><code class="docutils literal notranslate"><span class="pre">MaterialSample.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.linkml_meta"><code class="docutils literal notranslate"><span class="pre">MaterialSample.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">MaterialSample.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.model_config"><code class="docutils literal notranslate"><span class="pre">MaterialSample.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.model_fields"><code class="docutils literal notranslate"><span class="pre">MaterialSample.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.name"><code class="docutils literal notranslate"><span class="pre">MaterialSample.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.provided_by"><code class="docutils literal notranslate"><span class="pre">MaterialSample.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.synonym"><code class="docutils literal notranslate"><span class="pre">MaterialSample.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.type"><code class="docutils literal notranslate"><span class="pre">MaterialSample.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.MaterialSample.xref"><code class="docutils literal notranslate"><span class="pre">MaterialSample.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing"><code class="docutils literal notranslate"><span class="pre">NamedThing</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.category"><code class="docutils literal notranslate"><span class="pre">NamedThing.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.deprecated"><code class="docutils literal notranslate"><span class="pre">NamedThing.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.description"><code class="docutils literal notranslate"><span class="pre">NamedThing.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.full_name"><code class="docutils literal notranslate"><span class="pre">NamedThing.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.has_attribute"><code class="docutils literal notranslate"><span class="pre">NamedThing.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.id"><code class="docutils literal notranslate"><span class="pre">NamedThing.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.iri"><code class="docutils literal notranslate"><span class="pre">NamedThing.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.linkml_meta"><code class="docutils literal notranslate"><span class="pre">NamedThing.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">NamedThing.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.model_config"><code class="docutils literal notranslate"><span class="pre">NamedThing.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.model_fields"><code class="docutils literal notranslate"><span class="pre">NamedThing.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.name"><code class="docutils literal notranslate"><span class="pre">NamedThing.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.provided_by"><code class="docutils literal notranslate"><span class="pre">NamedThing.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.synonym"><code class="docutils literal notranslate"><span class="pre">NamedThing.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.type"><code class="docutils literal notranslate"><span class="pre">NamedThing.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.NamedThing.xref"><code class="docutils literal notranslate"><span class="pre">NamedThing.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Occurrent"><code class="docutils literal notranslate"><span class="pre">Occurrent</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Occurrent.linkml_meta"><code class="docutils literal notranslate"><span class="pre">Occurrent.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Occurrent.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Occurrent.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Occurrent.model_config"><code class="docutils literal notranslate"><span class="pre">Occurrent.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Occurrent.model_fields"><code class="docutils literal notranslate"><span class="pre">Occurrent.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OntologyClass"><code class="docutils literal notranslate"><span class="pre">OntologyClass</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OntologyClass.id"><code class="docutils literal notranslate"><span class="pre">OntologyClass.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OntologyClass.linkml_meta"><code class="docutils literal notranslate"><span class="pre">OntologyClass.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OntologyClass.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">OntologyClass.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OntologyClass.model_config"><code class="docutils literal notranslate"><span class="pre">OntologyClass.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OntologyClass.model_fields"><code class="docutils literal notranslate"><span class="pre">OntologyClass.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.category"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.deprecated"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.description"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.full_name"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.has_attribute"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.has_taxonomic_rank"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.has_taxonomic_rank</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.id"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.iri"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.linkml_meta"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.model_config"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.model_fields"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.name"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.provided_by"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.synonym"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.type"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.OrganismTaxon.xref"><code class="docutils literal notranslate"><span class="pre">OrganismTaxon.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.category"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.deprecated"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.description"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.full_name"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.has_attribute"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.id"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.iri"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.linkml_meta"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.model_config"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.model_fields"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.name"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.provided_by"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.synonym"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.type"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEntity.xref"><code class="docutils literal notranslate"><span class="pre">PhysicalEntity.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEssence"><code class="docutils literal notranslate"><span class="pre">PhysicalEssence</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEssence.linkml_meta"><code class="docutils literal notranslate"><span class="pre">PhysicalEssence.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEssence.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">PhysicalEssence.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEssence.model_config"><code class="docutils literal notranslate"><span class="pre">PhysicalEssence.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEssence.model_fields"><code class="docutils literal notranslate"><span class="pre">PhysicalEssence.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEssenceOrOccurrent"><code class="docutils literal notranslate"><span class="pre">PhysicalEssenceOrOccurrent</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEssenceOrOccurrent.linkml_meta"><code class="docutils literal notranslate"><span class="pre">PhysicalEssenceOrOccurrent.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEssenceOrOccurrent.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">PhysicalEssenceOrOccurrent.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEssenceOrOccurrent.model_config"><code class="docutils literal notranslate"><span class="pre">PhysicalEssenceOrOccurrent.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.PhysicalEssenceOrOccurrent.model_fields"><code class="docutils literal notranslate"><span class="pre">PhysicalEssenceOrOccurrent.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure"><code class="docutils literal notranslate"><span class="pre">Procedure</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.category"><code class="docutils literal notranslate"><span class="pre">Procedure.category</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.deprecated"><code class="docutils literal notranslate"><span class="pre">Procedure.deprecated</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.description"><code class="docutils literal notranslate"><span class="pre">Procedure.description</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.full_name"><code class="docutils literal notranslate"><span class="pre">Procedure.full_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.has_attribute"><code class="docutils literal notranslate"><span class="pre">Procedure.has_attribute</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.id"><code class="docutils literal notranslate"><span class="pre">Procedure.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.iri"><code class="docutils literal notranslate"><span class="pre">Procedure.iri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.linkml_meta"><code class="docutils literal notranslate"><span class="pre">Procedure.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Procedure.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.model_config"><code class="docutils literal notranslate"><span class="pre">Procedure.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.model_fields"><code class="docutils literal notranslate"><span class="pre">Procedure.model_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.name"><code class="docutils literal notranslate"><span class="pre">Procedure.name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.provided_by"><code class="docutils literal notranslate"><span class="pre">Procedure.provided_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.synonym"><code class="docutils literal notranslate"><span class="pre">Procedure.synonym</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.type"><code class="docutils literal notranslate"><span class="pre">Procedure.type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.Procedure.xref"><code class="docutils literal notranslate"><span class="pre">Procedure.xref</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.QuantityValue"><code class="docutils literal notranslate"><span class="pre">QuantityValue</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.QuantityValue.has_numeric_value"><code class="docutils literal notranslate"><span class="pre">QuantityValue.has_numeric_value</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.QuantityValue.has_unit"><code class="docutils literal notranslate"><span class="pre">QuantityValue.has_unit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.QuantityValue.linkml_meta"><code class="docutils literal notranslate"><span class="pre">QuantityValue.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.QuantityValue.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">QuantityValue.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.QuantityValue.model_config"><code class="docutils literal notranslate"><span class="pre">QuantityValue.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.QuantityValue.model_fields"><code class="docutils literal notranslate"><span class="pre">QuantityValue.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.SubjectOfInvestigation"><code class="docutils literal notranslate"><span class="pre">SubjectOfInvestigation</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.SubjectOfInvestigation.linkml_meta"><code class="docutils literal notranslate"><span class="pre">SubjectOfInvestigation.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.SubjectOfInvestigation.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">SubjectOfInvestigation.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.SubjectOfInvestigation.model_config"><code class="docutils literal notranslate"><span class="pre">SubjectOfInvestigation.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.SubjectOfInvestigation.model_fields"><code class="docutils literal notranslate"><span class="pre">SubjectOfInvestigation.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.TaxonomicRank"><code class="docutils literal notranslate"><span class="pre">TaxonomicRank</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.TaxonomicRank.id"><code class="docutils literal notranslate"><span class="pre">TaxonomicRank.id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.TaxonomicRank.linkml_meta"><code class="docutils literal notranslate"><span class="pre">TaxonomicRank.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.TaxonomicRank.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">TaxonomicRank.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.TaxonomicRank.model_config"><code class="docutils literal notranslate"><span class="pre">TaxonomicRank.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.TaxonomicRank.model_fields"><code class="docutils literal notranslate"><span class="pre">TaxonomicRank.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ThingWithTaxon"><code class="docutils literal notranslate"><span class="pre">ThingWithTaxon</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ThingWithTaxon.in_taxon"><code class="docutils literal notranslate"><span class="pre">ThingWithTaxon.in_taxon</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ThingWithTaxon.in_taxon_label"><code class="docutils literal notranslate"><span class="pre">ThingWithTaxon.in_taxon_label</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ThingWithTaxon.linkml_meta"><code class="docutils literal notranslate"><span class="pre">ThingWithTaxon.linkml_meta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ThingWithTaxon.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ThingWithTaxon.model_computed_fields</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ThingWithTaxon.model_config"><code class="docutils literal notranslate"><span class="pre">ThingWithTaxon.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.models.genome_annotation.html#bkbit.models.genome_annotation.ThingWithTaxon.model_fields"><code class="docutils literal notranslate"><span class="pre">ThingWithTaxon.model_fields</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="bkbit.models.library_generation.html">bkbit.models.library_generation module</a></li>
+</ul>
+</div>
+</section>
+<section id="module-bkbit.models">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-bkbit.models" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="bkbit.model_editors.linkml_trimmer.html" class="btn btn-neutral float-left" title="bkbit.model_editors.linkml_trimmer module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="bkbit.models.anatomical_structure.html" class="btn btn-neutral float-right" title="bkbit.models.anatomical_structure module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, BICAN.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
