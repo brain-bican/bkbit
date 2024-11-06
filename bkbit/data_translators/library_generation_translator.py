@@ -1,3 +1,48 @@
+"""
+Module for parsing and processing specimen data using BICAN models and NIMP API endpoints. This module provides functionality to:
+
+1. Parse nhash IDs for specimens from the NIMP API, either in a top-down (descendants) or bottom-up (ancestors) fashion.
+2. Generate BICAN objects based on the parsed specimen data.
+3. Serialize the extracted information into JSON-LD format for further use.
+4. Check if values belong to a specific enumeration set.
+
+Classes:
+    SpecimenPortal: A class responsible for handling the parsing and generation of BICAN objects for specimen data.
+
+Functions:
+    get_field_type: Determines if an annotation is multivalued and returns the field type.
+    generate_bican_object: Generates a BICAN object based on the provided data and parent relationships.
+    parse_nhash_id_bottom_up: Parses ancestors of the provided nhash ID, generating BICAN objects.
+    parse_nhash_id_top_down: Parses descendants of the provided nhash ID, generating BICAN objects.
+    serialize_to_jsonld: Serializes the generated BICAN objects into JSON-LD format.
+    specimen2jsonld: Command-line function for parsing nhash IDs and serializing the result into JSON-LD format.
+
+Usage:
+    The module can be run as a standalone script using the command-line interface with the appropriate arguments and options:
+
+    ```
+    python specimen_portal.py <nhash_id> [-d]
+    ```
+
+    This script will parse the nhash ID and serialize the generated data into JSON-LD format, with the option to parse descendants or ancestors.
+
+Example:
+    ```
+    python specimen_portal.py "DO-GICE7463" -d
+    ```
+
+    This will parse the descendants of the specimen identified by the nhash ID and save the result as a JSON-LD file.
+
+Dependencies:
+    - json
+    - os
+    - click
+    - tqdm
+    - multiprocessing.Pool
+    - bkbit.models.library_generation
+    - bkbit.utils.nimp_api_endpoints (get_data, get_ancestors, get_descendants)
+"""
+
 import json
 from enum import Enum
 import os
@@ -25,6 +70,41 @@ CONTEXT = "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-cont
 
 
 class SpecimenPortal:
+    """
+    The SpecimenPortal class is responsible for parsing and generating BICAN objects for specimen data
+    by traversing through nodes (ancestors or descendants) based on nhash IDs. It provides utilities to
+    recursively parse node relationships and convert the data into a JSON-LD format.
+
+    Attributes:
+        jwt_token (str): The authentication token used to access the specimen data.
+        generated_objects (dict): A dictionary that stores generated BICAN objects, keyed by nhash IDs.
+
+    Methods:
+        get_field_type(annotation, collected_annotations=None):
+            Static method that determines whether a field is multivalued and returns the type of the field.
+
+        parse_nhash_id_bottom_up(nhash_id):
+            Parses ancestors of the provided nhash_id, starting from the node and moving upwards to the root (Donor).
+
+        parse_nhash_id_top_down(nhash_id):
+            Parses descendants of the provided nhash_id, starting from the node and moving downwards to the leaves (Library Pool).
+
+        generate_bican_object(data, was_derived_from=None):
+            Generates a BICAN object based on the provided data and parent relationships.
+
+        serialize_to_jsonld(exclude_none=True, exclude_unset=False):
+            Serializes the generated objects into JSON-LD format for further use or storage.
+
+        parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):
+            Parses a single nhash ID and optionally saves the result to a JSON-LD file.
+
+        parse_multiple_nashids(jwt_token, file_path, descendants):
+            Parses multiple nhash IDs from a file and saves the results to JSON-LD files.
+
+    Static Methods:
+        __check_valueset_membership(enum_type, nimp_value):
+            Checks if a given value belongs to a specified enum.
+    """
     def __init__(self, jwt_token):
         self.jwt_token = jwt_token
         self.generated_objects = {}
@@ -68,7 +148,7 @@ class SpecimenPortal:
 
         return is_multivalued, selected_type
 
-    def parse_nhash_id_bottom_up(self, nhash_id):
+    def parse_nhash_id_bottom_up(self, nhash_id: str):
         """
         Parses the given nhash_id from bottom to top, retrieving ancestors and generating respective BICAN objects.
 
@@ -112,7 +192,7 @@ class SpecimenPortal:
                 print(f"Unexpected error generating object for '{curr_nhash_id}': {e}")
                 continue
 
-    def parse_nhash_id_top_down(self, nhash_id):
+    def parse_nhash_id_top_down(self, nhash_id: str):
         """
         Parses the given nhash_id in a top-down manner, traversing the nodes all the way to the leaves (Library Pool).
 
@@ -277,7 +357,7 @@ class SpecimenPortal:
         return json.dumps(output_data, indent=2)
 
 
-def __parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):
+def parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):
     """
     Parse a single nashid using the SpecimenPortal class.
 
@@ -305,7 +385,7 @@ def __parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):
         print(sp_obj.serialize_to_jsonld())
 
 
-def __parse_multiple_nashids(jwt_token, file_path, descendants):
+def parse_multiple_nashids(jwt_token, file_path, descendants):
     """
     Parse multiple nashids from a file.
 
@@ -322,7 +402,7 @@ def __parse_multiple_nashids(jwt_token, file_path, descendants):
         nhashids = [line.strip() for line in file.readlines()]
     with Pool() as pool:
         results = pool.starmap(
-            __parse_single_nashid,
+            parse_single_nashid,
             [(jwt_token, nhash_id, descendants, True) for nhash_id in nhashids],
         )
     return results
@@ -355,9 +435,9 @@ def specimen2jsonld(nhash_id: str, descendants: bool):
     if not jwt_token or jwt_token == "":
         raise ValueError("JWT token is required")
     if os.path.isfile(nhash_id):
-        __parse_multiple_nashids(jwt_token, nhash_id, descendants)
+        parse_multiple_nashids(jwt_token, nhash_id, descendants)
     else:
-        __parse_single_nashid(jwt_token, nhash_id, descendants)
+        parse_single_nashid(jwt_token, nhash_id, descendants)
 
 
 if __name__ == "__main__":

@@ -6,9 +6,9 @@ build-backend = 'setuptools.build_meta'
 [project]
 name = "bkbit"
 authors = [
-  { name="bkbit developers"},
+  { name="brain-bican-bkbit developers"},
 ]
-description = "A library for atlaskb data models"
+description = "A library for using brain-bican data models"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
@@ -36,7 +36,7 @@ docs = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/atlaskb/bkbit"
+"Homepage" = "https://github.com/brain-bican/bkbit"
 
 [tool.setuptools_scm]
 write_to = "bkbit/_version.py"
