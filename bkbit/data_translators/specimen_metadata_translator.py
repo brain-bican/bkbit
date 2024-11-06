@@ -25,6 +25,12 @@ def extract_specimen_ids(csv_file_path):
 @click.argument('specimen_metadata_file_path')
 
 def list_library_aliquot(specimen_metadata_file_path):
+    """
+    Extracts and prints all the Library Aliquot NHash IDs from Data Catalog's specimen metadata file.
+
+    Args:
+        specimen_metadata_file_path (str): Path to the specimen metadata file.
+    """
     extract_specimen_ids(specimen_metadata_file_path)
 
 if __name__ == '__main__':  
