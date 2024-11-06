@@ -69,7 +69,7 @@ def serialize_to_jsonld(objects):
 
 ##OPTIONS##
 # Option #1: List all library aliquots in the file manifest.
-@click.option('--list_library_aliquots', is_flag=True, help='List all library aliquots in the file manifest.')  
+@click.option('-l', '--list_library_aliquots', is_flag=True, help='List all library aliquots in the file manifest.')  
 
 def filemanifest2jsonld(file_manifest_path: str, list_library_aliquots: bool):
     digital_and_checksum_objects, specimen_ids = process_csv(file_manifest_path)
