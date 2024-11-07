@@ -18,6 +18,7 @@ This package contains tools to use the BICAN Knowledgebase Data Models.
    :caption: DATA TRANSLATORS
 
    specimen_file_manifest
+   list_specimen_library_aliquot
    specimen_metadata
    genome_annotation
 
