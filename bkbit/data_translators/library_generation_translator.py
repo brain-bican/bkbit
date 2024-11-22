@@ -295,12 +295,6 @@ class SpecimenPortal:
                     ]
                 else:
                     assigned_attributes[schema_field_name] = str(data_value)
-                # if schema_field_name == "id":
-                #     assigned_attributes[schema_field_name] = "NIMP:" + str(data.get("id"))
-                # elif multivalued:
-                #     assigned_attributes[schema_field_name] = [str(item) for item in data_value]
-                # else:
-                #     assigned_attributes[schema_field_name] = str(data_value)
             elif field_type is int:
                 assigned_attributes[schema_field_name] = int(float(data_value))
             elif field_type is float:
