@@ -123,7 +123,8 @@ def bican_fix(schema: SchemaDefinition) -> SchemaDefinition:
     """
     # fixing values for categories
     for nm, cl in schema.classes.items():
-        cl.slot_usage["category"] = SlotDefinition(name="category", pattern=r"^bican:[A-Z][A-Za-z]+$")
+        if "category" in cl.slots:
+            cl.slot_usage["category"] = SlotDefinition(name="category", pattern=r"^bican:[A-Z][A-Za-z]+$")
         # not needed anymore
         # if "name_pr" in cl.slots:
         #     cl.slots["name"] = cl.slots.pop("name_pr")
