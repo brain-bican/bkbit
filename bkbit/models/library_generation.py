@@ -9581,7 +9581,7 @@ class Library(ProvEntity, MaterialSample):
          'local_names': {'NIMP': {'local_name_source': 'NIMP',
                                   'local_name_value': 'library_quantification_ng'}},
          'slot_uri': 'bican:318b2d3a-dae7-4c63-bfbb-93862b92f63e'} })
-    R1/R2_index_name: Optional[LibraryR1R2Index] = Field(None, description="""Name of the pair of library indexes used for sequencing.  Indexes allow libraries to be pooled together for sequencing.  Sequencing output (fastq) are demultiplexed by using the indexes for each library.  The name will be associated with the sequences of i7, i5, and i5as, which are needed by SeqCores for demultiplexing.  The required direction of the sequence (sense or antisense) of the index can differ depending on sequencing instruments.""", json_schema_extra = { "linkml_meta": {'alias': 'R1/R2 index name',
+    R1_R2_index_name: Optional[LibraryR1R2Index] = Field(None, description="""Name of the pair of library indexes used for sequencing.  Indexes allow libraries to be pooled together for sequencing.  Sequencing output (fastq) are demultiplexed by using the indexes for each library.  The name will be associated with the sequences of i7, i5, and i5as, which are needed by SeqCores for demultiplexing.  The required direction of the sequence (sense or antisense) of the index can differ depending on sequencing instruments.""", json_schema_extra = { "linkml_meta": {'alias': 'R1/R2 index name',
          'domain_of': ['Library'],
          'exact_mappings': ['NIMP:PD-VLLMWZ60'],
          'in_subset': ['analysis', 'tracking'],
