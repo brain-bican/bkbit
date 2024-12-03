@@ -119,17 +119,8 @@ def bican_fix(schema: SchemaDefinition) -> SchemaDefinition:
     """
     Apply BICAN specific fixes to the schema
     :param schema:
-    :return:
+    :return: SchemaDefinition
     """
-    # fixing values for categories
-    for nm, cl in schema.classes.items():
-        if "category" in cl.slots:
-            cl.slot_usage["category"] = SlotDefinition(name="category", pattern=r"^bican:[A-Z][A-Za-z]+$")
-        # not needed anymore
-        # if "name_pr" in cl.slots:
-        #     cl.slots["name"] = cl.slots.pop("name_pr")
-        # if "slot_usage" in cl and "name_pr" in cl["slot_usage"]:
-        #     cl.slot_usage["name"] = cl.slot_usage.pop("name_pr")
 
     # removing names from the slots
     if "name" in schema.slots:
