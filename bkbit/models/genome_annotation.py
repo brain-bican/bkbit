@@ -5257,6 +5257,10 @@ class GeneAnnotation(Gene):
     """
     An annotation describing the location, boundaries, and functions of  individual genes within a genome annotation.
     """
+
+    def __hash__(self):
+        return hash(tuple([self.id, self.name, self.molecular_type, self.description]))
+    
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://identifiers.org/brain-bican/genome-annotation-schema',
          'id_prefixes': ['ENSEMBL', 'MGI', 'NCBIGene']})
 
