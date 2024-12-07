@@ -127,7 +127,7 @@ gen-geneannotation [OPTIONS] GFF3_URL
 &emsp;DEFAULT:<br>
 &emsp;&emsp;'WARNING'<br>
 &emsp;OPTIONS:<br>
-&emsp;&emsp;DEBUG | INFO | WARNING | ERROR | CRITICIAL 
+&emsp;&emsp;DEBUG | INFO | WARNING | ERROR | CRITICAL 
 
 <span style="color: red;">-f, --log_to_file</span> <br>
 &emsp;Log to a file instead of the console. <br>
@@ -180,7 +180,7 @@ gen-geneannotation [OPTIONS] GFF3_URL
 &emsp;DEFAULT:<br>
 &emsp;&emsp;'WARNING'<br>
 &emsp;OPTIONS:<br>
-&emsp;&emsp;DEBUG | INFO | WARNING | ERROR | CRITICIAL 
+&emsp;&emsp;DEBUG | INFO | WARNING | ERROR | CRITICAL 
 
 <span style="color: red;">-f, --log_to_file</span> <br>
 &emsp;Log to a file instead of the console. <br>

@@ -17,7 +17,7 @@ SIMPLE_TYPES_NOSTR = ["integer", "float", "boolean", "date", "datetime"]
 
 def fix_tsv_files(tsv_files, inlined=False, ref_by_ind=True):
     """
-    Fixing all the tsv files, modyfying the range column, and adding any_of, exactly_one_of, and inlined columns.
+    Fixing all the tsv files, modifying the range column, and adding any_of, exactly_one_of, and inlined columns.
     :param tsv_files: list of tsv files
     :param inlined: if True, the inlined column will be added
     "param ref_by_ind: if True (and if inlined is True) the range will be modified (adding string) to be able to reference by index

@@ -44,7 +44,7 @@ Options
         Default:
             WARNING
         Options:
-            DEBUG | INFO | WARNING | ERROR | CRITICIAL
+            DEBUG | INFO | WARNING | ERROR | CRITICAL
 
     ``-f, --log_to_file``
         Log to a file instead of the console.

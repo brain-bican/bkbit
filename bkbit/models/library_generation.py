@@ -7460,7 +7460,7 @@ class TissueSample(ProvEntity, MaterialSample):
     dissection_was_guided_by: Optional[str] = Field(None, description="""The dissection ROI polygon that was used to guide the dissection.""", json_schema_extra = { "linkml_meta": {'alias': 'dissection_was_guided_by',
          'domain_of': ['TissueSample'],
          'exact_mappings': ['NIMP:has_parent']} })
-    tissue_sample_structure: Optional[List[str]] = Field(None, description="""Strucure of tissue sample.""", json_schema_extra = { "linkml_meta": {'alias': 'tissue_sample_structure',
+    tissue_sample_structure: Optional[List[str]] = Field(None, description="""Structure of tissue sample.""", json_schema_extra = { "linkml_meta": {'alias': 'tissue_sample_structure',
          'domain_of': ['TissueSample'],
          'local_names': {'NIMP': {'local_name_source': 'NIMP',
                                   'local_name_value': 'structure'}}} })
@@ -10302,7 +10302,7 @@ class LibraryPool(ProvEntity, MaterialSample):
                                      'pattern': '^bican:[A-Z][A-Za-z]+$'},
                         'name': {'description': "Library lab's library pool name.  For "
                                                 'some labs this may be the same as '
-                                                '"Libray pool tube local name".   '
+                                                '"Library pool tube local name".   '
                                                 'Other labs distinguish between the '
                                                 'local tube label of the library pool '
                                                 'and the library pool name provided to '
@@ -10353,7 +10353,7 @@ class LibraryPool(ProvEntity, MaterialSample):
                        'DigitalAsset'],
          'exact_mappings': ['NIMP:has_parent'],
          'slot_uri': 'prov:wasDerivedFrom'} })
-    name: Optional[str] = Field(None, description="""Library lab's library pool name.  For some labs this may be the same as \"Libray pool tube local name\".   Other labs distinguish between the local tube label of the library pool and the library pool name provided to SeqCore for tracking.  Local Pool Name is used to communicate sequencing status between SeqCore and Library Labs.""", json_schema_extra = { "linkml_meta": {'alias': 'name',
+    name: Optional[str] = Field(None, description="""Library lab's library pool name.  For some labs this may be the same as \"Library pool tube local name\".   Other labs distinguish between the local tube label of the library pool and the library pool name provided to SeqCore for tracking.  Local Pool Name is used to communicate sequencing status between SeqCore and Library Labs.""", json_schema_extra = { "linkml_meta": {'alias': 'name',
          'aliases': ['label', 'display name', 'title'],
          'definition_uri': 'https://w3id.org/biolink/vocab/name',
          'domain': 'entity',
@@ -13745,7 +13745,7 @@ class LibraryConstruction(ProvActivity, Procedure):
 
 class LibraryPooling(ProvActivity, Procedure):
     """
-    The process of constructing of a libray pool by combining library aliquots from a set of input libraries. Each library aliquot in a library pool will have a unique R1/R2 index to allow for sequencing together then separating the sequencing output by originating library aliquot through the process of demultiplexing.
+    The process of constructing of a library pool by combining library aliquots from a set of input libraries. Each library aliquot in a library pool will have a unique R1/R2 index to allow for sequencing together then separating the sequencing output by originating library aliquot through the process of demultiplexing.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://identifiers.org/brain-bican/library-generation-schema',
          'in_subset': ['bican', 'library_generation'],

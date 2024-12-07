@@ -897,7 +897,7 @@ class Gff3:
 
 
 @click.command()
-##ARGUEMENTS##
+##ARGUMENTS##
 # Argument #1: The URL of the GFF file
 @click.argument("content_url", type=str)
 
