@@ -11,7 +11,7 @@ The default behavior is to run the converter starting with tsv files, specifying
 
 If ``--gsheet`` option is used, the converter starts from downloading spreadsheets  from Google Sheets.
 The argument must be a YAML file that has ``gsheet_id`` and a list of ``sheets``  with ``gid`` (a unique identifier for each individual sheet) 
-and ``name`` (optionally) that will be used as a name of the downloaded TSV file (if not available ``gid`` wil be used).
+and ``name`` (optionally) that will be used as a name of the downloaded TSV file (if not available ``gid`` will be used).
 
 Command Line
 .............

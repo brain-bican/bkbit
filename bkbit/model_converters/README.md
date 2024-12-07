@@ -22,7 +22,7 @@ Usage: bkbit schema2model [OPTIONS] [SPREADSHEETS]...
   spreadsheets  from Google Sheets.  The argument must be a YAML file that has
   `gsheet_id` and a list of `sheets`  with `gid` (a unique identifier for each
   individual sheet) and `name` (optionally)  that will be used as a name of
-  the downloaded TSV file (if not available `gid` wil be used).
+  the downloaded TSV file (if not available `gid` will be used).
 
 Options:
   -o, --output FILENAME           Path for the yaml output file.
