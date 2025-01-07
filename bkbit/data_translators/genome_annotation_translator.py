@@ -635,8 +635,7 @@ class Gff3:
         # Check and validate the biotype attribute
         biotype = self.__get_attribute(attributes, "biotype", curr_line_num)
 
-        gene_annotation = ga.GeneAnnotation(
-            id=ENSEMBL_GENE_ID_PREFIX + ":" + stable_id,
+        gene_annotation = self.instantiate_gene_annotation(
             source_id=stable_id,
             symbol=name,
             name=name,
@@ -646,6 +645,17 @@ class Gff3:
             in_taxon=[self.organism_taxon.id],
             in_taxon_label=self.organism_taxon.full_name,
         )
+        # gene_annotation = ga.GeneAnnotation(
+        #     id=ENSEMBL_GENE_ID_PREFIX + ":" + stable_id,
+        #     source_id=stable_id,
+        #     symbol=name,
+        #     name=name,
+        #     description=description,
+        #     molecular_type=biotype,
+        #     referenced_in=self.genome_annotation.id,
+        #     in_taxon=[self.organism_taxon.id],
+        #     in_taxon_label=self.organism_taxon.full_name,
+        # )
         # handle duplicates
         if gene_annotation not in self.gene_annotations:
             return gene_annotation
@@ -712,9 +722,7 @@ class Gff3:
                 "Line %s: synonym is not set for this row's GeneAnnotation object due to missing gene_synonym attribute.",
                 curr_line_num,
             )
-
-        gene_annotation = ga.GeneAnnotation(
-            id=NCBI_GENE_ID_PREFIX + ":" + stable_id,
+        gene_annotation = self.instantiate_gene_annotation(
             source_id=stable_id,
             symbol=name,
             name=name,
@@ -725,6 +733,18 @@ class Gff3:
             in_taxon_label=self.organism_taxon.full_name,
             synonym=synonyms,
         )
+        # gene_annotation = ga.GeneAnnotation(
+        #     id=NCBI_GENE_ID_PREFIX + ":" + stable_id,
+        #     source_id=stable_id,
+        #     symbol=name,
+        #     name=name,
+        #     description=description,
+        #     molecular_type=biotype,
+        #     referenced_in=self.genome_annotation.id,
+        #     in_taxon=[self.organism_taxon.id],
+        #     in_taxon_label=self.organism_taxon.full_name,
+        #     synonym=synonyms,
+        # )
         if gene_annotation.id in self.gene_annotations:
             if gene_annotation != self.gene_annotations[gene_annotation.id]:
                 return self.__resolve_ncbi_gene_annotation(
@@ -740,6 +760,40 @@ class Gff3:
                 )
                 return None
         return gene_annotation
+
+    @staticmethod
+    def instantiate_gene_annotation(source_id, symbol, name, description, molecular_type, referenced_in, in_taxon, in_taxon_label, synonym):
+        """
+        Instantiates a GeneAnnotation object with the provided attributes.
+
+        Args:
+            source_id (str): The source ID of the gene.
+            symbol (str): The symbol of the gene.
+            name (str): The name of the gene.
+            description (str): The description of the gene.
+            molecular_type (str): The molecular type of the gene.
+            referenced_in (str): The ID of the genome annotation where the gene is referenced.
+            in_taxon (str): The ID of the taxon where the gene is located.
+            in_taxon_label (str): The label of the taxon where the gene is located.
+            synonym (list): A list of synonyms for the gene.
+
+        Returns:
+            GeneAnnotation: The instantiated GeneAnnotation object.
+        """
+        ga_id = hash(tuple(source_id, symbol, name, description, molecular_type, referenced_in, in_taxon, in_taxon_label, synonym=None))
+        return ga.GeneAnnotation(
+            id= "BICAN:" + str(ga_id),
+            source_id=source_id,
+            symbol=symbol,
+            name=name,
+            description=description,
+            molecular_type=molecular_type,
+            referenced_in=referenced_in,
+            in_taxon=in_taxon,
+            in_taxon_label=in_taxon_label,
+            synonym=synonym,
+        )
+
 
     def __get_attribute(self, attributes, attribute_name, curr_line_num):
         """
