@@ -762,7 +762,7 @@ class Gff3:
         return gene_annotation
 
     @staticmethod
-    def instantiate_gene_annotation(source_id, symbol, name, description, molecular_type, referenced_in, in_taxon, in_taxon_label, synonym):
+    def instantiate_gene_annotation(source_id, symbol, name, description, molecular_type, referenced_in, in_taxon:list[str], in_taxon_label, synonym:list[str]=None):
         """
         Instantiates a GeneAnnotation object with the provided attributes.
 
@@ -780,9 +780,10 @@ class Gff3:
         Returns:
             GeneAnnotation: The instantiated GeneAnnotation object.
         """
-        ga_id = hash(tuple(source_id, symbol, name, description, molecular_type, referenced_in, in_taxon, in_taxon_label, synonym=None))
+        #ga_id = hash(tuple([source_id, symbol, name, description, molecular_type, tuple(in_taxon), in_taxon_label, tuple(synonym)]))
+        ga_id = hashlib.sha256(str(tuple([source_id, symbol, name, description, molecular_type, tuple(in_taxon), in_taxon_label, tuple(synonym)])).encode()).hexdigest()
         return ga.GeneAnnotation(
-            id= "BICAN:" + str(ga_id),
+            id= "bican:" + str(ga_id),
             source_id=source_id,
             symbol=symbol,
             name=name,
