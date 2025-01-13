@@ -781,7 +781,7 @@ class Gff3:
             GeneAnnotation: The instantiated GeneAnnotation object.
         """
         #ga_id = hash(tuple([source_id, symbol, name, description, molecular_type, tuple(in_taxon), in_taxon_label, tuple(synonym)]))
-        ga_id = hashlib.sha256(str(tuple([source_id, symbol, name, description, molecular_type, tuple(in_taxon), in_taxon_label, tuple(synonym)])).encode()).hexdigest()
+        ga_id = hashlib.sha256(str(tuple([source_id, symbol, name, description, molecular_type, referenced_in, tuple(in_taxon), in_taxon_label, tuple([] if synonym is None else synonym)])).encode()).hexdigest()
         return ga.GeneAnnotation(
             id= "bican:" + str(ga_id),
             source_id=source_id,
