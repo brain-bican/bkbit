@@ -30,7 +30,6 @@ Dependencies:
     - re
     - hashlib
     - tempfile
-    - uuid
     - urllib
     - urllib.request
     - urllib.parse
@@ -51,7 +50,6 @@ Dependencies:
 import re
 import hashlib
 import tempfile
-import uuid
 import urllib
 import urllib.request
 from urllib.parse import urlparse
@@ -74,15 +72,15 @@ from bkbit.utils.load_json import load_json
 ## CONSTANTS ##
 
 PREFIX_MAP = {
-    "NCBITaxon": "http://purl.obolibrary.org/obo/NCBITaxon_",
-    "NCBIGene": "http://identifiers.org/ncbigene/",
-    "ENSEMBL": "http://identifiers.org/ensembl/",
-    "NCBIAssembly": "https://www.ncbi.nlm.nih.gov/assembly/",
+    "NCBITaxon:": "http://purl.obolibrary.org/obo/NCBITaxon_",
+    "NCBIGene:": "http://identifiers.org/ncbigene/",
+    "ENSEMBL:": "http://identifiers.org/ensembl/",
+    "NCBIAssembly:": "https://www.ncbi.nlm.nih.gov/assembly/",
 }
-NCBI_GENE_ID_PREFIX = "NCBIGene"
-ENSEMBL_GENE_ID_PREFIX = "ENSEMBL"
-TAXON_PREFIX = "NCBITaxon"
-ASSEMBLY_PREFIX = "NCBIAssembly"
+NCBI_GENE_ID_PREFIX = "NCBIGene:"
+ENSEMBL_GENE_ID_PREFIX = "ENSEMBL:"
+TAXON_PREFIX = "NCBITaxon:"
+ASSEMBLY_PREFIX = "NCBIAssembly:"
 BICAN_ANNOTATION_PREFIX = "bican:annotation-"
 GENOME_ANNOTATION_DESCRIPTION_FORMAT = (
     "{authority} {taxon_scientific_name} Annotation Release {genome_version}"
@@ -366,12 +364,9 @@ class Gff3:
         Returns:
             ga.OrganismTaxon: The generated organism taxon object.
         """
-        return ga.OrganismTaxon(
-            id=TAXON_PREFIX + ":" + taxon_id,
-            full_name=self.taxon_scientific_name[taxon_id],
-            name=self.taxon_common_name[taxon_id],
-            iri=PREFIX_MAP[TAXON_PREFIX] + taxon_id,
-        )
+        attributes = {"full_name": self.taxon_scientific_name[taxon_id], "name": self.taxon_common_name[taxon_id], "iri": PREFIX_MAP[TAXON_PREFIX] + taxon_id, "type": ["bican:OrganismTaxon"], "xref": [TAXON_PREFIX + taxon_id]}
+        attributes["id"] = self.generate_object_id(attributes)
+        return ga.OrganismTaxon(**attributes)
 
     def assign_authority_type(self, authority: str):
         """
@@ -416,14 +411,9 @@ class Gff3:
         Returns:
         ga.GenomeAssembly: The generated genome assembly object.
         """
-        return ga.GenomeAssembly(
-            id=ASSEMBLY_PREFIX + ":" + assembly_id,
-            in_taxon=[self.organism_taxon.id],
-            in_taxon_label=self.organism_taxon.full_name,
-            version=assembly_version,
-            name=assembly_label,
-            strain=assembly_strain,
-        )
+        attributes = {"in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "name": assembly_label, "version": assembly_version, "strain": assembly_strain, "type": ["bican:GenomeAssembly"], "xref": [ASSEMBLY_PREFIX + assembly_id]}
+        attributes["id"] = self.generate_object_id(attributes)
+        return ga.GenomeAssembly(**attributes)
 
     def generate_genome_annotation(self, genome_label: str, genome_version: str):
         """
@@ -436,21 +426,9 @@ class Gff3:
         Returns:
             ga.GenomeAnnotation: The generated genome annotation.
         """
-        return ga.GenomeAnnotation(
-            id=BICAN_ANNOTATION_PREFIX + genome_label.upper(),
-            digest=[checksum.id for checksum in self.checksums],
-            content_url=[self.content_url],
-            reference_assembly=self.genome_assembly.id,
-            version=genome_version,
-            in_taxon=[self.organism_taxon.id],
-            in_taxon_label=self.organism_taxon.full_name,
-            description=GENOME_ANNOTATION_DESCRIPTION_FORMAT.format(
-                authority=self.authority.value,
-                taxon_scientific_name=self.organism_taxon.full_name,
-                genome_version=genome_version,
-            ),
-            authority=self.authority,
-        )
+        attributes = {"digest": [checksum.id for checksum in self.checksums], "content_url": [self.content_url], "reference_assembly": self.genome_assembly.id, "version": genome_version, "in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "description": GENOME_ANNOTATION_DESCRIPTION_FORMAT.format(authority=self.authority.value, taxon_scientific_name=self.organism_taxon.full_name, genome_version=genome_version), "authority": self.authority, "type": ["bican:GenomeAnnotation"], "xref": [BICAN_ANNOTATION_PREFIX + genome_label.upper()]}
+        attributes["id"] = self.generate_object_id(attributes)
+        return ga.GenomeAnnotation(**attributes)
 
     def generate_digest(
         self,
@@ -472,37 +450,20 @@ class Gff3:
         """
         checksums = []
         for hash_type in hash_functions:
-            # Generate a UUID version 4
-            uuid_value = uuid.uuid4()
-
-            # Construct a URN with the UUID
-            urn = f"urn:uuid:{uuid_value}"
             hash_type = hash_type.strip().upper()
             # Create a Checksum object
             if hash_type == ga.DigestType.SHA256.name:
-                checksums.append(
-                    ga.Checksum(
-                        id=urn,
-                        checksum_algorithm=ga.DigestType.SHA256,
-                        value=hash_values.get("SHA256"),
-                    )
-                )
+                sha256_attributes = {"checksum_algorithm": ga.DigestType.SHA256, "value": hash_values.get("SHA256"), "type": ["bican:Checksum"]}
+                sha256_attributes["id"] = self.generate_object_id(sha256_attributes)
+                checksums.append(ga.Checksum(**sha256_attributes))
             elif hash_type == ga.DigestType.MD5.name:
-                checksums.append(
-                    ga.Checksum(
-                        id=urn,
-                        checksum_algorithm=ga.DigestType.MD5,
-                        value=hash_values.get("MD5"),
-                    )
-                )
+                md5_attributes = {"checksum_algorithm": ga.DigestType.MD5, "value": hash_values.get("MD5"), "type": ["bican:Checksum"]}
+                md5_attributes["id"] = self.generate_object_id(md5_attributes)
+                checksums.append(ga.Checksum(**md5_attributes))
             elif hash_type == ga.DigestType.SHA1.name:
-                checksums.append(
-                    ga.Checksum(
-                        id=urn,
-                        checksum_algorithm=ga.DigestType.SHA1,
-                        value=hash_values.get("SHA1"),
-                    )
-                )
+                sha1_attributes = {"checksum_algorithm": ga.DigestType.SHA1, "value": hash_values.get("SHA1"), "type": ["bican:Checksum"]}
+                sha1_attributes["id"] = self.generate_object_id(sha1_attributes)
+                checksums.append(ga.Checksum(**sha1_attributes))
             else:
                 self.logger.error(
                     "Hash algorithm %s is not supported. Please use SHA256, MD5, or SHA1.",
@@ -635,27 +596,12 @@ class Gff3:
         # Check and validate the biotype attribute
         biotype = self.__get_attribute(attributes, "biotype", curr_line_num)
 
-        gene_annotation = self.instantiate_gene_annotation(
-            source_id=stable_id,
-            symbol=name,
-            name=name,
-            description=description,
-            molecular_type=biotype,
-            referenced_in=self.genome_annotation.id,
-            in_taxon=[self.organism_taxon.id],
-            in_taxon_label=self.organism_taxon.full_name,
-        )
-        # gene_annotation = ga.GeneAnnotation(
-        #     id=ENSEMBL_GENE_ID_PREFIX + ":" + stable_id,
-        #     source_id=stable_id,
-        #     symbol=name,
-        #     name=name,
-        #     description=description,
-        #     molecular_type=biotype,
-        #     referenced_in=self.genome_annotation.id,
-        #     in_taxon=[self.organism_taxon.id],
-        #     in_taxon_label=self.organism_taxon.full_name,
-        # )
+        #! maybe remove type and add it as default directly in model
+        attributes = {"source_id": stable_id, "symbol": name, "name": name, "description": description, "molecular_type": biotype, "referenced_in": self.genome_annotation.id, "in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "type": ["bican:GeneAnnotation"], "xref": [ENSEMBL_GENE_ID_PREFIX + stable_id]}
+        #! add a try/catch incase the hash returns an error and log it
+        attributes["id"] = self.generate_object_id(attributes)
+        gene_annotation = ga.GeneAnnotation(**attributes)
+
         # handle duplicates
         if gene_annotation not in self.gene_annotations:
             return gene_annotation
@@ -722,29 +668,13 @@ class Gff3:
                 "Line %s: synonym is not set for this row's GeneAnnotation object due to missing gene_synonym attribute.",
                 curr_line_num,
             )
-        gene_annotation = self.instantiate_gene_annotation(
-            source_id=stable_id,
-            symbol=name,
-            name=name,
-            description=description,
-            molecular_type=biotype,
-            referenced_in=self.genome_annotation.id,
-            in_taxon=[self.organism_taxon.id],
-            in_taxon_label=self.organism_taxon.full_name,
-            synonym=synonyms,
-        )
-        # gene_annotation = ga.GeneAnnotation(
-        #     id=NCBI_GENE_ID_PREFIX + ":" + stable_id,
-        #     source_id=stable_id,
-        #     symbol=name,
-        #     name=name,
-        #     description=description,
-        #     molecular_type=biotype,
-        #     referenced_in=self.genome_annotation.id,
-        #     in_taxon=[self.organism_taxon.id],
-        #     in_taxon_label=self.organism_taxon.full_name,
-        #     synonym=synonyms,
-        # )
+
+        #! maybe remove type and add it as default directly in model
+        attributes = {"source_id": stable_id, "symbol": name, "name": name, "description": description, "molecular_type": biotype, "referenced_in": self.genome_annotation.id, "in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "synonym": synonyms, "type": ["bican:GeneAnnotation"], "xref": [NCBI_GENE_ID_PREFIX + stable_id]}
+        #! add a try/catch incase the hash returns an error and log it
+        attributes["id"] = self.generate_object_id(attributes)
+        gene_annotation = ga.GeneAnnotation(**attributes)
+
         if gene_annotation.id in self.gene_annotations:
             if gene_annotation != self.gene_annotations[gene_annotation.id]:
                 return self.__resolve_ncbi_gene_annotation(
@@ -761,39 +691,23 @@ class Gff3:
                 return None
         return gene_annotation
 
+
     @staticmethod
-    def instantiate_gene_annotation(source_id, symbol, name, description, molecular_type, referenced_in, in_taxon:list[str], in_taxon_label, synonym:list[str]=None):
+    def generate_object_id(attributes:dict):
         """
-        Instantiates a GeneAnnotation object with the provided attributes.
+        Generate a unique object ID based on the provided attributes.
 
         Args:
-            source_id (str): The source ID of the gene.
-            symbol (str): The symbol of the gene.
-            name (str): The name of the gene.
-            description (str): The description of the gene.
-            molecular_type (str): The molecular type of the gene.
-            referenced_in (str): The ID of the genome annotation where the gene is referenced.
-            in_taxon (str): The ID of the taxon where the gene is located.
-            in_taxon_label (str): The label of the taxon where the gene is located.
-            synonym (list): A list of synonyms for the gene.
+            attributes (dict): A dictionary containing the attributes of the object.
 
         Returns:
-            GeneAnnotation: The instantiated GeneAnnotation object.
+            str: The generated object ID.
         """
-        #ga_id = hash(tuple([source_id, symbol, name, description, molecular_type, tuple(in_taxon), in_taxon_label, tuple(synonym)]))
-        ga_id = hashlib.sha256(str(tuple([source_id, symbol, name, description, molecular_type, referenced_in, tuple(in_taxon), in_taxon_label, tuple([] if synonym is None else synonym)])).encode()).hexdigest()
-        return ga.GeneAnnotation(
-            id= "bican:" + str(ga_id),
-            source_id=source_id,
-            symbol=symbol,
-            name=name,
-            description=description,
-            molecular_type=molecular_type,
-            referenced_in=referenced_in,
-            in_taxon=in_taxon,
-            in_taxon_label=in_taxon_label,
-            synonym=synonym,
-        )
+        # Sort the attributes by keys and convert to a consistent JSON string
+        #print(attributes)
+        normalized_attributes = json.dumps(attributes, sort_keys=True)
+        object_id = hashlib.sha256(normalized_attributes.encode()).hexdigest()
+        return object_id
 
 
     def __get_attribute(self, attributes, attribute_name, curr_line_num):
