@@ -82,6 +82,7 @@ ENSEMBL_GENE_ID_PREFIX = "ENSEMBL:"
 TAXON_PREFIX = "NCBITaxon:"
 ASSEMBLY_PREFIX = "NCBIAssembly:"
 BICAN_ANNOTATION_PREFIX = "bican:annotation-"
+BKBIT_OBJECT_ID_PREFIX = "urn:bkbit:"
 GENOME_ANNOTATION_DESCRIPTION_FORMAT = (
     "{authority} {taxon_scientific_name} Annotation Release {genome_version}"
 )
@@ -707,7 +708,7 @@ class Gff3:
         #print(attributes)
         normalized_attributes = json.dumps(attributes, sort_keys=True)
         object_id = hashlib.sha256(normalized_attributes.encode()).hexdigest()
-        return object_id
+        return BKBIT_OBJECT_ID_PREFIX + object_id
 
 
     def __get_attribute(self, attributes, attribute_name, curr_line_num):
