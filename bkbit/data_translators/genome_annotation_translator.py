@@ -189,8 +189,8 @@ class Gff3:
         self.logger = setup_logger(LOG_FILE_NAME, log_level, log_to_file)
 
         self.content_url = content_url
+
         ## STEP 1: Parse the content URL to get metadata
-        # Parse content_url to get metadata
         url_metadata = Gff3.parse_url()
         if url_metadata is None:
             self.logger.critical(
@@ -199,102 +199,45 @@ class Gff3:
             raise ValueError(
                 "The provided content URL is not supported. Please provide a valid URL."
             )
+        self.authority = url_metadata.get("authority")
 
-    # def __init__(
-    #     self,
-    #     content_url,
-    #     assembly_accession=None,
-    #     assembly_strain=None,
-    #     log_level="WARNING",
-    #     log_to_file=False,
-    # ):
-    #     """
-    #     Initializes an instance of the GFFTranslator class.
+        taxon_id, assembly_id = None, None
+        # Assign the taxon_id and assembly_id based on the authority
+        if self.authority.value == ga.AuthorityType.NCBI.value:
+            taxon_id = url_metadata.get("taxonid")
+            assembly_id = url_metadata.get("assembly_accession")
+        elif self.authority.value == ga.AuthorityType.ENSEMBL.value:
+            taxon_id = self.scientific_name_to_taxonid.get(
+                url_metadata.get("scientific_name").replace("_", " ")
+            )
+            if assembly_accession is None:
+                self.logger.critical(
+                    "The assembly ID is required for Ensembl URLs. Please provide the assembly ID."
+                )
+                raise ValueError(
+                    "The assembly ID is required for Ensembl URLs. Please provide the assembly ID."
+                )
+            assembly_id = assembly_accession
+        
+        assembly_label = url_metadata.get("assembly_name")
+        genome_version = url_metadata.get("release_version")
+        genome_label = self.authority.value + "-" + taxon_id + "-" + genome_version
 
-    #     Parameters:
-    #     - content_url (str): The URL of the GFF file.
-    #     - assembly_id (str): The ID of the genome assembly.
-    #     - assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
-    #     - hash_functions (tuple[str]): A tuple of hash functions to use for generating checksums. Defaults to ('MD5').
-    #     """
-    #     self.logger = setup_logger(LOG_FILE_NAME, log_level, log_to_file)
-    #     try:
-    #         self.scientific_name_to_taxonid = load_json(SCIENTIFIC_NAME_TO_TAXONID_PATH)
-    #         self.taxon_scientific_name = load_json(TAXON_SCIENTIFIC_NAME_PATH)
-    #         self.taxon_common_name = load_json(TAXON_COMMON_NAME_PATH)
-    #     except FileNotFoundError as e:
-    #         self.logger.critical("NCBI Taxonomy not downloaded. Run 'bkbit download-ncbi-taxonomy' command first." )
-    #         print(e)
-    #         sys.exit(2)
+        ## STEP 2: Download the GFF file
+        # Download the GFF file
+        self.gff_file, hash_values = Gff3.download_gff_file()
 
-    #     self.content_url = content_url
+        ## STEP 3: Generate the organism taxon, genome assembly, checksum, and genome annotation objects
+        self.organism_taxon = Gff3.generate_organism_taxon(taxon_id)
+        self.genome_assembly = self.generate_genome_assembly(
+            assembly_id, assembly_version, assembly_label, assembly_strain
+        )
+        self.checksums = self.generate_digest(hash_values, DEFAULT_HASH)
+        self.genome_annotation = self.generate_genome_annotation(
+            genome_label, genome_version
+        )
 
-    #     ## STEP 1: Parse the content URL to get metadata
-    #     # Parse content_url to get metadata
-    #     url_metadata = self.parse_url()
-    #     if url_metadata is None:
-    #         self.logger.critical(
-    #             "The provided content URL is not supported. Please provide a valid URL."
-    #         )
-    #         raise ValueError(
-    #             "The provided content URL is not supported. Please provide a valid URL."
-    #         )
-
-    #     # Define variables to store metadata
-    #     (
-    #         taxon_id,
-    #         assembly_id,
-    #         assembly_version,
-    #         assembly_label,
-    #         genome_label,
-    #         genome_version,
-    #     ) = (None, None, None, None, None, None)
-
-    #     # Assign the authority type
-    #     self.authority = url_metadata.get("authority")
-
-    #     # Assign the taxon_id and assembly_id based on the authority
-    #     if self.authority.value == ga.AuthorityType.NCBI.value:
-    #         taxon_id = url_metadata.get("taxonid")
-    #         assembly_id = url_metadata.get("assembly_accession")
-    #     elif self.authority.value == ga.AuthorityType.ENSEMBL.value:
-    #         taxon_id = self.scientific_name_to_taxonid.get(
-    #             url_metadata.get("scientific_name").replace("_", " ")
-    #         )
-    #         if assembly_accession is None:
-    #             self.logger.critical(
-    #                 "The assembly ID is required for Ensembl URLs. Please provide the assembly ID."
-    #             )
-    #             raise ValueError(
-    #                 "The assembly ID is required for Ensembl URLs. Please provide the assembly ID."
-    #             )
-    #         assembly_id = assembly_accession
-
-    #     # Assign assembly_version, assembly_label, genome_version, and genome_label
-    #     assembly_version = (
-    #         assembly_id.split(".")[1] if len(assembly_id.split(".")) >= 1 else None
-    #     )
-    #     assembly_label = url_metadata.get("assembly_name")
-    #     genome_version = url_metadata.get("release_version")
-    #     genome_label = self.authority.value + "-" + taxon_id + "-" + genome_version
-
-    #     ## STEP 2: Download the GFF file
-    #     # Download the GFF file
-    #     self.gff_file, hash_values = Gff3.download_gff_file()
-
-    #     ## STEP 3: Generate the organism taxon, genome assembly, checksums, and genome annotation objects
-    #     # Generate the organism taxon object
-    #     self.organism_taxon = self.generate_organism_taxon(taxon_id)
-    #     self.genome_assembly = self.generate_genome_assembly(
-    #         assembly_id, assembly_version, assembly_label, assembly_strain
-    #     )
-    #     self.checksums = self.generate_digest(hash_values, DEFAULT_HASH)
-    #     self.genome_annotation = self.generate_genome_annotation(
-    #         genome_label, genome_version
-    #     )
-
-    #     self.gene_annotations = {}
-
+        self.gene_annotations = {}
 
     @staticmethod
     def parse_url(content_url: str):
@@ -400,7 +343,8 @@ class Gff3:
             "SHA1": sha1_hash.hexdigest(),
         }
 
-    def generate_organism_taxon(self, taxon_id: str):
+    @classmethod
+    def generate_organism_taxon(cls, taxon_id: str):
         """
         Generates an organism taxon object based on the provided taxon ID.
 
@@ -410,8 +354,8 @@ class Gff3:
         Returns:
             ga.OrganismTaxon: The generated organism taxon object.
         """
-        attributes = {"full_name": self.taxon_scientific_name[taxon_id], "name": self.taxon_common_name[taxon_id], "iri": PREFIX_MAP[TAXON_PREFIX] + taxon_id, "type": ["bican:OrganismTaxon"], "xref": [TAXON_PREFIX + taxon_id]}
-        attributes["id"] = self.generate_object_id(attributes)
+        attributes = {"full_name": cls.taxon_scientific_name[taxon_id], "name": cls.taxon_common_name[taxon_id], "iri": PREFIX_MAP[TAXON_PREFIX] + taxon_id, "type": ["bican:OrganismTaxon"], "xref": [TAXON_PREFIX + taxon_id]}
+        attributes["id"] = cls.generate_object_id(attributes)
         return ga.OrganismTaxon(**attributes)
 
     def assign_authority_type(self, authority: str):
