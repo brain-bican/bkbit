@@ -92,7 +92,7 @@ TAXON_DIR_PATH = "../utils/ncbi_taxonomy/"
 SCIENTIFIC_NAME_TO_TAXONID_PATH = pkg_resources.resource_filename(__name__, TAXON_DIR_PATH + "scientific_name_to_taxid.json")
 TAXON_SCIENTIFIC_NAME_PATH = pkg_resources.resource_filename(__name__, TAXON_DIR_PATH + "taxid_to_scientific_name.json")
 TAXON_COMMON_NAME_PATH = pkg_resources.resource_filename(__name__, TAXON_DIR_PATH + "taxid_to_common_name.json")
-
+INCOMPATABLE_EXTENSION = "The provided content URL is not supported. Please provide a valid URL with '.gff.gz' extension."
 class Gff3:
     """
     The Gff3 class is responsible for downloading, parsing, and processing of GFF3 files from NCBI and Ensembl repositories.
@@ -267,19 +267,22 @@ class Gff3:
 
         # Determine if the URL is from NCBI or Ensembl and extract information
         if "ncbi" in parsed_url.netloc:
-            ncbi_match = re.search(ncbi_pattern, path)
-            if ncbi_match:
-                return {
-                    "authority": ga.AuthorityType.NCBI,
-                    "taxonid": ncbi_match.group(1),
-                    "release_version": (
-                        ncbi_match.group(2)
-                        if ncbi_match.group(2)
-                        else ncbi_match.group(4)
-                    ),
-                    "assembly_accession": ncbi_match.group(3),
-                    "assembly_name": ncbi_match.group(6),
-                }
+            try:
+                metadata = path.split('genomes/all/annotation_releases/')[1].split('/')
+                
+                if len(metadata) in {3, 4}:
+                    release_version = metadata[1] if len(metadata) == 4 else metadata[1].split('-')[1]
+                    assembly_parts = re.split(r'(?<!GCF)_', metadata[2])
+
+                    return {
+                        "authority": ga.AuthorityType.NCBI,
+                        "taxonid": metadata[0],
+                        "release_version": release_version,
+                        "assembly_accession": assembly_parts[0],
+                        "assembly_name": assembly_parts[1] if len(assembly_parts) > 1 else None,
+                    }
+            except (IndexError, ValueError):
+                return None
 
         elif "ensembl" in parsed_url.netloc:
             ensembl_match = re.search(ensembl_pattern, path)
