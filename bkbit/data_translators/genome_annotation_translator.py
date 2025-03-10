@@ -117,9 +117,6 @@ class Gff3:
         generate_organism_taxon(taxon_id):
             Generates an organism taxon object based on the provided taxon ID.
 
-        assign_authority_type(authority):
-            Assigns the authority type based on the given authority string.
-
         generate_genome_assembly(assembly_id, assembly_version, assembly_label, assembly_strain=None):
             Generates a genome assembly object based on the provided parameters.
 
@@ -362,30 +359,6 @@ class Gff3:
         attributes = {"full_name": cls.taxon_scientific_name[taxon_id], "name": cls.taxon_common_name[taxon_id], "iri": PREFIX_MAP[TAXON_PREFIX] + taxon_id, "xref": [TAXON_PREFIX + taxon_id]}
         attributes["id"] = cls.generate_object_id(attributes)
         return ga.OrganismTaxon(**attributes)
-
-    def assign_authority_type(self, authority: str):
-        """
-        Assigns the authority type based on the given authority string.
-
-        Args:
-            authority (str): The authority string to be assigned.
-
-        Returns:
-            ga.AuthorityType: The corresponding authority type.
-
-        Raises:
-            Exception: If the authority is not supported. Only NCBI and Ensembl authorities are supported.
-        """
-        if authority.upper() == ga.AuthorityType.NCBI.value:
-            return ga.AuthorityType.NCBI
-        if authority.upper() == ga.AuthorityType.ENSEMBL.value:
-            return ga.AuthorityType.ENSEMBL
-        self.logger.critical(
-            "Authority %s is not supported. Please use NCBI or Ensembl.", authority
-        )
-        raise ValueError(
-            f"Authority {self.authority} is not supported. Please use NCBI or Ensembl."
-        )
 
     def generate_genome_assembly(
         self,
