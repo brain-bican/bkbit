@@ -1,6 +1,7 @@
 from bkbit.data_translators.genome_annotation_translator import Gff3
 from bkbit.models import genome_annotation as ga
 import pytest
+import hashlib
 
 
 def test_generate_organism_taxon():
@@ -67,7 +68,7 @@ def test_generate_organism_taxon():
         ),
         # Invalid Ensembl URL (missing genome version)
         (
-            "https://ftp.ensembl.org/pub/release-110/gff3/homo_sapiens/Homo_sapiens.GRCh38.gff3.gz",
+            "https://ftp.ensembl.org/pub/gff3/homo_sapiens/Homo_sapiens.GRCh38.gff3.gz",
             None,
         ),
         # Invalid NCBI URL (missing release version)
@@ -79,3 +80,43 @@ def test_generate_organism_taxon():
 )
 def test_parse_url(url, expected_output):
     assert Gff3.parse_url(url) == expected_output
+
+@pytest.mark.parametrize(
+    "input1, input2",
+    [
+        # Identical inputs should produce the same output
+        (
+            {"a": 1, "b": 2, "c": 6},
+            {"a": 1, "b": 2, "c": 6}
+        ),
+        # Different order of keys should not effect the output 
+        (
+            {"a": 1, "b": 2, "c": 6},
+            {"b": 2, "c": 6, "a": 1}
+        ),
+        # Empty dictionary
+        (
+            {},
+            {}
+        )
+    ],
+)
+def test_generate_object_id_inputs_produces_same_output(input1, input2):
+    assert Gff3.generate_object_id(input1) == Gff3.generate_object_id(input2) 
+
+@pytest.mark.parametrize(
+    "input1, input2",
+    [
+        # Different inputs should produce different output
+        (
+            {"a": 1, "b": 2, "c": 6},
+            {"a": 1, "b": 2, "c": 7}
+        ),
+        (
+            {"a": 1, "b": 2, "c": 6},
+            {"b": 2, "c": 6}
+        )
+    ],
+)
+def test_generate_object_id_inputs_produces_different_output(input1, input2):
+    assert Gff3.generate_object_id(input1) != Gff3.generate_object_id(input2) 
