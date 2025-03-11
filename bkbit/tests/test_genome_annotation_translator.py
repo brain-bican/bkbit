@@ -3,27 +3,6 @@ from bkbit.models import genome_annotation as ga
 import pytest
 import hashlib
 
-
-# def test_generate_organism_taxon():
-#     test_org_taxon_1 = Gff3.generate_organism_taxon('9606')
-#     temp = ga.OrganismTaxon(id='urn:bkbit:94ce74f4f8189281ec98dcb3803708f78ef3ffc207afc3d6030cb920e63029b5', iri='http://purl.obolibrary.org/obo/NCBITaxon_9606', category=['biolink:OrganismTaxon'], type=['bican:OrganismTaxon'], name='human', description=None, has_attribute=None, deprecated=None, provided_by=None, xref=['NCBITaxon:9606'], full_name='Homo sapiens', synonym=None, has_taxonomic_rank=None)
-
-
-#     assert test_org_taxon_1 == temp
-#     # # Check if the return type is an instance of OrganismTaxon
-#     # assert isinstance(test_org_taxon_1, ga.OrganismTaxon)
-#     # # Check if the return object has the correct "full_name" value
-#     # assert test_org_taxon_1.full_name == 'Homo sapiens'
-#     # # Check if the return object has the correct "name" value
-#     # assert test_org_taxon_1.name  == 'human'
-#     # # Check if the return object has the correct "xref" value
-#     # assert Gff3.generate_organism_taxon('9606').xref[0] == 'NCBITaxon:9606'
-
-#     # # Check if the function is deterministic given the same input 
-#     # test_org_taxon_2 = Gff3.generate_organism_taxon('9606')
-#     # assert test_org_taxon_1.id == test_org_taxon_2.id 
-
-
 @pytest.mark.parametrize(
     "url, expected_output",
     [
@@ -125,3 +104,18 @@ def test_generate_object_id_inputs_produces_same_output(input1, input2):
 )
 def test_generate_object_id_inputs_produces_different_output(input1, input2):
     assert Gff3.generate_object_id(input1) != Gff3.generate_object_id(input2) 
+
+@pytest.mark.parametrize(
+    "content_url, expected_md5_hash",
+    [
+        # NCBI URL
+        (
+            "https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/9823/106/GCF_000003025.6_Sscrofa11.1/GCF_000003025.6_Sscrofa11.1_genomic.gff.gz",
+            "b010f8d53476725e8a01424a0dd2cecf"
+        ),
+    ]
+)
+@pytest.mark.slow
+def test_download_gff_file_md5_hash(content_url, expected_md5_hash):
+    gzip_file, hash_values = Gff3.download_gff_file(content_url)
+    assert hash_values.get("MD5") == expected_md5_hash
