@@ -260,6 +260,9 @@ class Gff3:
         ensembl_pattern = (
             r"/pub/release-(\d+)/gff3/([^/]+)/([^/.]+)\.([^/.]+)\.([^/.]+)\.gff3\.gz"
         )
+        
+        if not content_url.endswith(".gff.gz") and not content_url.endswith(".gff3.gz"):
+            return None
 
         # Parse the URL to get the path
         parsed_url = urlparse(content_url)
