@@ -138,7 +138,7 @@ class Gff3:
         generate_ncbi_gene_annotation(attributes, curr_line_num):
             Generates a GeneAnnotation object for NCBI based on the provided attributes.
 
-        __get_attribute(attributes, attribute_name, curr_line_num):
+        _get_attribute(attributes, attribute_name, curr_line_num):
             Retrieves the value of a specific attribute from the given attributes dictionary.
 
         __resolve_ncbi_gene_annotation(new_gene_annotation, curr_line_num):
@@ -554,18 +554,18 @@ class Gff3:
             None
 
         """
-        stable_id = self.__get_attribute(attributes, "gene_id", curr_line_num)
+        stable_id = self._get_attribute(attributes, "gene_id", curr_line_num)
         if stable_id:
             stable_id = stable_id.split(".")[0]
 
         # Check and validate the name attribute
-        name = self.__get_attribute(attributes, "Name", curr_line_num)
+        name = self._get_attribute(attributes, "Name", curr_line_num)
 
         # Check and validate the description attribute
-        description = self.__get_attribute(attributes, "description", curr_line_num)
+        description = self._get_attribute(attributes, "description", curr_line_num)
 
         # Check and validate the biotype attribute
-        biotype = self.__get_attribute(attributes, "biotype", curr_line_num)
+        biotype = self._get_attribute(attributes, "biotype", curr_line_num)
 
         #! maybe remove type and add it as default directly in model
         attributes = {"source_id": stable_id, "symbol": name, "name": name, "description": description, "molecular_type": biotype, "referenced_in": self.genome_annotation.id, "in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "xref": [ENSEMBL_GENE_ID_PREFIX + stable_id]}
@@ -619,13 +619,13 @@ class Gff3:
             return None
 
         # Check and validate the name attribute
-        name = self.__get_attribute(attributes, "Name", curr_line_num)
+        name = self._get_attribute(attributes, "Name", curr_line_num)
 
         # Check and validate the description attribute
-        description = self.__get_attribute(attributes, "description", curr_line_num)
+        description = self._get_attribute(attributes, "description", curr_line_num)
 
         # Check and validate the biotype attribute
-        biotype = self.__get_attribute(attributes, "gene_biotype", curr_line_num)
+        biotype = self._get_attribute(attributes, "gene_biotype", curr_line_num)
 
         # Parse synonyms
         synonyms = []
@@ -681,7 +681,7 @@ class Gff3:
         return BKBIT_OBJECT_ID_PREFIX + object_id
 
 
-    def __get_attribute(self, attributes, attribute_name, curr_line_num):
+    def _get_attribute(self, attributes, attribute_name, curr_line_num):
         """
         Get the value of a specific attribute from the given attributes dictionary.
 
