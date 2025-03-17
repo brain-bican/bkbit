@@ -1,12 +1,12 @@
-from bkbit.data_translators.genome_annotation_translator import Gff3
-from bkbit.models import genome_annotation as ga
 import pytest
 import hashlib
+from bkbit.data_translators.genome_annotation_translator import Gff3
+from bkbit.models import genome_annotation as ga
 
 @pytest.mark.parametrize(
     "url, expected_output",
     [
-        # Valid NCBI URL (where url is: */release_version/*)
+        # Valid NCBI URL (where url format is: */release_version/*)
         # Metadata listed here: https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/9823/106/GCF_000003025.6_Sscrofa11.1/README_Sus_scrofa_annotation_release_106
         (
             "https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/9823/106/GCF_000003025.6_Sscrofa11.1/GCF_000003025.6_Sscrofa11.1_genomic.gff.gz",
@@ -18,7 +18,7 @@ import hashlib
                 "assembly_name": "Sscrofa11.1",
             }
         ),
-        # Valid NCBI URL (where url is: */assembly_accession-release_version/*)
+        # Valid NCBI URL (where url format is: */assembly_accession-release_version/*)
         # Metadata listed here: 
         (
             "https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/9361/GCF_030445035.1-RS_2023_07/GCF_030445035.1_mDasNov1.hap2_genomic.gff.gz",
@@ -45,6 +45,11 @@ import hashlib
             "http://www.treeshrewdb.org/data/TS_3.0.genomeannotation.gtf.gz",
             None
         ),
+        # Unsupported Data Format 
+        (
+            "https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/9407/101/GCF_014176215.1_mRouAeg1.p/GCF_014176215.1_mRouAeg1.p_genomic.gtf.gz",
+            None
+        ),
         # Invalid Ensembl URL (missing genome version)
         (
             "https://ftp.ensembl.org/pub/gff3/homo_sapiens/Homo_sapiens.GRCh38.gff3.gz",
@@ -53,11 +58,6 @@ import hashlib
         # Invalid NCBI URL (missing release version)
         (
             "https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/9823/GCF_000003025.6_Sscrofa11.1/GCF_000003025.6_Sscrofa11.1_genomic.gff.gz",
-            None
-        ),
-        # Valid NCBI URL but in data gtf format 
-        (
-            "https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/9407/101/GCF_014176215.1_mRouAeg1.p/GCF_014176215.1_mRouAeg1.p_genomic.gtf.gz",
             None
         )
     ],
@@ -109,6 +109,7 @@ def test_generate_object_id_inputs_produces_different_output(input1, input2):
     "content_url, expected_md5_hash",
     [
         # NCBI URL
+        # Checksum obtained from: https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/9823/106/GCF_000003025.6_Sscrofa11.1/md5checksums.txt
         (
             "https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/9823/106/GCF_000003025.6_Sscrofa11.1/GCF_000003025.6_Sscrofa11.1_genomic.gff.gz",
             "b010f8d53476725e8a01424a0dd2cecf"
