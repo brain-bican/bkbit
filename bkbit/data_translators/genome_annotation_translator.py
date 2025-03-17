@@ -141,7 +141,7 @@ class Gff3:
         _get_attribute(attributes, attribute_name, curr_line_num):
             Retrieves the value of a specific attribute from the given attributes dictionary.
 
-        __resolve_ncbi_gene_annotation(new_gene_annotation, curr_line_num):
+        _resolve_ncbi_gene_annotation(new_gene_annotation, curr_line_num):
             Resolves conflicts between existing and new gene annotations based on certain conditions.
 
         __merge_values(t):
@@ -648,7 +648,7 @@ class Gff3:
 
         if gene_annotation.id in self.gene_annotations:
             if gene_annotation != self.gene_annotations[gene_annotation.id]:
-                return self.__resolve_ncbi_gene_annotation(
+                return self._resolve_ncbi_gene_annotation(
                     gene_annotation, curr_line_num
                 )
             if name != self.gene_annotations[gene_annotation.id].name:
@@ -727,7 +727,7 @@ class Gff3:
             )
         return value
 
-    def __resolve_ncbi_gene_annotation(self, new_gene_annotation, curr_line_num):
+    def _resolve_ncbi_gene_annotation(self, new_gene_annotation, curr_line_num):
         """
         Resolves conflicts between existing and new gene annotations based on certain conditions.
 
