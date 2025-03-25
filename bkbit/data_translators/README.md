@@ -203,3 +203,42 @@ pip install bkbit
 
 gen-geneannotation -a 'GCF_003339765.1' 'https://ftp.ensembl.org/pub/release-104/gff3/macaca_mulatta/Macaca_mulatta.Mmul_10.104.gff3.gz' > output.jsonld
 ```
+
+# BKE Taxonomy 
+## Mapping Data to LinkML Schema
+
+
+| Class Name | Slots in Schema (`x` if they can be found in the data)| Slots Missing in Schema |
+|------------|-----------------------------------------------------|------------------------------|
+| `CellTypeTaxon`    | - [x] id <br> - [x] accession_id <br> - [x] name <br> - [x] order <br> - [x] description <br> - [x] number_of_cells <br> - [ ] part_of_taxonomy <br> - [ ] contains_cluster <br> - [ ] has_parent |
+| `ObservationRow`   | - [ ] part_of_matrix <br> - [ ] represented_in <br> - [ ] was_derived_from | - [ ] label
+| `ObservationMatrix`| - [ ] represented_by <br> - [ ] has_variable <br> - [ ] was_derived_from   | - [ ] url
+| `MatrixFile`       |                                                                            | - [ ] url
+| `DisplayColor`     | - [x] id <br> - [x] color_hex_triplet <br> - [ ] part_of_palette <br> - [ ] is_color_for |
+| `ColorPalette`     | - [x] id <br> - [x] name <br> - [x] description <br> - [ ] is_palette_for |
+| `ClusterSet`       | - [x] id <br> - [x] created_at <br> - [x] accession_id <br> - [x] name <br> - [x] description <br> - [ ] was_generated_by <br> - [ ] was_derived_from <br> - [ ] is_revision_of |
+| `Cluster`          | - [x] id <br> - [x] accession_id <br> - [x] name <br> - [x] number_of_observations <br> - [ ] part_of_set <br> - [ ] contains_observation <br> - [ ] contains_sample |
+| `CellTypeTaxonomy`   | - [x] id <br> - [x] created_at <br> - [x] accession_id <br> - [x] name <br> - [x] description <br> - [ ] was_generated_by <br> - [ ] was_derived_from <br> - [ ] is_revision_of |
+| `CellTypeSet`        | - [x] id <br> - [x] accession_id <br> - [x] name <br> - [x] description <br> - [x] type <br> - [x] order <br> - [ ] part_of_taxonomy <br> - [ ] contains_taxon <br> - [ ] has_parent <br> - [ ] has_abbreviation |
+| `Abbreviation`       | - [x] id <br> - [x] term <br> - [x] meaning <br> - [x] entity_type <br> - [ ] denotes |
+
+## Topological Sort of Classes
+1.  DisplayColor  
+2.  ColorPalette  
+3.  CellTypeSet  
+4.  CellTypeTaxon  
+5.  CellTypeTaxonomy  
+6.  Cluster  
+7.  Abbreviation  
+8.  CellTypeTaxonomyCreationProcess  
+9.  ObservationRow  
+10. ParcellationTerm  
+11. ClusterSet  
+12. ClusteringProcess  
+13. ObservationMatrix  
+14. ObservationMatrixCreationProcess  
+15. MatrixFile  
+16. gene annotation  
+17. CellSpecimen  
+
+
