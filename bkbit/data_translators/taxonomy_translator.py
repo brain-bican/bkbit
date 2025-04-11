@@ -28,26 +28,6 @@ DEPENDENCIES = {
     "ParcellationTerm": []  # no dependencies
 }
 
-CLASS_NAME_MAPPING = {
-    "Abbreviation": bke_tax.Abbreviation,
-    "CellTypeSet": bke_tax.CellTypeSet,
-    "CellTypeTaxon": bke_tax.CellTypeTaxon,
-    "CellTypeTaxonomy": bke_tax.CellTypeTaxonomy,
-    "CellTypeTaxonomyCreationProcess": bke_tax.CellTypeTaxonomyCreationProcess,
-    "Cluster": bke_tax.Cluster,
-    "ClusteringProcess": bke_tax.ClusteringProcess,
-    "ClusterSet": bke_tax.ClusterSet,
-    "ColorPalette": bke_tax.ColorPalette,
-    "DisplayColor": bke_tax.DisplayColor,
-    "ObservationMatrix": bke_tax.ObservationMatrix,
-    "ObservationRow": bke_tax.ObservationRow,
-    "ObservationMatrixCreationProcess": bke_tax.ObservationMatrixCreationProcess,
-    "MatrixFile": bke_tax.MatrixFile,
-    "CellSpecimen": bke_tax.CellSpecimen,
-    "GeneAnnotation": bke_tax.GeneAnnotation,
-    "ParcellationTerm": bke_tax.ParcellationTerm,
-}
-
 processed_classes = set()
 
     # Decorator to check dependencies and prompt user if unmet
@@ -139,7 +119,8 @@ class Taxonomy:
     def parse(self, class_name, file_path):
         """Parse data from a parquet file and return a dictionary of objects."""
 
-        class_object = CLASS_NAME_MAPPING.get(class_name)
+        #class_object = CLASS_NAME_MAPPING.get(class_name)
+        class_object = bke_tax.__dict__.get(class_name)
         if class_object is None:
             raise ValueError(f"Unknown class name: {class_name}")
         all_object_attributes = self._get_attributes(file_path, class_object)
