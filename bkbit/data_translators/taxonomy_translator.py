@@ -27,6 +27,27 @@ DEPENDENCIES = {
     "GeneAnnotation": [],  # no dependencies
     "ParcellationTerm": []  # no dependencies
 }
+
+CLASS_NAME_MAPPING = {
+    "Abbreviation": bke_tax.Abbreviation,
+    "CellTypeSet": bke_tax.CellTypeSet,
+    "CellTypeTaxon": bke_tax.CellTypeTaxon,
+    "CellTypeTaxonomy": bke_tax.CellTypeTaxonomy,
+    "CellTypeTaxonomyCreationProcess": bke_tax.CellTypeTaxonomyCreationProcess,
+    "Cluster": bke_tax.Cluster,
+    "ClusteringProcess": bke_tax.ClusteringProcess,
+    "ClusterSet": bke_tax.ClusterSet,
+    "ColorPalette": bke_tax.ColorPalette,
+    "DisplayColor": bke_tax.DisplayColor,
+    "ObservationMatrix": bke_tax.ObservationMatrix,
+    "ObservationRow": bke_tax.ObservationRow,
+    "ObservationMatrixCreationProcess": bke_tax.ObservationMatrixCreationProcess,
+    "MatrixFile": bke_tax.MatrixFile,
+    "CellSpecimen": bke_tax.CellSpecimen,
+    "GeneAnnotation": bke_tax.GeneAnnotation,
+    "ParcellationTerm": bke_tax.ParcellationTerm,
+}
+
 processed_classes = set()
 
     # Decorator to check dependencies and prompt user if unmet
@@ -50,7 +71,6 @@ def require_dependencies(class_name):
 class Taxonomy:
     def __init__(self):
         self.relations = pd.DataFrame()
-        self.display_colors = []
         self.xref_to_bkbit_id = {}
 
     def read_relationships(self, file_path):
@@ -76,7 +96,6 @@ class Taxonomy:
         all_object_attributes = []
         for _, row in df.iterrows():
             row_attributes = {}
-            source_id = row["unique_id"]
             for (
                 schema_field_name,
                 schema_field_metadata,
@@ -93,6 +112,9 @@ class Taxonomy:
                 multivalued = schema_field_metadata.json_schema_extra.get(
                     "linkml_meta", {}
                 ).get("multivalued", False)
+                print(
+                    f"Processing {schema_field_name} ({data_field_name}) with range {linkml_range} and multivalued {multivalued}"
+                )
                 if data_field_name in row: 
                     #! TODO: What if references are provided in the data? We need to then use xref_to_bkbit_id
                     #! TODO: Check to see if the type of the data matches the range
@@ -114,12 +136,19 @@ class Taxonomy:
             all_object_attributes.append(row_attributes)
         return all_object_attributes
     
-    @require_dependencies("DisplayColor")
-    def parse_display_color(self, file_path):
-        """Parse display color data from a parquet file and return a dictionary of display colors."""
-        display_colors = self._get_attributes(file_path, bke_tax.DisplayColor)
-        for display_color in display_colors:
-            display_color["id"] = generate_object_id(display_color)
-            self.display_colors.append(bke_tax.DisplayColor(**display_color))
-            self.xref_to_bkbit_id[display_color["xref"][0]] = display_color["id"]
+    def parse(self, class_name, file_path):
+        """Parse data from a parquet file and return a dictionary of objects."""
 
+        class_object = CLASS_NAME_MAPPING.get(class_name)
+        if class_object is None:
+            raise ValueError(f"Unknown class name: {class_name}")
+        all_object_attributes = self._get_attributes(file_path, class_object)
+        for attributes in all_object_attributes:
+            attributes["id"] = generate_object_id(attributes)
+            self._append_attr(class_name, class_object(**attributes))            
+            self.xref_to_bkbit_id[attributes["xref"][0]] = attributes["id"]
+
+    def _append_attr(self, attr_name, item):
+        if not hasattr(self, attr_name) or getattr(self, attr_name) is None:
+            setattr(self, attr_name, [])
+        getattr(self, attr_name).append(item)
