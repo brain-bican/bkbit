@@ -1,5 +1,9 @@
 from collections import defaultdict
+from operator import mul
+from re import M
 
+from arrow import get
+import linkml
 import pandas as pd
 import pyarrow.parquet as pq
 from tqdm import tqdm
@@ -101,21 +105,37 @@ class Taxonomy:
                     #! TODO: Check to see if the type of the data is a class or a primitive
                     if schema_field_name == "xref":
                         row_attributes[schema_field_name] = [LOCAL_NAME_SOURCE + ":" + str(row[data_field_name])]
+                    elif linkml_range in bke_tax.__dict__:
+                        relations = self.get_relations(row[data_field_name], data_field_name, linkml_range)
+                        relation_object_ids = []
+                        for row in relations:
+                            bkbit_id = self._get_bkbit_id(row['object']) #!fix the hardcoded name 
+                            if bkbit_id:
+                                relation_object_ids.append(bkbit_id)
+                            else:  
+                                # TODO: Check if the object is in the KG
+                                pass
+                        if not multivalued and len(relation_object_ids) > 1:
+                            raise ValueError(
+                                f"Expected a single value for {schema_field_name}, but got multiple: {relation_object_ids}"
+                            )
+                        try:
+                            row_attributes[schema_field_name] = relation_object_ids.pop()
+                        except IndexError:
+                            pass
+                        row_attributes[schema_field_name] = relation_object_ids
                     elif multivalued:
                         row_attributes[schema_field_name] = row[data_field_name].split(",")
                     else:
                         row_attributes[schema_field_name] = row[data_field_name]
-                # elif relations := self.get_relations(
-                #     source_id, data_field_name, linkml_range
-                # ):
-                #     row_attributes[schema_field_name] = self.xref_to_bkbit_id.get(
-                #         relations["object"], relations["object"]
-                #     )
-                #     #! TODO: If the object is not found in local xref_to_bkbit_id, check the KG
 
             all_object_attributes.append(row_attributes)
         return all_object_attributes
     
+    def _get_bkbit_id(self, source_id):
+        mapping_key = LOCAL_NAME_SOURCE + ":" + str(source_id)
+        return self.xref_to_bkbit_id.get(mapping_key)
+
     def parse(self, class_name, file_path):
         """Parse data from a parquet file and return a dictionary of objects."""
 
