@@ -183,47 +183,27 @@ class Gff3:
         - log_to_file (bool): Whether to log messages to a file.
         """
 
-        LOG_FILE_NAME = "gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log"
-        self.logger = setup_logger(LOG_FILE_NAME, log_level, log_to_file)
+        log_file_name = "gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log"
+        self.logger = setup_logger(log_file_name, log_level, log_to_file)
 
         self.content_url = content_url
 
         ## STEP 1: Parse the content URL to get metadata
-        url_metadata = Gff3.parse_url()
-        if url_metadata is None:
-            self.logger.critical(
-                "The provided content URL is not supported. Please provide a valid URL."
-            )
-            raise ValueError(
-                "The provided content URL is not supported. Please provide a valid URL."
-            )
+        url_metadata = self.parse_url(assembly_accession)
+        ## STEP 1.1: Assign metadata values
         self.authority = url_metadata.get("authority")
-
-        taxon_id, assembly_id = None, None
-        # Assign the taxon_id and assembly_id based on the authority
-        if self.authority.value == ga.AuthorityType.NCBI.value:
-            taxon_id = url_metadata.get("taxonid")
-            assembly_id = url_metadata.get("assembly_accession")
-        elif self.authority.value == ga.AuthorityType.ENSEMBL.value:
-            taxon_id = self.scientific_name_to_taxonid.get(
-                url_metadata.get("scientific_name").replace("_", " ")
-            )
-            if assembly_accession is None:
-                self.logger.critical(
-                    "The assembly ID is required for Ensembl URLs. Please provide the assembly ID."
-                )
-                raise ValueError(
-                    "The assembly ID is required for Ensembl URLs. Please provide the assembly ID."
-                )
-            assembly_id = assembly_accession
-        
+        taxon_id = url_metadata.get("taxonid")
+        assembly_id = url_metadata.get("assembly_accession")
         assembly_label = url_metadata.get("assembly_name")
         genome_version = url_metadata.get("release_version")
         genome_label = self.authority.value + "-" + taxon_id + "-" + genome_version
+        assembly_version = (
+            assembly_id.split(".")[1] if len(assembly_id.split(".")) >= 1 else None
+        )
 
         ## STEP 2: Download the GFF file
         # Download the GFF file
-        self.gff_file, hash_values = Gff3.download_gff_file()
+        self.gff_file, hash_values = Gff3.download_gff_file(content_url)
 
         ## STEP 3: Generate the organism taxon, genome assembly, checksum, and genome annotation objects
         self.organism_taxon = Gff3.generate_organism_taxon(taxon_id)
@@ -237,8 +217,7 @@ class Gff3:
 
         self.gene_annotations = {}
 
-    @staticmethod
-    def parse_url(content_url: str):
+    def parse_url(self, assembly_accession: str = None):
         """
         Parses the content URL and extracts information about the genome annotation.
 
@@ -262,11 +241,11 @@ class Gff3:
             r"/pub/release-(\d+)/gff3/([^/]+)/([^/.]+)\.([^/.]+)\.([^/.]+)\.gff3\.gz"
         )
         
-        if not content_url.endswith(".gff.gz") and not content_url.endswith(".gff3.gz"):
+        if not self.content_url.endswith(".gff.gz") and not self.content_url.endswith(".gff3.gz"):
             return None
 
         # Parse the URL to get the path
-        parsed_url = urlparse(content_url)
+        parsed_url = urlparse(self.content_url)
         path = parsed_url.path
 
         # Determine if the URL is from NCBI or Ensembl and extract information
@@ -290,14 +269,32 @@ class Gff3:
         elif "ensembl" in parsed_url.netloc:
             ensembl_match = re.search(ensembl_pattern, path)
             if ensembl_match:
+                if assembly_accession is None:
+                    self.logger.critical(
+                        "Missing Assembly ID: The assembly ID is required for Ensembl URLs. Please provide the assembly ID."
+                    )
+                    raise ValueError(
+                        "Missing Assembly ID: The assembly ID is required for Ensembl URLs. Please provide the assembly ID."
+                    )
+                
+                scientific_name = ensembl_match.group(3)
+                taxonid = self.scientific_name_to_taxonid.get(
+                    scientific_name.replace("_", " ")
+                )
                 return {
                     "authority": ga.AuthorityType.ENSEMBL,
+                    "taxonid": taxonid,
                     "release_version": ensembl_match.group(1),
-                    "scientific_name": ensembl_match.group(3),
+                    "assembly_accession": assembly_accession,
                     "assembly_name": ensembl_match.group(4),
                 }
         # If no match is found, return None
-        return None
+        self.logger.critical(
+            "The provided content URL is not supported. Please provide a valid URL."
+        )   
+        raise ValueError(
+            "The provided content URL is not supported. Please provide a valid URL."
+        )  
 
     @staticmethod
     def download_gff_file(content_url: str):
@@ -870,7 +867,7 @@ class Gff3:
     show_default=True,
     help="The output format.",
 )
-def gff2jsonld(content_url, assembly_accession, assembly_strain, log_level, log_to_file):
+def gff2jsonld(content_url, assembly_accession, assembly_strain, log_level, log_to_file, output_format):
     '''
     Creates GeneAnnotation objects from a GFF3 file and serializes them to JSON-LD format.
     '''
