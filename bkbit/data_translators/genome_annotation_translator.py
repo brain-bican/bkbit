@@ -66,6 +66,7 @@ import pkg_resources
 from bkbit.models import genome_annotation as ga
 from bkbit.utils.setup_logger import setup_logger
 from bkbit.utils.load_json import load_json
+from bkbit.utils.generate_bkbit_id import generate_object_id
 
 
 
@@ -360,7 +361,7 @@ class Gff3:
             ga.OrganismTaxon: The generated organism taxon object.
         """
         attributes = {"full_name": cls.taxon_scientific_name[taxon_id], "name": cls.taxon_common_name[taxon_id], "iri": PREFIX_MAP[TAXON_PREFIX] + taxon_id, "xref": [TAXON_PREFIX + taxon_id]}
-        attributes["id"] = cls.generate_object_id(attributes)
+        attributes["id"] = generate_object_id(attributes)
         return ga.OrganismTaxon(**attributes)
 
     def generate_genome_assembly(
@@ -383,7 +384,7 @@ class Gff3:
         ga.GenomeAssembly: The generated genome assembly object.
         """
         attributes = {"in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "name": assembly_label, "version": assembly_version, "strain": assembly_strain, "xref": [ASSEMBLY_PREFIX + assembly_id]}
-        attributes["id"] = self.generate_object_id(attributes)
+        attributes["id"] = generate_object_id(attributes)
         return ga.GenomeAssembly(**attributes)
 
     def generate_genome_annotation(self, genome_label: str, genome_version: str):
@@ -398,7 +399,7 @@ class Gff3:
             ga.GenomeAnnotation: The generated genome annotation.
         """
         attributes = {"digest": [checksum.id for checksum in self.checksums], "content_url": [self.content_url], "reference_assembly": self.genome_assembly.id, "version": genome_version, "in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "description": GENOME_ANNOTATION_DESCRIPTION_FORMAT.format(authority=self.authority.value, taxon_scientific_name=self.organism_taxon.full_name, genome_version=genome_version), "authority": self.authority, "xref": [BICAN_ANNOTATION_PREFIX + genome_label.upper()]}
-        attributes["id"] = self.generate_object_id(attributes)
+        attributes["id"] = generate_object_id(attributes)
         return ga.GenomeAnnotation(**attributes)
 
     def generate_digest(
@@ -425,15 +426,15 @@ class Gff3:
             # Create a Checksum object
             if hash_type == ga.DigestType.SHA256.name:
                 sha256_attributes = {"checksum_algorithm": ga.DigestType.SHA256, "value": hash_values.get("SHA256")}
-                sha256_attributes["id"] = self.generate_object_id(sha256_attributes)
+                sha256_attributes["id"] = generate_object_id(sha256_attributes)
                 checksums.append(ga.Checksum(**sha256_attributes))
             elif hash_type == ga.DigestType.MD5.name:
                 md5_attributes = {"checksum_algorithm": ga.DigestType.MD5, "value": hash_values.get("MD5")}
-                md5_attributes["id"] = self.generate_object_id(md5_attributes)
+                md5_attributes["id"] = generate_object_id(md5_attributes)
                 checksums.append(ga.Checksum(**md5_attributes))
             elif hash_type == ga.DigestType.SHA1.name:
                 sha1_attributes = {"checksum_algorithm": ga.DigestType.SHA1, "value": hash_values.get("SHA1")}
-                sha1_attributes["id"] = self.generate_object_id(sha1_attributes)
+                sha1_attributes["id"] = generate_object_id(sha1_attributes)
                 checksums.append(ga.Checksum(**sha1_attributes))
             else:
                 self.logger.error(
@@ -570,7 +571,7 @@ class Gff3:
         #! maybe remove type and add it as default directly in model
         attributes = {"source_id": stable_id, "symbol": name, "name": name, "description": description, "molecular_type": biotype, "referenced_in": self.genome_annotation.id, "in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "xref": [ENSEMBL_GENE_ID_PREFIX + stable_id]}
         #! add a try/catch incase the hash returns an error and log it
-        attributes["id"] = self.generate_object_id(attributes)
+        attributes["id"] = generate_object_id(attributes)
         gene_annotation = ga.GeneAnnotation(**attributes)
 
         # handle duplicates
@@ -643,7 +644,7 @@ class Gff3:
         #! maybe remove type and add it as default directly in model
         attributes = {"source_id": stable_id, "symbol": name, "name": name, "description": description, "molecular_type": biotype, "referenced_in": self.genome_annotation.id, "in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "synonym": synonyms, "xref": [NCBI_GENE_ID_PREFIX + stable_id]}
         #! add a try/catch incase the hash returns an error and log it
-        attributes["id"] = self.generate_object_id(attributes)
+        attributes["id"] = generate_object_id(attributes)
         gene_annotation = ga.GeneAnnotation(**attributes)
 
         if gene_annotation.id in self.gene_annotations:
@@ -661,25 +662,6 @@ class Gff3:
                 )
                 return None
         return gene_annotation
-
-
-    @staticmethod
-    def generate_object_id(attributes:dict):
-        """
-        Generate a unique object ID based on the provided attributes.
-
-        Args:
-            attributes (dict): A dictionary containing the attributes of the object.
-
-        Returns:
-            str: The generated object ID.
-        """
-        # Sort the attributes by keys and convert to a consistent JSON string
-        #print(attributes)
-        normalized_attributes = json.dumps(attributes, sort_keys=True)
-        object_id = hashlib.sha256(normalized_attributes.encode()).hexdigest()
-        return BKBIT_OBJECT_ID_PREFIX + object_id
-
 
     def _get_attribute(self, attributes, attribute_name, curr_line_num):
         """
