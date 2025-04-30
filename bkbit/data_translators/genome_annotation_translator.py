@@ -638,7 +638,6 @@ class Gff3:
                 curr_line_num,
             )
 
-        #! maybe remove type and add it as default directly in model
         attributes = {"source_id": stable_id, "symbol": name, "name": name, "description": description, "molecular_type": biotype, "referenced_in": self.genome_annotation.id, "in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "synonym": synonyms, "xref": [NCBI_GENE_ID_PREFIX + stable_id]}
         #! add a try/catch incase the hash returns an error and log it
         attributes["id"] = generate_object_id(attributes)
