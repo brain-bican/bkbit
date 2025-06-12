@@ -161,8 +161,8 @@ class Gff3:
         taxon_scientific_name = load_json(TAXON_SCIENTIFIC_NAME_PATH)
         taxon_common_name = load_json(TAXON_COMMON_NAME_PATH)
     except FileNotFoundError as e:
-        logging.critical("NCBI Taxonomy not downloaded. Run 'bkbit download-ncbi-taxonomy' first.")
-        raise RuntimeError("Missing required NCBI taxonomy data.") from e
+        #logging.critical("NCBI Taxonomy not downloaded. Run 'bkbit download-ncbi-taxonomy' first.")
+        raise RuntimeError("NCBI Taxonomy not downloaded. Run 'bkbit download-ncbi-taxonomy' first.") from e
 
     def __init__(
         self,
@@ -186,36 +186,71 @@ class Gff3:
         log_file_name = "gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log"
         self.logger = setup_logger(log_file_name, log_level, log_to_file)
 
+        # Store configuration parameters
         self.content_url = content_url
+        self.assembly_accession = assembly_accession
+        self.assembly_strain = assembly_strain
 
-        ## STEP 1: Parse the content URL to get metadata
-        url_metadata = self.parse_url(assembly_accession)
-        ## STEP 1.1: Assign metadata values
-        self.authority = url_metadata.get("authority")
-        taxon_id = url_metadata.get("taxonid")
-        assembly_id = url_metadata.get("assembly_accession")
-        assembly_label = url_metadata.get("assembly_name")
-        genome_version = url_metadata.get("release_version")
-        genome_label = self.authority.value + "-" + taxon_id + "-" + genome_version
-        assembly_version = (
-            assembly_id.split(".")[1] if len(assembly_id.split(".")) >= 1 else None
-        )
+        
+        # Initialize attributes that will be populated in setup()
+        self.authority = None
+        self.taxon_id = None
+        self.assembly_id = None
+        self.assembly_label = None
+        self.genome_version = None
+        self.genome_label = None
+        self.assembly_version = None
+        self.hash_values = None
+        self.gff_file = None
 
-        ## STEP 2: Download the GFF file
-        # Download the GFF file
-        self.gff_file, hash_values = Gff3.download_gff_file(content_url)
-
-        ## STEP 3: Generate the organism taxon, genome assembly, checksum, and genome annotation objects
-        self.organism_taxon = Gff3.generate_organism_taxon(taxon_id)
-        self.genome_assembly = self.generate_genome_assembly(
-            assembly_id, assembly_version, assembly_label, assembly_strain
-        )
-        self.checksums = self.generate_digest(hash_values, DEFAULT_HASH)
-        self.genome_annotation = self.generate_genome_annotation(
-            genome_label, genome_version
-        )
-
+        # Initialize metadata objects
+        self.organism_taxon = None
+        self.genome_assembly = None
+        self.checksums = None
+        self.genome_annotation = None
         self.gene_annotations = {}
+        
+        # Flag to track if setup has been completed
+        self._is_setup = False
+
+    def setup(self):
+        """
+        Perform heavy initialization tasks like downloading and parsing.
+        
+        Returns:
+            self: Returns self for method chaining
+        
+        Raises:
+            ValueError: If the content URL is not supported
+        """
+        try:
+            # STEP 1: Parse the content URL to get metadata
+            url_metadata = self.parse_url(self.assembly_accession)
+            
+            # STEP 1.1: Assign metadata values
+            self.authority = url_metadata.get("authority")
+            self.taxon_id = url_metadata.get("taxonid")
+            self.assembly_id = url_metadata.get("assembly_accession")
+            self.assembly_label = url_metadata.get("assembly_name")
+            self.genome_version = url_metadata.get("release_version")
+            self.genome_label = self.authority.value + "-" + self.taxon_id + "-" + self.genome_version
+            self.assembly_version = (
+                self.assembly_id.split(".")[1] if len(self.assembly_id.split(".")) >= 1 else None
+            )
+            
+            # STEP 2: Download the GFF file
+            self.gff_file, self.hash_values = Gff3.download_gff_file(self.content_url)
+            
+            # Mark setup as complete
+            self._is_setup = True
+            
+            return self  # For method chaining
+            
+        except ValueError as e:
+            self.logger.error("Setup failed: %s", str(e))
+            raise
+
+
 
     def parse_url(self, assembly_accession: str = None):
         """
