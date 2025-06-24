@@ -65,6 +65,7 @@ import sys
 from tqdm import tqdm
 import click
 import pkg_resources
+import pathlib
 from bkbit.models import genome_annotation as ga
 from bkbit.utils.setup_logger import setup_logger
 from bkbit.utils.load_json import load_json
@@ -906,9 +907,6 @@ def parse_url(content_url):
     # NCBI : [assembly accession.version]_[assembly name]_[content type].[optional format]
     # ENSEMBL :  <species>.<assembly>.<_version>.gff3.gz -> organism full name, assembly name, genome version
     ncbi_pattern = r"/genomes/all/annotation_releases/(\d+)(?:/(\d+))?/(GCF_\d+\.\d+)[_-]([^/]+)/(GCF_\d+\.\d+)[_-]([^/]+)_genomic\.gff\.gz"
-    ensembl_pattern = (
-        r"/pub/release-(\d+)/gff3/([^/]+)/([^/.]+)\.([^/.]+)\.([^/.]+)\.gff3\.gz"
-    )
 
     # Parse the URL to get the path
     parsed_url = urlparse(content_url)
@@ -931,20 +929,27 @@ def parse_url(content_url):
             }
 
     elif "ensembl" in parsed_url.netloc:
-        ensembl_match = re.search(ensembl_pattern, path)
-        if ensembl_match:
-            scientific_name_to_taxonid = load_json(SCIENTIFIC_NAME_TO_TAXONID_PATH)
-            result = {
-                "authority": ga.AuthorityType.ENSEMBL,
-                "release_version": ensembl_match.group(1),
-                "scientific_name": ensembl_match.group(3),
-                "assembly_name": ensembl_match.group(4),
-            }
-            taxon_id = scientific_name_to_taxonid.get(
-                result.get("scientific_name").replace("_", " ")
-            )
-            result['taxonid'] = taxon_id
-            return result
+        file_path = pathlib.Path(parsed_url.path).name
+        file_path = file_path.replace('.gff3.gz', '')
+
+        scientific_name = file_path.split('.')[0]
+        file_path = file_path.replace(scientific_name+'.', '')
+        release_version = file_path.split('.')[-1]
+        file_path = file_path.replace('.' + release_version, '')
+        assembly_name = file_path
+
+        scientific_name_to_taxonid = load_json(SCIENTIFIC_NAME_TO_TAXONID_PATH)
+        result = {
+            "authority": ga.AuthorityType.ENSEMBL,
+            "release_version": release_version,
+            "scientific_name": scientific_name,
+            "assembly_name": assembly_name,
+        }
+        taxon_id = scientific_name_to_taxonid.get(
+            result.get("scientific_name").replace("_", " ")
+        )
+        result['taxonid'] = taxon_id
+        return result
 
     # If no match is found, return None
     return None
