@@ -831,14 +831,22 @@ class Gff3:
         self, exclude_none: bool = True, exclude_unset: bool = False
     ):
         """
-        Serialize the object and either write it to the specified output file or print it to the CLI.
+        Serialize the object and either write it
+        to the specified output file or print it to the CLI.
 
         Parameters:
-            exclude_none (bool): Whether to exclude None values in the output.
-            exclude_unset (bool): Whether to exclude unset values in the output.
+            exclude_none (bool):
+                Whether to exclude None values in the output.
+            exclude_unset (bool):
+                Whether to exclude unset values in the output.
 
         Returns:
-            None
+            Dict
+
+        Notes
+        -----
+        Overrode default implementation so that we can return the dict
+        containing the jsonld graph
         """
 
         data = [
@@ -853,16 +861,29 @@ class Gff3:
             ),
         ]
         for ck in self.checksums:
-            data.append(ck.dict(exclude_none=exclude_none, exclude_unset=exclude_unset))
+            data.append(
+                ck.dict(
+                    exclude_none=exclude_none,
+                    exclude_unset=exclude_unset
+                )
+            )
         for ga in self.gene_annotations.values():
-            data.append(ga.dict(exclude_none=exclude_none, exclude_unset=exclude_unset))
+            data.append(
+                ga.dict(
+                    exclude_none=exclude_none,
+                    exclude_unset=exclude_unset
+                )
+            )
 
         output_data = {
-            "@context": "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/genome_annotation.context.jsonld",
+            "@context": (
+                "https://raw.githubusercontent.com/brain-bican/"
+                "models/main/jsonld-context-autogen/"
+                "genome_annotation.context.jsonld"
+            ),
             "@graph": data,
         }
-
-        print(json.dumps(output_data, indent=2))
+        return output_data
 
 
 def parse_url(content_url):
@@ -973,7 +994,8 @@ def gff2jsonld(content_url, assembly_accession, assembly_strain, log_level, log_
         log_to_file=log_to_file
     )
     gff3.parse()
-    gff3.serialize_to_jsonld()
+    result = gff3.serialize_to_jsonld()
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":
