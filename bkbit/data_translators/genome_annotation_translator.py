@@ -112,9 +112,6 @@ class Gff3:
         __init__(content_url, assembly_accession=None, assembly_strain=None, log_level="WARNING", log_to_file=False):
             Initializes the Gff3 class with the provided parameters.
 
-        parse_url():
-            Parses the content URL and extracts information about the genome annotation.
-
         __download_gff_file():
             Downloads a GFF file from a given URL and calculates the MD5, SHA256, and SHA1 hashes.
 
@@ -161,6 +158,7 @@ class Gff3:
     def __init__(
         self,
         content_url,
+        url_metadata,
         assembly_accession=None,
         assembly_strain=None,
         log_level="WARNING",
@@ -171,13 +169,13 @@ class Gff3:
 
         Parameters:
         - content_url (str): The URL of the GFF file.
+        - url_metadata (dict): dict containing metadata about the genome annotation
         - assembly_id (str): The ID of the genome assembly.
         - assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
         - hash_functions (tuple[str]): A tuple of hash functions to use for generating checksums. Defaults to ('MD5').
         """
         self.logger = setup_logger(LOG_FILE_NAME, log_level, log_to_file)
         try:
-            self.scientific_name_to_taxonid = load_json(SCIENTIFIC_NAME_TO_TAXONID_PATH)
             self.taxon_scientific_name = load_json(TAXON_SCIENTIFIC_NAME_PATH)
             self.taxon_common_name = load_json(TAXON_COMMON_NAME_PATH)
         except FileNotFoundError as e:
@@ -189,7 +187,6 @@ class Gff3:
 
         ## STEP 1: Parse the content URL to get metadata
         # Parse content_url to get metadata
-        url_metadata = self.parse_url()
         if url_metadata is None:
             self.logger.critical(
                 "The provided content URL is not supported. Please provide a valid URL."
@@ -212,13 +209,10 @@ class Gff3:
         self.authority = url_metadata.get("authority")
 
         # Assign the taxon_id and assembly_id based on the authority
+        taxon_id = url_metadata.get("taxonid")
         if self.authority.value == ga.AuthorityType.NCBI.value:
-            taxon_id = url_metadata.get("taxonid")
             assembly_id = url_metadata.get("assembly_accession")
         elif self.authority.value == ga.AuthorityType.ENSEMBL.value:
-            taxon_id = self.scientific_name_to_taxonid.get(
-                url_metadata.get("scientific_name").replace("_", " ")
-            )
             if assembly_accession is None:
                 self.logger.critical(
                     "The assembly ID is required for Ensembl URLs. Please provide the assembly ID."
@@ -253,59 +247,34 @@ class Gff3:
 
         self.gene_annotations = {}
 
-    def parse_url(self):
+    @classmethod
+    def from_url(
+            cls,
+            content_url,
+            assembly_accession=None,
+            assembly_strain=None,
+            log_level="WARNING",
+            log_to_file=False
+    ):
         """
-        Parses the content URL and extracts information about the genome annotation.
+        Initializes an instance of the GFFTranslator class, gleaning
+        metadata about the annotation from the URL of the GFF file.
 
-        Returns:
-            A dictionary containing the following information:
-            - 'authority': The authority type (NCBI or ENSEMBL).
-            - 'taxonid': The taxon ID of the genome.
-            - 'release_version': The release version of the genome annotation.
-            - 'assembly_accession': The assembly accession of the genome.
-            - 'assembly_name': The name of the assembly.
-            - 'species': The species name (only for ENSEMBL URLs).
+        Parameters:
+        - content_url (str): The URL of the GFF file.
+        - assembly_id (str): The ID of the genome assembly.
+        - assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
+        - hash_functions (tuple[str]): A tuple of hash functions to use for generating checksums. Defaults to ('MD5').
         """
-        # Define regex patterns for NCBI and Ensembl URLs
-        # NCBI : [assembly accession.version]_[assembly name]_[content type].[optional format]
-        # ENSEMBL :  <species>.<assembly>.<_version>.gff3.gz -> organism full name, assembly name, genome version
-        ncbi_pattern = r"/genomes/all/annotation_releases/(\d+)(?:/(\d+))?/(GCF_\d+\.\d+)[_-]([^/]+)/(GCF_\d+\.\d+)[_-]([^/]+)_genomic\.gff\.gz"
-        ensembl_pattern = (
-            r"/pub/release-(\d+)/gff3/([^/]+)/([^/.]+)\.([^/.]+)\.([^/.]+)\.gff3\.gz"
+        url_metadata = parse_url(content_url=content_url)
+        return cls(
+            content_url=content_url,
+            url_metadata=url_metadata,
+            assembly_accession=assembly_accession,
+            assembly_strain=assembly_strain,
+            log_level=log_level,
+            log_to_file=log_to_file
         )
-
-        # Parse the URL to get the path
-        parsed_url = urlparse(self.content_url)
-        path = parsed_url.path
-
-        # Determine if the URL is from NCBI or Ensembl and extract information
-        if "ncbi" in parsed_url.netloc:
-            ncbi_match = re.search(ncbi_pattern, path)
-            if ncbi_match:
-                return {
-                    "authority": ga.AuthorityType.NCBI,
-                    "taxonid": ncbi_match.group(1),
-                    "release_version": (
-                        ncbi_match.group(2)
-                        if ncbi_match.group(2)
-                        else ncbi_match.group(4)
-                    ),
-                    "assembly_accession": ncbi_match.group(3),
-                    "assembly_name": ncbi_match.group(6),
-                }
-
-        elif "ensembl" in parsed_url.netloc:
-            ensembl_match = re.search(ensembl_pattern, path)
-            if ensembl_match:
-                return {
-                    "authority": ga.AuthorityType.ENSEMBL,
-                    "release_version": ensembl_match.group(1),
-                    "scientific_name": ensembl_match.group(3),
-                    "assembly_name": ensembl_match.group(4),
-                }
-
-        # If no match is found, return None
-        return None
 
     def __download_gff_file(self):
         """
@@ -896,6 +865,70 @@ class Gff3:
         print(json.dumps(output_data, indent=2))
 
 
+def parse_url(content_url):
+    """
+    Parses the content URL and extracts information about the genome annotation.
+
+    Parameters:
+        content_url: a string. The URL of the GFF file being parsed for metadata
+
+    Returns:
+        A dictionary containing the following information:
+        - 'authority': The authority type (NCBI or ENSEMBL).
+        - 'taxonid': The taxon ID of the genome.
+        - 'release_version': The release version of the genome annotation.
+        - 'assembly_accession': The assembly accession of the genome.
+        - 'assembly_name': The name of the assembly.
+        - 'species': The species name (only for ENSEMBL URLs).
+    """
+    # Define regex patterns for NCBI and Ensembl URLs
+    # NCBI : [assembly accession.version]_[assembly name]_[content type].[optional format]
+    # ENSEMBL :  <species>.<assembly>.<_version>.gff3.gz -> organism full name, assembly name, genome version
+    ncbi_pattern = r"/genomes/all/annotation_releases/(\d+)(?:/(\d+))?/(GCF_\d+\.\d+)[_-]([^/]+)/(GCF_\d+\.\d+)[_-]([^/]+)_genomic\.gff\.gz"
+    ensembl_pattern = (
+        r"/pub/release-(\d+)/gff3/([^/]+)/([^/.]+)\.([^/.]+)\.([^/.]+)\.gff3\.gz"
+    )
+
+    # Parse the URL to get the path
+    parsed_url = urlparse(content_url)
+    path = parsed_url.path
+
+    # Determine if the URL is from NCBI or Ensembl and extract information
+    if "ncbi" in parsed_url.netloc:
+        ncbi_match = re.search(ncbi_pattern, path)
+        if ncbi_match:
+            return {
+                "authority": ga.AuthorityType.NCBI,
+                "taxonid": ncbi_match.group(1),
+                "release_version": (
+                    ncbi_match.group(2)
+                    if ncbi_match.group(2)
+                    else ncbi_match.group(4)
+                ),
+                "assembly_accession": ncbi_match.group(3),
+                "assembly_name": ncbi_match.group(6),
+            }
+
+    elif "ensembl" in parsed_url.netloc:
+        ensembl_match = re.search(ensembl_pattern, path)
+        if ensembl_match:
+            scientific_name_to_taxonid = load_json(SCIENTIFIC_NAME_TO_TAXONID_PATH)
+            result = {
+                "authority": ga.AuthorityType.ENSEMBL,
+                "release_version": ensembl_match.group(1),
+                "scientific_name": ensembl_match.group(3),
+                "assembly_name": ensembl_match.group(4),
+            }
+            taxon_id = scientific_name_to_taxonid.get(
+                result.get("scientific_name").replace("_", " ")
+            )
+            result['taxonid'] = taxon_id
+            return result
+
+    # If no match is found, return None
+    return None
+
+
 @click.command()
 ##ARGUEMENTS##
 # Argument #1: The URL of the GFF file
@@ -932,8 +965,12 @@ def gff2jsonld(content_url, assembly_accession, assembly_strain, log_level, log_
     '''
     Creates GeneAnnotation objects from a GFF3 file and serializes them to JSON-LD format.
     '''
-    gff3 = Gff3(
-        content_url, assembly_accession, assembly_strain, log_level, log_to_file
+    gff3 = Gff3.from_url(
+        content_url=content_url,
+        assembly_accession=assembly_accession,
+        assembly_strain=assembly_strain,
+        log_level=log_level,
+        log_to_file=log_to_file
     )
     gff3.parse()
     gff3.serialize_to_jsonld()
