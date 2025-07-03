@@ -164,6 +164,7 @@ class Gff3:
         assembly_strain=None,
         log_level="WARNING",
         log_to_file=False,
+        use_tqdm=True
     ):
         """
         Initializes an instance of the GFFTranslator class.
@@ -175,6 +176,7 @@ class Gff3:
         - assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
         - hash_functions (tuple[str]): A tuple of hash functions to use for generating checksums. Defaults to ('MD5').
         """
+        self.use_tqdm = use_tqdm
         self.logger = setup_logger(LOG_FILE_NAME, log_level, log_to_file)
         try:
             self.taxon_scientific_name = load_json(TAXON_SCIENTIFIC_NAME_PATH)
@@ -255,7 +257,8 @@ class Gff3:
             assembly_accession=None,
             assembly_strain=None,
             log_level="WARNING",
-            log_to_file=False
+            log_to_file=False,
+            use_tqdm=True
     ):
         """
         Initializes an instance of the GFFTranslator class, gleaning
@@ -274,7 +277,8 @@ class Gff3:
             assembly_accession=assembly_accession,
             assembly_strain=assembly_strain,
             log_level=log_level,
-            log_to_file=log_to_file
+            log_to_file=log_to_file,
+            use_tqdm=use_tqdm
         )
 
     def __download_gff_file(self):
@@ -299,12 +303,15 @@ class Gff3:
             gzip_file_path = f_gzip.name
 
             # Create a progress bar
-            progress_bar = tqdm(
-                total=total_size,
-                unit="iB",
-                unit_scale=True,
-                desc="Downloading GFF file",
-            )
+            if self.use_tqdm:
+                progress_bar = tqdm(
+                    total=total_size,
+                    unit="iB",
+                    unit_scale=True,
+                    desc="Downloading GFF file",
+                )
+            else:
+                progress_bar = None
 
             # Read the file in chunks, write to the temporary file, and update the hash
             while True:
@@ -315,9 +322,11 @@ class Gff3:
                 md5_hash.update(data)
                 sha256_hash.update(data)
                 sha1_hash.update(data)
-                progress_bar.update(len(data))
+                if progress_bar is not None:
+                    progress_bar.update(len(data))
 
-            progress_bar.close()
+            if progress_bar is not None:
+                progress_bar.close()
 
         # Return the path to the temporary file and the md5 hash
         return gzip_file_path, {
@@ -528,9 +537,14 @@ class Gff3:
 
         with open(gff_file, "r", encoding="utf-8") as file:
             curr_line_num = 1
-            progress_bar = tqdm(
-                total=self.__get_line_count(gff_file), desc="Parsing GFF3 File"
-            )
+
+            if self.use_tqdm:
+                progress_bar = tqdm(
+                    total=self.__get_line_count(gff_file), desc="Parsing GFF3 File"
+                )
+            else:
+                progress_bar = None
+
             for line_raw in file:
                 line_strip = line_raw.strip()
                 if curr_line_num == 1 and not line_strip.startswith("##gff-version 3"):
@@ -572,9 +586,13 @@ class Gff3:
                                 self.gene_annotations[gene_annotation.id] = (
                                     gene_annotation
                                 )
-                progress_bar.update(1)
+                if progress_bar is not None:
+                    progress_bar.update(1)
+
                 curr_line_num += 1
-            progress_bar.close()
+
+            if progress_bar is not None:
+                progress_bar.close()
 
     def generate_ensembl_gene_annotation(self, attributes, curr_line_num):
         """
