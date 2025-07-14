@@ -164,7 +164,8 @@ class Gff3:
         assembly_strain=None,
         log_level="WARNING",
         log_to_file=False,
-        use_tqdm=True
+        use_tqdm=True,
+        tmp_dir=None
     ):
         """
         Initializes an instance of the GFFTranslator class.
@@ -176,6 +177,7 @@ class Gff3:
         - assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
         - hash_functions (tuple[str]): A tuple of hash functions to use for generating checksums. Defaults to ('MD5').
         """
+        self._tmp_dir = tmp_dir
         self.use_tqdm = use_tqdm
         self.logger = setup_logger(LOG_FILE_NAME, log_level, log_to_file)
         try:
@@ -258,7 +260,8 @@ class Gff3:
             assembly_strain=None,
             log_level="WARNING",
             log_to_file=False,
-            use_tqdm=True
+            use_tqdm=True,
+            tmp_dir=None
     ):
         """
         Initializes an instance of the GFFTranslator class, gleaning
@@ -278,7 +281,8 @@ class Gff3:
             assembly_strain=assembly_strain,
             log_level=log_level,
             log_to_file=log_to_file,
-            use_tqdm=use_tqdm
+            use_tqdm=use_tqdm,
+            tmp_dir=tmp_dir
         )
 
     def __download_gff_file(self):
@@ -299,7 +303,11 @@ class Gff3:
         sha1_hash = hashlib.sha1()
 
         # Create a temporary file for the gzip data
-        with tempfile.NamedTemporaryFile(suffix=".gz", delete=False) as f_gzip:
+        with tempfile.NamedTemporaryFile(
+                            suffix=".gz",
+                            delete=False,
+                            dir=self._tmp_dir) as f_gzip:
+
             gzip_file_path = f_gzip.name
 
             # Create a progress bar
@@ -527,7 +535,7 @@ class Gff3:
             # Decompress the gzip file
             with gzip.open(self.gff_file, "rb") as f_in:
                 # Create a temporary file to save the decompressed data
-                with tempfile.NamedTemporaryFile(delete=False) as f_out:
+                with tempfile.NamedTemporaryFile(delete=False, dir=self._tmp_dir) as f_out:
                     # Copy the decompressed data to the temporary file
                     f_out.write(f_in.read())
                     gff_file = f_out.name
