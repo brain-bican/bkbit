@@ -70,6 +70,7 @@ from bkbit.models import genome_annotation as ga
 from bkbit.utils.setup_logger import setup_logger
 from bkbit.utils.load_json import load_json
 
+import bkbit.data_translators.error_classes as error_classes
 
 
 ## CONSTANTS ##
@@ -180,13 +181,9 @@ class Gff3:
         self._tmp_dir = tmp_dir
         self.use_tqdm = use_tqdm
         self.logger = setup_logger(LOG_FILE_NAME, log_level, log_to_file)
-        try:
-            self.taxon_scientific_name = load_json(TAXON_SCIENTIFIC_NAME_PATH)
-            self.taxon_common_name = load_json(TAXON_COMMON_NAME_PATH)
-        except FileNotFoundError as e:
-            self.logger.critical("NCBI Taxonomy not downloaded. Run 'bkbit download-ncbi-taxonomy' command first." )
-            print(e)
-            sys.exit(2)
+        detect_model_presence(logger=self.logger)
+        self.taxon_scientific_name = load_json(TAXON_SCIENTIFIC_NAME_PATH)
+        self.taxon_common_name = load_json(TAXON_COMMON_NAME_PATH)
 
         self.content_url = content_url
 
@@ -273,6 +270,7 @@ class Gff3:
         - assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
         - hash_functions (tuple[str]): A tuple of hash functions to use for generating checksums. Defaults to ('MD5').
         """
+        detect_model_presence()
         url_metadata = parse_url(content_url=content_url)
         return cls(
             content_url=content_url,
@@ -979,6 +977,24 @@ def parse_url(content_url):
 
     # If no match is found, return None
     return None
+
+
+def detect_model_presence(logger=None):
+    """
+    Detect if NCBI taxonomy model is present. If not, throw a custom error.
+
+    Paramteers
+    ----------
+    logger:
+        custom  logger where message can be written
+    """
+    scientific_name_path = pathlib.Path(TAXON_SCIENTIFIC_NAME_PATH)
+    taxon_common_name_path = pathlib.Path(TAXON_COMMON_NAME_PATH)
+    if not scientific_name_path.is_file() or not taxon_common_name_path.is_file():
+        msg = "NCBI Taxonomy not downloaded. Run 'bkbit download-ncbi-taxonomy' command first."
+        if logger is not None:
+            logger.critical(msg)
+        raise error_classes.MissingModelError(msg)
 
 
 @click.command()
