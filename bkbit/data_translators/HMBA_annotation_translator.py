@@ -5,141 +5,149 @@ import hashlib
 import pandas as pd
 import json
 
-def parse_group(df):
-    """
-    Parse the group data from the DataFrame and generate CellTypeTaxon and DisplayColor objects.
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing group data with columns:
-            - name
-            - accession_group
-            - display_order_group
-            - color_hex_group
-    Returns:
-        list: A list of generated CellTypeTaxon and DisplayColor objects.
-    """
-    generated_group_objects = []
-    for row in df.itertuples():
+class BKETaxonomy: 
+    def __init__(self):
+        self.abbreviations = {}
+        self.group_ctt = {}
+        self.subclass_ctt = {}
+        self.class_ctt = {}
+        self.neighborhood_ctt = {}
+        self.display_colors = {}
+    def parse_group(self, df):
+        """
+        Parse the group data from the DataFrame and generate CellTypeTaxon and DisplayColor objects.
+        
+        Args:
+            df (pd.DataFrame): DataFrame containing group data with columns:
+                - name
+                - accession_group
+                - display_order_group
+                - color_hex_group
+        Returns:
+            list: A list of generated CellTypeTaxon and DisplayColor objects.
+        """
+        generated_group_objects = []
+        for row in df.itertuples():
 
-        # define CellTypeTaxon
-        #? Should literature support be added as content_url?
-        #? Should literature_name_short and literature_name_long be added as xref?
-        #! columns not processed and contain data: embedding_set, CL:ID_group, curated_markers, literature_support, literature_name_short, literature_name_long
-        group_ctt_attributes = _helper_parse_cell_type_taxon_attributes(row, "Group")
-        group_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, group_ctt_attributes)
+            # define CellTypeTaxon
+            #? Should literature support be added as content_url?
+            #? Should literature_name_short and literature_name_long be added as xref?
+            #! columns not processed and contain data: embedding_set, CL:ID_group, curated_markers, literature_support, literature_name_short, literature_name_long
+            group_ctt_attributes = _helper_parse_cell_type_taxon_attributes(row, "Group")
+            group_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, group_ctt_attributes)
 
-        # define DisplayColor 
-        group_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_group, "is_color_for_taxon": group_cell_type_taxon.id})
-        generated_group_objects.extend([group_cell_type_taxon, group_display_color])
+            # define DisplayColor 
+            group_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_group, "is_color_for_taxon": group_cell_type_taxon.id})
+            generated_group_objects.extend([group_cell_type_taxon, group_display_color])
 
-    return generated_group_objects
+        return generated_group_objects
 
 
 
-def parse_subclass(df):
-    """
-    Parse the subclass data from the DataFrame and generate CellTypeTaxon and DisplayColor objects.
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing subclass data with columns:
-            - Subclass
-            - accession_subclass
-            - display_order_subclass
-            - color_hex_subclass
-    Returns:
-        list: A list of generated CellTypeTaxon and DisplayColor objects.
-    """
-    generated_subclass_objects = []
-    for row in df.itertuples():
-        # define CellTypeTaxon
-        subclass_ctt_attributes = _helper_parse_cell_type_taxon_attributes(row, "Subclass")
-        subclass_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, subclass_ctt_attributes)
+    def parse_subclass(self, df):
+        """
+        Parse the subclass data from the DataFrame and generate CellTypeTaxon and DisplayColor objects.
+        
+        Args:
+            df (pd.DataFrame): DataFrame containing subclass data with columns:
+                - Subclass
+                - accession_subclass
+                - display_order_subclass
+                - color_hex_subclass
+        Returns:
+            list: A list of generated CellTypeTaxon and DisplayColor objects.
+        """
+        generated_subclass_objects = []
+        for row in df.itertuples():
+            # define CellTypeTaxon
+            subclass_ctt_attributes = _helper_parse_cell_type_taxon_attributes(row, "Subclass")
+            subclass_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, subclass_ctt_attributes)
 
-        # define DisplayColor
-        subclass_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_subclass, "is_color_for_taxon": subclass_cell_type_taxon.id})
-        generated_subclass_objects.extend([subclass_cell_type_taxon, subclass_display_color])
+            # define DisplayColor
+            subclass_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_subclass, "is_color_for_taxon": subclass_cell_type_taxon.id})
+            generated_subclass_objects.extend([subclass_cell_type_taxon, subclass_display_color])
 
-    return generated_subclass_objects
+        return generated_subclass_objects
 
-def parse_class(df):
-    """
-    Parse the class data from the DataFrame and generate CellTypeTaxon and DisplayColor objects.
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing class data with columns:
-            - Class
-            - accession_class
-            - display_order_class
-            - color_hex_class
-    Returns:
-        list: A list of generated CellTypeTaxon and DisplayColor objects.
-    """
-    generated_class_objects = []
-    for row in df.itertuples():
-        # define CellTypeTaxon
-        class_ctt_attributes = _helper_parse_cell_type_taxon_attributes(row, "Class")
-        class_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, class_ctt_attributes)
+    def parse_class(self, df):
+        """
+        Parse the class data from the DataFrame and generate CellTypeTaxon and DisplayColor objects.
+        
+        Args:
+            df (pd.DataFrame): DataFrame containing class data with columns:
+                - Class
+                - accession_class
+                - display_order_class
+                - color_hex_class
+        Returns:
+            list: A list of generated CellTypeTaxon and DisplayColor objects.
+        """
+        generated_class_objects = []
+        for row in df.itertuples():
+            # define CellTypeTaxon
+            class_ctt_attributes = _helper_parse_cell_type_taxon_attributes(row, "Class")
+            class_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, class_ctt_attributes)
 
-        # define DisplayColor
-        class_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_class, "is_color_for_taxon": class_cell_type_taxon.id})
-        generated_class_objects.extend([class_cell_type_taxon, class_display_color])
+            # define DisplayColor
+            class_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_class, "is_color_for_taxon": class_cell_type_taxon.id})
+            generated_class_objects.extend([class_cell_type_taxon, class_display_color])
 
-    return generated_class_objects
+        return generated_class_objects
 
-def parse_neighborhood(df):
-    """
-    Parse the neighborhood data from the DataFrame and generate CellTypeTaxon and DisplayColor objects.
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing neighborhood data with columns:
-            - Neighborhood
-            - accession_neighborhood
-            - display_order_neighborhood
-            - color_hex_neighborhood
-    Returns:
-        list: A list of generated CellTypeTaxon and DisplayColor objects.
-    """
-    generated_neighborhood_objects = []
-    for row in df.itertuples():
-        # define CellTypeTaxon
-        neighborhood_ctt_attributes = _helper_parse_cell_type_taxon_attributes(row, "Neighborhood")
-        neighborhood_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, neighborhood_ctt_attributes)
+    def parse_neighborhood(self, df):
+        """
+        Parse the neighborhood data from the DataFrame and generate CellTypeTaxon and DisplayColor objects.
+        
+        Args:
+            df (pd.DataFrame): DataFrame containing neighborhood data with columns:
+                - Neighborhood
+                - accession_neighborhood
+                - display_order_neighborhood
+                - color_hex_neighborhood
+        Returns:
+            list: A list of generated CellTypeTaxon and DisplayColor objects.
+        """
+        generated_neighborhood_objects = []
+        for row in df.itertuples():
+            # define CellTypeTaxon
+            neighborhood_ctt_attributes = _helper_parse_cell_type_taxon_attributes(row, "Neighborhood")
+            neighborhood_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, neighborhood_ctt_attributes)
 
-        # define DisplayColor
-        neighborhood_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_neighborhood, "is_color_for_taxon": neighborhood_cell_type_taxon.id})
-        generated_neighborhood_objects.extend([neighborhood_cell_type_taxon, neighborhood_display_color])
+            # define DisplayColor
+            neighborhood_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_neighborhood, "is_color_for_taxon": neighborhood_cell_type_taxon.id})
+            generated_neighborhood_objects.extend([neighborhood_cell_type_taxon, neighborhood_display_color])
 
-    return generated_neighborhood_objects
+        return generated_neighborhood_objects
 
-def parse_abbreviation(df):
-    """
-    Parses a DataFrame to generate a dictionary of abbreviation objects.
+    def parse_abbreviation(self, df):
+        """
+        Parses a DataFrame to generate a dictionary of abbreviation objects.
 
-    Args:
-        df (pandas.DataFrame): A DataFrame containing abbreviation data. 
-            Expected columns:
-                - primary_identifier: Primary identifier for the abbreviation.
-                - secondary_identifier: Secondary identifier for the abbreviation.
-                - token: The abbreviation term.
-                - abbreviation_meaning: The meaning of the abbreviation.
-                - type: The entity type associated with the abbreviation.
+        Args:
+            df (pandas.DataFrame): A DataFrame containing abbreviation data. 
+                Expected columns:
+                    - primary_identifier: Primary identifier for the abbreviation.
+                    - secondary_identifier: Secondary identifier for the abbreviation.
+                    - token: The abbreviation term.
+                    - abbreviation_meaning: The meaning of the abbreviation.
+                    - type: The entity type associated with the abbreviation.
 
-    Returns:
-        dict: A dictionary where keys are abbreviation terms (str) and values 
-        are abbreviation objects generated using `bke_taxonomy.Abbreviation`.
-    """
-    abbreviations = dict()
-    for row in df.itertuples():
-        # define Abbreviation
-        xref = []
-        if row.primary_identifier:
-            xref.append(row.primary_identifier)
-        if row.secondary_identifier:
-            xref.append(row.secondary_identifier)
-        abbreviation_attributes = {"term": row.token, "meaning": row.abbreviation_meaning, "entity_type": row.type, "xref": xref}
-        abbreviation_object = generate_object(bke_taxonomy.Abbreviation, abbreviation_attributes)
-        abbreviations[abbreviation_object.term] = abbreviation_object
-    return abbreviations
+        Returns:
+            dict: A dictionary where keys are abbreviation terms (str) and values 
+            are abbreviation objects generated using `bke_taxonomy.Abbreviation`.
+        """
+        abbreviations = dict()
+        for row in df.itertuples():
+            # define Abbreviation
+            xref = []
+            if row.primary_identifier:
+                xref.append(row.primary_identifier)
+            if row.secondary_identifier:
+                xref.append(row.secondary_identifier)
+            abbreviation_attributes = {"term": row.token, "meaning": row.abbreviation_meaning, "entity_type": row.type, "xref": xref}
+            abbreviation_object = generate_object(bke_taxonomy.Abbreviation, abbreviation_attributes)
+            abbreviations[abbreviation_object.term] = abbreviation_object
+        return abbreviations
 
 
 def _helper_parse_cell_type_taxon_attributes(row, attribute_suffix):
@@ -160,7 +168,6 @@ def _helper_parse_cell_type_taxon_attributes(row, attribute_suffix):
         data_key = key + "_" + attribute_suffix.lower()
         if data_key in row._fields:
             attributes[model_value] = getattr(row, data_key)
-    
     return attributes
 
 def generate_object(cls, attributes: dict):
