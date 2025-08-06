@@ -5,8 +5,6 @@ import hashlib
 import pandas as pd
 import json
 
-hmba_taxonomy = dict()
-display_color_attribute_names = {"color_hex"}
 def parse_group(df):
     """
     Parse the group data from the DataFrame and generate CellTypeTaxon and DisplayColor objects.
@@ -26,7 +24,7 @@ def parse_group(df):
         # define CellTypeTaxon
         #? Should literature support be added as content_url?
         #? Should literature_name_short and literature_name_long be added as xref?
-        #! columns not processed and contain data: embessing_set, CL:ID_group, curated_markers, tokens_group, literature_support, literature_name_short, literature_name_long
+        #! columns not processed and contain data: embedding_set, CL:ID_group, curated_markers, literature_support, literature_name_short, literature_name_long
         group_ctt_attributes = _helper_parse_cell_type_taxon_attributes(row, "Group")
         group_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, group_ctt_attributes)
 
@@ -113,6 +111,37 @@ def parse_neighborhood(df):
 
     return generated_neighborhood_objects
 
+def parse_abbreviation(df):
+    """
+    Parses a DataFrame to generate a dictionary of abbreviation objects.
+
+    Args:
+        df (pandas.DataFrame): A DataFrame containing abbreviation data. 
+            Expected columns:
+                - primary_identifier: Primary identifier for the abbreviation.
+                - secondary_identifier: Secondary identifier for the abbreviation.
+                - token: The abbreviation term.
+                - abbreviation_meaning: The meaning of the abbreviation.
+                - type: The entity type associated with the abbreviation.
+
+    Returns:
+        dict: A dictionary where keys are abbreviation terms (str) and values 
+        are abbreviation objects generated using `bke_taxonomy.Abbreviation`.
+    """
+    abbreviations = dict()
+    for row in df.itertuples():
+        # define Abbreviation
+        xref = []
+        if row.primary_identifier:
+            xref.append(row.primary_identifier)
+        if row.secondary_identifier:
+            xref.append(row.secondary_identifier)
+        abbreviation_attributes = {"term": row.token, "meaning": row.abbreviation_meaning, "entity_type": row.type, "xref": xref}
+        abbreviation_object = generate_object(bke_taxonomy.Abbreviation, abbreviation_attributes)
+        abbreviations[abbreviation_object.term] = abbreviation_object
+    return abbreviations
+
+
 def _helper_parse_cell_type_taxon_attributes(row, attribute_suffix):
     """
     Helper function to parse cell type taxon attributes from a row.
@@ -192,8 +221,8 @@ if __name__ == "__main__":
     for i in class_ctt_objects:
         print(i)
         
-    # # parse Neighborhood columns
-    # neighborhood_ctt_objects = parse_neighborhood(hmba_df.iloc[:,34:40])
-    # # print in json format
-    # for i in neighborhood_ctt_objects:
-    #     print(i)
+    # parse Neighborhood columns
+    neighborhood_ctt_objects = parse_neighborhood(hmba_df.iloc[:,34:41])
+    # print in json format
+    for i in neighborhood_ctt_objects:
+        print(i)
