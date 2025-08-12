@@ -59,12 +59,10 @@ from datetime import datetime
 from collections import defaultdict
 import subprocess
 import gzip
-import sys
 from tqdm import tqdm
 import click
 import pkg_resources
 from bkbit.models import genome_annotation as ga
-from bkbit.utils.data_catalog_api.src import schema
 from bkbit.utils.setup_logger import setup_logger
 from bkbit.utils.load_json import load_json
 from bkbit.utils.generate_bkbit_id import generate_object_id
@@ -666,7 +664,6 @@ class Gff3:
         # Check and validate the biotype attribute
         biotype = self._get_attribute(attributes, "biotype", curr_line_num)
 
-        #! maybe remove type and add it as default directly in model
         attributes = {"source_id": stable_id, "symbol": name, "name": name, "description": description, "molecular_type": biotype, "referenced_in": self.genome_annotation.id, "in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "xref": [ENSEMBL_GENE_ID_PREFIX + stable_id]}
         #! add a try/catch incase the hash returns an error and log it
         attributes["id"] = generate_object_id(attributes)
@@ -877,9 +874,7 @@ class Gff3:
                 result[key].add(e.strip())
         return result
 
-    def serialize_to_jsonld(
-        self, exclude_none: bool = True, exclude_unset: bool = False
-    ):
+    def serialize_to_jsonld(self):
         """
         Serialize the object and either write it to the specified output file or print it to the CLI.
 
@@ -908,36 +903,6 @@ class Gff3:
             "@graph": data,
         }
         return (json.dumps(output_data, indent=2))
-
-
-        # rdf_dumper = RDFLibDumper()
-        # print(rdf_dumper.dump(element=self.genome_assembly, fmt="turtle", schemaview=view, to_file="output.ttl"))
-        # rdf_dumper = RDFDumper()
-        # rdf_dumper.dump(element=self.genome_assembly, fmt="turtle", to_file="output.ttl", contexts="https://raw.githubusercontent.com/brain-bican/models/162897b3e5f62e91e9e65af20878e165fe89467e/jsonld-context-autogen/genome_annotation.context.jsonld")
-        # # data.entend(se)
-        # data = [
-        #     self.organism_taxon.dict(
-        #         exclude_none=exclude_none, exclude_unset=exclude_unset
-        #     ),
-        #     self.genome_assembly.dict(
-        #         exclude_none=exclude_none, exclude_unset=exclude_unset
-        #     ),
-        #     self.genome_annotation.dict(
-        #         exclude_none=exclude_none, exclude_unset=exclude_unset
-        #     ),
-        # ]
-        # for ck in self.checksums:
-        #     data.append(ck.dict(exclude_none=exclude_none, exclude_unset=exclude_unset))
-        # for ga in self.gene_annotations.values():
-        #     data.append(ga.dict(exclude_none=exclude_none, exclude_unset=exclude_unset))
-
-        # output_data = {
-        #     "@context": "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/genome_annotation.context.jsonld",
-        #     "@graph": data,
-        # }
-
-        # return (json.dumps(output_data, indent=2))
-
     
 @click.command()
 ##ARGUEMENTS##
