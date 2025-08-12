@@ -67,6 +67,9 @@ from bkbit.utils.setup_logger import setup_logger
 from bkbit.utils.load_json import load_json
 from bkbit.utils.generate_bkbit_id import generate_object_id
 from linkml_runtime.dumpers import json_dumper
+import rdflib
+from rdflib import Graph, URIRef, Literal
+
 
 ## CONSTANTS ##
 
@@ -966,13 +969,16 @@ def gff2jsonld(content_url, assembly_accession, assembly_strain, log_level, log_
     gff3.setup()  # Initialize the Gff3 object, which downloads the GFF file and parses the URL
     gff3.parse_gff3_file()
     gff3.parse()
-    jsonld = gff3.serialize_to_jsonld()
+    jsonld_data = gff3.serialize_to_jsonld()
     if output_format == "turtle":
-        pass
+        g = Graph()
+        try:
+            g.parse(data=jsonld_data, format="json-ld")
+            print(g.serialize(format="turtle"))
+        except Exception as e:
+            print(f"Error during conversion: {e}")
     else:
-        print(jsonld)
+        print(jsonld_data)
     
-
-
 if __name__ == "__main__":
     gff2jsonld()
