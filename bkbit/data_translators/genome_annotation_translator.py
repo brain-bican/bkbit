@@ -69,10 +69,6 @@ from bkbit.utils.setup_logger import setup_logger
 from bkbit.utils.load_json import load_json
 from bkbit.utils.generate_bkbit_id import generate_object_id
 from linkml_runtime.dumpers import json_dumper
-from linkml_runtime.dumpers import RDFLibDumper
-from linkml_runtime.utils.schemaview import SchemaView
-from linkml_runtime.dumpers import RDFDumper
-from rdflib import Graph
 
 ## CONSTANTS ##
 
@@ -894,190 +890,25 @@ class Gff3:
         Returns:
             str: The serialized JSON-LD string.
         """
-        prefix_map = {
-            "AGRKB": "https://www.alliancegenome.org/",
-            "AspGD": "http://www.aspergillusgenome.org/cgi-bin/locus.pl?dbid=",
-            "BFO": "http://purl.obolibrary.org/obo/BFO_",
-            "BIOGRID": "http://identifiers.org/biogrid/",
-            "BIOSAMPLE": "http://identifiers.org/biosample/",
-            "BTO": "http://purl.obolibrary.org/obo/BTO_",
-            "CHEBI": "http://purl.obolibrary.org/obo/CHEBI_",
-            "CHEMBL.TARGET": "http://identifiers.org/chembl.target/",
-            "CPT": "https://www.ama-assn.org/practice-management/cpt/",
-            "DRUGBANK": "http://identifiers.org/drugbank/",
-            "EDAM-DATA": "http://edamontology.org/data_",
-            "EDAM-FORMAT": "http://edamontology.org/format_",
-            "EDAM-OPERATION": "http://edamontology.org/operation_",
-            "EDAM-TOPIC": "http://edamontology.org/topic_",
-            "EFO": "http://www.ebi.ac.uk/efo/EFO_",
-            "ENSEMBL": "http://identifiers.org/ensembl/",
-            "FB": "http://identifiers.org/fb/",
-            "FMA": "http://purl.obolibrary.org/obo/FMA_",
-            "GENO": "http://purl.obolibrary.org/obo/GENO_",
-            "GOLD.META": "http://identifiers.org/gold.meta/",
-            "GOREL": "http://purl.obolibrary.org/obo/GOREL_",
-            "HANCESTRO": "http://www.ebi.ac.uk/ancestro/ancestro_",
-            "HCPCS": "http://purl.bioontology.org/ontology/HCPCS/",
-            "HGNC": "http://identifiers.org/hgnc/",
-            "HMDB": "http://identifiers.org/hmdb/",
-            "IAO": "http://purl.obolibrary.org/obo/IAO_",
-            "INO": "http://purl.obolibrary.org/obo/INO_",
-            "IUPHAR.FAMILY": "http://identifiers.org/iuphar.family/",
-            "KEGG.BRITE": "https://bioregistry.io/kegg.brite:",
-            "KEGG.GENES": "https://bioregistry.io/kegg.genes:bsu:",
-            "LOINC": "http://loinc.org/rdf/",
-            "MESH": "http://id.nlm.nih.gov/mesh/",
-            "MGI": "http://identifiers.org/mgi/",
-            "MONDO": "http://purl.obolibrary.org/obo/MONDO_",
-            "NBO-PROPERTY": "http://purl.obolibrary.org/obo/nbo#",
-            "NCBIAssembly": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "NCBIGene": "http://identifiers.org/ncbigene/",
-            "NCBITaxon": "http://purl.obolibrary.org/obo/NCBITaxon_",
-            "NCIT": "http://purl.obolibrary.org/obo/NCIT_",
-            "OBAN": "http://purl.org/oban/",
-            "OBI": "http://purl.obolibrary.org/obo/OBI_",
-            "OMIM": "http://purl.obolibrary.org/obo/OMIM_",
-            "PATO": "http://purl.obolibrary.org/obo/PATO_",
-            "PHARMGKB.GENE": "https://www.pharmgkb.org/gene/",
-            "PomBase": "https://www.pombase.org/gene/",
-            "RGD": "http://identifiers.org/rgd/",
-            "RO": "http://purl.obolibrary.org/obo/RO_",
-            "RXNORM": "http://purl.bioontology.org/ontology/RXNORM/",
-            "SEMMEDDB": "https://skr3.nlm.nih.gov/SemMedDB",
-            "SGD": "http://identifiers.org/sgd/",
-            "SIO": "http://semanticscience.org/resource/SIO_",
-            "SNOMED": "http://purl.obolibrary.org/obo/SNOMED_",
-            "SO": "http://purl.obolibrary.org/obo/SO_",
-            "STY": "http://purl.bioontology.org/ontology/STY/",
-            "TAXRANK": "http://purl.obolibrary.org/obo/TAXRANK_",
-            "UBERON": "http://purl.obolibrary.org/obo/UBERON_",
-            "UBERON_CORE": "http://purl.obolibrary.org/obo/uberon/core#",
-            "UBERON_NONAMESPACE": "http://purl.obolibrary.org/obo/core#",
-            "UMLS": "http://identifiers.org/umls/",
-            "UMLSSG": "https://lhncbc.nlm.nih.gov/semanticnetwork/download/sg_archive/SemGroups-v04.txt",
-            "UO-PROPERTY": "http://purl.obolibrary.org/obo/uo#",
-            "WB": "http://identifiers.org/wb/",
-            "WIKIDATA": "https://www.wikidata.org/entity/",
-            "WIKIDATA_PROPERTY": "https://www.wikidata.org/prop/",
-            "WormBase": "https://www.wormbase.org/get?name=",
-            "Xenbase": "http://www.xenbase.org/gene/showgene.do?method=display&geneId=",
-            "ZFIN": "http://identifiers.org/zfin/",
-            "bican": "https://identifiers.org/brain-bican/vocab/",
-            "biolink": "https://w3id.org/biolink/vocab/",
-            "bioschemas": "https://bioschemas.org/",
-            "dcid": "https://datacommons.org/browser/",
-            "dct": "http://purl.org/dc/terms/",
-            "dctypes": "http://purl.org/dc/dcmitype/",
-            "dictyBase": "http://dictybase.org/gene/",
-            "doi": "https://doi.org/",
-            "gff3": "https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md#",
-            "gpi": "https://github.com/geneontology/go-annotation/blob/master/specs/gpad-gpi-2-0.md#",
-            "linkml": "https://w3id.org/linkml/",
-            "ncbi": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=",
-            "oboInOwl": "http://www.geneontology.org/formats/oboInOwl#",
-            "orphanet": "http://www.orpha.net/ORDO/Orphanet_",
-            "owl": "http://www.w3.org/2002/07/owl#",
-            "pav": "http://purl.org/pav/",
-            "prov": "http://www.w3.org/ns/prov#",
-            "qud": "http://qudt.org/1.1/schema/qudt#",
-            "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-            "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-            "schema": "http://schema.org/",
-            "skos": "http://www.w3.org/2004/02/skos/core#",
-            "xsd": "http://www.w3.org/2001/XMLSchema#",
-            "Activity": {
-                "@id": "biolink:Activity"
-            },
-            "ActivityAndBehavior": {
-                "@id": "biolink:ActivityAndBehavior"
-            },
-            "Annotation": {
-                "@id": "biolink:Annotation"
-            },
-            "Attribute": {
-                "@id": "biolink:Attribute"
-            },
-            "BiologicalEntity": {
-                "@id": "biolink:BiologicalEntity"
-            },
-            "ChemicalEntityOrGeneOrGeneProduct": {
-                "@id": "biolink:ChemicalEntityOrGeneOrGeneProduct"
-            },
-            "Dataset": {
-                "@id": "biolink:Dataset"
-            },
-            "Entity": {
-                "@id": "biolink:Entity"
-            },
-            "Gene": {
-                "@id": "biolink:Gene"
-            },
-            "GeneOrGeneProduct": {
-                "@id": "biolink:GeneOrGeneProduct"
-            },
-            "Genome": {
-                "@id": "biolink:Genome"
-            },
-            "GenomicEntity": {
-                "@id": "biolink:GenomicEntity"
-            },
-            "InformationContentEntity": {
-                "@id": "biolink:InformationContentEntity"
-            },
-            "MacromolecularMachineMixin": {
-                "@id": "biolink:MacromolecularMachineMixin"
-            },
-            "MaterialSample": {
-                "@id": "biolink:MaterialSample"
-            },
-            "NamedThing": {
-                "@id": "biolink:NamedThing"
-            },
-            "Occurrent": {
-                "@id": "biolink:Occurrent"
-            },
-            "OntologyClass": {
-                "@id": "biolink:OntologyClass"
-            },
-            "OrganismTaxon": {
-                "@id": "biolink:OrganismTaxon"
-            },
-            "PhysicalEntity": {
-                "@id": "biolink:PhysicalEntity"
-            },
-            "PhysicalEssence": {
-                "@id": "biolink:PhysicalEssence"
-            },
-            "PhysicalEssenceOrOccurrent": {
-                "@id": "biolink:PhysicalEssenceOrOccurrent"
-            },
-            "Procedure": {
-                "@id": "biolink:Procedure"
-            },
-            "QuantityValue": {
-                "@id": "biolink:QuantityValue"
-            },
-            "SubjectOfInvestigation": {
-                "@id": "biolink:SubjectOfInvestigation"
-            },
-            "TaxonomicRank": {
-                "@id": "biolink:TaxonomicRank"
-            },
-            "ThingWithTaxon": {
-                "@id": "biolink:ThingWithTaxon"
-            }
-        }
+        data = []
+        data.append(json.loads(json_dumper.dumps(self.organism_taxon)))
+        data.append(json.loads(json_dumper.dumps(self.genome_assembly)))
+        data.append(json.loads(json_dumper.dumps(self.genome_annotation)))
         
-        # view = SchemaView(pkg_resources.resource_filename(__name__, "../linkml-schema/genome_annotation.yaml"))
-        # original category value
-        output= json_dumper.dumps(self.organism_taxon, contexts="https://raw.githubusercontent.com/brain-bican/models/55eda5b3841762889f403fbedaecf1d320dc5254/jsonld-context-autogen/genome_annotation.context.jsonld")
-        #output = json_dumper.dumps(self.genome_assembly, contexts="https://raw.githubusercontent.com/brain-bican/models/162897b3e5f62e91e9e65af20878e165fe89467e/jsonld-context-autogen/genome_annotation.context.jsonld")
-        #output = json_dumper.dumps(self.genome_assembly, contexts="https://github.com/brain-bican/models/blob/64818160498abe4a6dbe8f464d851832cc56d6a3/jsonld-context-autogen/genome_annotation.context.jsonld")
-        g = Graph()
-        print("output:", output)
-        g.parse(data=output, format="json-ld")
-        turtle_string = g.serialize(format="turtle")
-        print("turtle_string:", turtle_string)
+        # Append checksums
+        for checksum in self.checksums:
+            data.append(json.loads(json_dumper.dumps(checksum)))
+            
+        # Append gene annotations
+        for gene_annotation in self.gene_annotations.values():
+            data.append(json.loads(json_dumper.dumps(gene_annotation)))
+
+        output_data = {
+            "@context": "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/genome_annotation.context.jsonld",
+            "@graph": data,
+        }
+        return (json.dumps(output_data, indent=2))
+
 
         # rdf_dumper = RDFLibDumper()
         # print(rdf_dumper.dump(element=self.genome_assembly, fmt="turtle", schemaview=view, to_file="output.ttl"))
