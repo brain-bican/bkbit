@@ -31,7 +31,7 @@ class BKETaxonomy:
         #! columns not processed and contain data: embedding_set, curated_markers, literature_support, literature_name_short, literature_name_long
         group_ctt_attributes = self._helper_parse_cell_type_taxon_attributes(row, "Group")
         group_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, group_ctt_attributes)
-        self.group_ctt[group_cell_type_taxon.name] = group_cell_type_taxon
+        self.group_ctt[group_cell_type_taxon.id] = group_cell_type_taxon
         
         # define DisplayColor
         group_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row["color_hex_group"], "is_color_for_taxon": group_cell_type_taxon.id})
@@ -56,7 +56,7 @@ class BKETaxonomy:
 
         subclass_ctt_attributes['has_parent'] = parent_id
         subclass_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, subclass_ctt_attributes)
-        self.subclass_ctt[subclass_cell_type_taxon.name] = subclass_cell_type_taxon
+        self.subclass_ctt[subclass_cell_type_taxon.id] = subclass_cell_type_taxon
 
         # define DisplayColor
         subclass_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_subclass, "is_color_for_taxon": subclass_cell_type_taxon.id})
@@ -79,7 +79,7 @@ class BKETaxonomy:
         class_ctt_attributes = self._helper_parse_cell_type_taxon_attributes(row, "Class")
         class_ctt_attributes['has_parent'] = parent_id
         class_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, class_ctt_attributes)
-        self.class_ctt[class_cell_type_taxon.name] = class_cell_type_taxon
+        self.class_ctt[class_cell_type_taxon.id] = class_cell_type_taxon
 
         # define DisplayColor
         class_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_class, "is_color_for_taxon": class_cell_type_taxon.id})
@@ -103,7 +103,7 @@ class BKETaxonomy:
         neighborhood_ctt_attributes = self._helper_parse_cell_type_taxon_attributes(row, "Neighborhood")
         neighborhood_ctt_attributes['has_parent'] = parent_id
         neighborhood_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, neighborhood_ctt_attributes)
-        self.neighborhood_ctt[neighborhood_cell_type_taxon.name] = neighborhood_cell_type_taxon
+        self.neighborhood_ctt[neighborhood_cell_type_taxon.id] = neighborhood_cell_type_taxon
 
         # define DisplayColor
         neighborhood_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_neighborhood, "is_color_for_taxon": neighborhood_cell_type_taxon.id})
@@ -146,7 +146,6 @@ class BKETaxonomy:
         """
         for row in df.itertuples():
             # define CellTypeSet
-            #! which description column should be used?
             cell_type_set_attributes = {"name": row.name, "accession_id": row.label, "description": row.description, "order": row.order}
             if row.name == "Neighborhood":
                 cell_type_set_attributes["contains_taxon"] = [i.id for i in self.neighborhood_ctt.values()]
@@ -160,7 +159,7 @@ class BKETaxonomy:
                 print(f"Unknown CellTypeSet name: {row.name}")
             # get self.row.name_ctt
             cell_type_set = generate_object(bke_taxonomy.CellTypeSet, cell_type_set_attributes)
-            self.cell_type_sets[cell_type_set.name] = cell_type_set
+            self.cell_type_sets[cell_type_set.id] = cell_type_set
 
     def _helper_parse_cell_type_taxon_attributes(self, row, attribute_suffix):
         """
@@ -236,18 +235,15 @@ if __name__ == "__main__":
     hmba_df = pd.read_csv(hmba_annotation_file)
     
     # process each row individually
-    for _, row in hmba_df.iterrows():
-        # convert row to DataFrame for compatibility with existing parsing functions
-        # row_df = pd.DataFrame([row])
-        
+    for _, curr_row in hmba_df.iterrows():        
         # parse Group columns for this row
-        group_taxon = hmba_bg.parse_group(row.iloc[0:21])
+        group_taxon = hmba_bg.parse_group(curr_row.iloc[0:21])
         # parse Subclass columns for this row
-        subclass_taxon = hmba_bg.parse_subclass(row.iloc[21:28], parent_id=group_taxon)
+        subclass_taxon = hmba_bg.parse_subclass(curr_row.iloc[21:28], parent_id=group_taxon)
         # # parse Class columns for this row
-        class_taxon = hmba_bg.parse_class(row.iloc[28:34], parent_id=subclass_taxon)
+        class_taxon = hmba_bg.parse_class(curr_row.iloc[28:34], parent_id=subclass_taxon)
         # parse Neighborhood columns for this row
-        neighborhood_taxon = hmba_bg.parse_neighborhood(row.iloc[34:41], parent_id=class_taxon)
+        neighborhood_taxon = hmba_bg.parse_neighborhood(curr_row.iloc[34:41], parent_id=class_taxon)
 
     # parse CellTypeSet columns
     # hmba_cell_type_set_file = pkg_resources.resource_filename("bkbit", "data/HMBA_BG_descriptions.csv")
