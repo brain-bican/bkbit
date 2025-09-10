@@ -173,7 +173,7 @@ class BKETaxonomy:
         Returns:
             dict: A dictionary of attributes for CellTypeTaxon.
         """
-        cell_type_taxon_attribute_names = {"accession": "accession_id", "display_order":"order", "tokens": "has_abbreviation"}
+        cell_type_taxon_attribute_names = {"accession": "accession_id", "display_order":"order", "tokens": "has_abbreviation", "CL_ID": "xref"}
         attributes = {"name": row.get(attribute_suffix)}
         
         for key, model_value in cell_type_taxon_attribute_names.items():
@@ -182,6 +182,8 @@ class BKETaxonomy:
                 if key == "tokens":
                     tokens = row.get(data_key).split("|")
                     attributes[model_value] = [self.abbreviations[token].id for token in tokens if token in self.abbreviations]
+                elif key == "CL_ID":
+                    attributes[model_value] = [row.get(data_key)] if pd.notna(row.get(data_key)) else None
                 else:
                     attributes[model_value] = row.get(data_key)
         return attributes
