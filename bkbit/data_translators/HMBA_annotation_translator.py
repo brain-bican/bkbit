@@ -4,14 +4,15 @@ import json
 import hashlib
 import pandas as pd
 import json
+from collections import defaultdict
 
 class BKETaxonomy: 
     def __init__(self):
         self.abbreviations = {}
-        self.group_ctt = {}
-        self.subclass_ctt = {}
-        self.class_ctt = {}
-        self.neighborhood_ctt = {}
+        self.group_ctt = defaultdict(set)
+        self.subclass_ctt = defaultdict(set)
+        self.class_ctt = defaultdict(set)
+        self.neighborhood_ctt = defaultdict(set)
         self.display_colors = {}
         self.cell_type_sets = {}
     def parse_group(self, row):
@@ -31,7 +32,7 @@ class BKETaxonomy:
         #! columns not processed and contain data: embedding_set, curated_markers, literature_support, literature_name_short, literature_name_long
         group_ctt_attributes = self._helper_parse_cell_type_taxon_attributes(row, "Group")
         group_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, group_ctt_attributes)
-        self.group_ctt[group_cell_type_taxon.id] = group_cell_type_taxon
+        self.group_ctt[group_cell_type_taxon.id].add(group_cell_type_taxon)
         
         # define DisplayColor
         group_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row["color_hex_group"], "is_color_for_taxon": group_cell_type_taxon.id})
@@ -239,11 +240,11 @@ if __name__ == "__main__":
         # parse Group columns for this row
         group_taxon = hmba_bg.parse_group(curr_row.iloc[0:21])
         # parse Subclass columns for this row
-        subclass_taxon = hmba_bg.parse_subclass(curr_row.iloc[21:28], parent_id=group_taxon)
-        # # parse Class columns for this row
-        class_taxon = hmba_bg.parse_class(curr_row.iloc[28:34], parent_id=subclass_taxon)
-        # parse Neighborhood columns for this row
-        neighborhood_taxon = hmba_bg.parse_neighborhood(curr_row.iloc[34:41], parent_id=class_taxon)
+        # subclass_taxon = hmba_bg.parse_subclass(curr_row.iloc[21:28], parent_id=group_taxon)
+        # # # parse Class columns for this row
+        # class_taxon = hmba_bg.parse_class(curr_row.iloc[28:34], parent_id=subclass_taxon)
+        # # parse Neighborhood columns for this row
+        # neighborhood_taxon = hmba_bg.parse_neighborhood(curr_row.iloc[34:41], parent_id=class_taxon)
 
     # parse CellTypeSet columns
     # hmba_cell_type_set_file = pkg_resources.resource_filename("bkbit", "data/HMBA_BG_descriptions.csv")
@@ -253,9 +254,9 @@ if __name__ == "__main__":
     with open(pkg_resources.resource_filename("bkbit", "data/HMBA_BG_taxonomy_20250909_2.json"), "w") as f:
         json.dump(hmba_bg.cell_type_sets, f, indent=4, default=lambda o: o.__dict__)
         json.dump(hmba_bg.group_ctt, f, indent=4, default=lambda o: o.__dict__)
-        json.dump(hmba_bg.subclass_ctt, f, indent=4, default=lambda o: o.__dict__)
-        json.dump(hmba_bg.class_ctt, f, indent=4, default=lambda o: o.__dict__)
-        json.dump(hmba_bg.neighborhood_ctt, f, indent=4, default=lambda o: o.__dict__)
+        # json.dump(hmba_bg.subclass_ctt, f, indent=4, default=lambda o: o.__dict__)
+        # json.dump(hmba_bg.class_ctt, f, indent=4, default=lambda o: o.__dict__)
+        # json.dump(hmba_bg.neighborhood_ctt, f, indent=4, default=lambda o: o.__dict__)
     # with open(pkg_resources.resource_filename("bkbit", "data/HMBA_BG_display_colors.json"), "w") as f:
     #     json.dump(hmba_bg.display_colors, f, indent=4, default=lambda o: o.__dict__)
     # with open(pkg_resources.resource_filename("bkbit", "data/HMBA_BG_abbreviations.json"), "w") as f:
