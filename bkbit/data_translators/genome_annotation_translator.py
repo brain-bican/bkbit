@@ -4,7 +4,7 @@ Module for downloading, parsing, and processing GFF3 files from NCBI and Ensembl
 1. Download a GFF3 file from a specified URL and calculate its checksums.
 2. Parse the GFF3 file to extract gene annotations.
 3. Generate various metadata objects such as organism taxon, genome assembly, and genome annotation.
-4. Serialize the extracted information into JSON-LD format for further use.
+4. Serialize the extracted information into JSON-LD or Turtle format for further use.
 
 Classes:
     Gff3: The Gff3 class is designed to handle the complete lifecycle of downloading, parsing, and processing GFF3 files from NCBI or Ensembl repositories. It extracts gene annotations and serializes the data into JSON-LD format.
@@ -24,27 +24,7 @@ Usage:
 Example:
     ```
     python genome_annotation_translator.py "https://example.com/path/to/gff3.gz" -a "GCF_000001405.39" -s "strain_name" -l "INFO" -f True
-    ```
-    
-Dependencies:
-    - re
-    - hashlib
-    - tempfile
-    - urllib
-    - urllib.request
-    - urllib.parse
-    - os
-    - json
-    - datetime
-    - collections.defaultdict
-    - subprocess
-    - gzip
-    - tqdm
-    - click
-    - pkg_resources
-    - bkbit.models.genome_annotation as ga
-    - bkbit.utils.setup_logger as setup_logger
-    - bkbit.utils.load_json as load_json    
+    ```  
 """
 
 import re
@@ -62,13 +42,13 @@ import gzip
 from tqdm import tqdm
 import click
 import pkg_resources
+from linkml_runtime.dumpers import json_dumper
+from rdflib import Graph
 from bkbit.models import genome_annotation as ga
 from bkbit.utils.setup_logger import setup_logger
 from bkbit.utils.load_json import load_json
 from bkbit.utils.generate_bkbit_id import generate_object_id
-from linkml_runtime.dumpers import json_dumper
-import rdflib
-from rdflib import Graph, URIRef, Literal
+
 
 
 ## CONSTANTS ##
