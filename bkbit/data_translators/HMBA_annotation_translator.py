@@ -128,13 +128,23 @@ class BKETaxonomy:
         """
         for row in df.itertuples():
             # define Abbreviation instance for each row 
-            xref = []
+            abbreviation_attributes = {"term": row.token, "meaning": row.meaning, "entity_type": row.type}
+
+            abbrev_ids = []
             # check if value is Nan
             if row.primary_identifier:
-                xref.append(row.primary_identifier)
+                abbrev_ids.append(row.primary_identifier)
             if row.secondary_identifier:
-                xref.append(row.secondary_identifier)
-            abbreviation_attributes = {"term": row.token, "meaning": row.meaning, "entity_type": row.type, "xref": xref}
+                abbrev_ids.append(row.secondary_identifier)
+            entity_type = abbreviation_attributes.get("entity_type")
+            if entity_type == "gene":
+                abbreviation_attributes["denotes_gene_annotation"] = abbrev_ids
+            elif entity_type == "cell_type":
+                abbreviation_attributes["denotes_cell_type"] = abbrev_ids
+            elif entity_type == "anatomical":
+                abbreviation_attributes["denotes_parcellation_term"] = abbrev_ids
+            else:
+                print(f"Unknown entity type: {entity_type}")
             abbreviation_object = generate_object(bke_taxonomy.Abbreviation, abbreviation_attributes)
             self.abbreviations[abbreviation_object.term] = abbreviation_object
     
@@ -252,7 +262,7 @@ if __name__ == "__main__":
     # hmba_cell_type_set_df = pd.read_csv(hmba_cell_type_set_file)
     # hmba_bg.parse_cell_type_set(hmba_cell_type_set_df)
     # save objects to json files
-    with open(pkg_resources.resource_filename("bkbit", "data/HMBA_BG_taxonomy_20250909_2.json"), "w") as f:
+    with open(pkg_resources.resource_filename("bkbit", "data/HMBA_BG_taxonomy.jsonld"), "w") as f:
         # use json_dumper to serialize objects
         data = []
         for i in hmba_bg.group_ctt:
@@ -262,6 +272,10 @@ if __name__ == "__main__":
         for i in hmba_bg.class_ctt:
             data.append(json.loads(json_dumper.dumps(i)))
         for i in hmba_bg.neighborhood_ctt:
+            data.append(json.loads(json_dumper.dumps(i)))
+        for i in hmba_bg.display_colors:
+            data.append(json.loads(json_dumper.dumps(i)))
+        for i in hmba_bg.abbreviations.values():
             data.append(json.loads(json_dumper.dumps(i)))
         output = output_data = {
             "@context": "https://raw.githubusercontent.com/brain-bican/models/refs/heads/main/jsonld-context-autogen/bke_taxonomy.context.jsonld",
