@@ -5,8 +5,8 @@ import json
 import hashlib
 import pandas as pd
 import json
-from collections import defaultdict
 from linkml_runtime.dumpers import json_dumper
+
 class BKETaxonomy: 
     def __init__(self):
         self.abbreviations = {}
@@ -16,98 +16,48 @@ class BKETaxonomy:
         self.neighborhood_ctt = {}
         self.display_colors = {}
         self.cell_type_sets = {}
-    def parse_group(self, row, parent_id):
+
+    def parse_taxonomy_level(self, row, level, parent_id=None):
         """
-        Parse the group data from a pandas Series (row) and generate CellTypeTaxon and DisplayColor objects.
+        Parse taxonomy data from a pandas Series and generate CellTypeTaxon and DisplayColor objects.
         
         Args:
-            row (pd.Series): Series containing group data with columns:
-                - Group
-                - accession_group
-                - display_order_group
-                - color_hex_group
-        """
-        # define CellTypeTaxon
-        group_ctt_attributes = self._helper_parse_cell_type_taxon_attributes(row, "Group")
-        group_ctt_attributes['has_parent'] = parent_id
-        group_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, group_ctt_attributes)
-        self.group_ctt.setdefault(group_cell_type_taxon.id, group_cell_type_taxon)
-
-        # define DisplayColor
-        group_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row["color_hex_group"], "is_color_for_taxon": group_cell_type_taxon.id})
-        self.display_colors.setdefault(group_display_color.id, group_display_color)
+            row (pd.Series): Series containing taxonomy data
+            level (str): The taxonomy level ("Group", "Subclass", "Class", "Neighborhood")
+            parent_id (str, optional): Parent taxon ID
         
-        return group_cell_type_taxon.id
-
-    def parse_subclass(self, row, parent_id):
+        Returns:
+            str: The ID of the created CellTypeTaxon
         """
-        Parse the subclass data from the DataFrame and generate CellTypeTaxon and DisplayColor objects.
+        # Define the storage dictionaries for each level
+        storage_map = {
+            "Group": self.group_ctt,
+            "Subclass": self.subclass_ctt, 
+            "Class": self.class_ctt,
+            "Neighborhood": self.neighborhood_ctt
+        }
         
-        Args:
-            df (pd.DataFrame): DataFrame containing subclass data with columns:
-                - Subclass
-                - accession_subclass
-                - display_order_subclass
-                - color_hex_subclass
-        """
-        # define CellTypeTaxon
-        subclass_ctt_attributes = self._helper_parse_cell_type_taxon_attributes(row, "Subclass")
-        # add parent attribute
-        subclass_ctt_attributes['has_parent'] = parent_id
-        subclass_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, subclass_ctt_attributes)
-        self.subclass_ctt.setdefault(subclass_cell_type_taxon.id, subclass_cell_type_taxon)
-
-        # define DisplayColor
-        subclass_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_subclass, "is_color_for_taxon": subclass_cell_type_taxon.id})
-        self.display_colors.setdefault(subclass_display_color.id, subclass_display_color)            
+        # Create CellTypeTaxon
+        ctt_attributes = self._helper_parse_cell_type_taxon_attributes(row, level)
+        if parent_id:
+            ctt_attributes['has_parent'] = parent_id
         
-        return subclass_cell_type_taxon.id
-    
-    def parse_class(self, row, parent_id):
-        """
-        Parse the class data from the DataFrame and generate CellTypeTaxon and DisplayColor objects.
+        cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, ctt_attributes)
+        storage_map[level].setdefault(cell_type_taxon.id, cell_type_taxon)
         
-        Args:
-            df (pd.DataFrame): DataFrame containing class data with columns:
-                - Class
-                - accession_class
-                - display_order_class
-                - color_hex_class
-        """
-        # define CellTypeTaxon
-        class_ctt_attributes = self._helper_parse_cell_type_taxon_attributes(row, "Class")
-        class_ctt_attributes['has_parent'] = parent_id
-        class_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, class_ctt_attributes)
-        self.class_ctt.setdefault(class_cell_type_taxon.id, class_cell_type_taxon)
-
-        # define DisplayColor
-        class_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_class, "is_color_for_taxon": class_cell_type_taxon.id})
-        self.display_colors.setdefault(class_display_color.id, class_display_color)       
-       
-        return class_cell_type_taxon.id
-
-    def parse_neighborhood(self, row):
-        """
-        Parse the neighborhood data from the DataFrame and generate CellTypeTaxon and DisplayColor objects.
+        # Create DisplayColor
+        color_column = "color_hex_" + level.lower()
+        if color_column in row and pd.notna(row[color_column]):
+            display_color = generate_object(
+                bke_taxonomy.DisplayColor, 
+                {
+                    "color_hex_triplet": row[color_column], 
+                    "is_color_for_taxon": cell_type_taxon.id
+                }
+            )
+            self.display_colors.setdefault(display_color.id, display_color)
         
-        Args:
-            df (pd.DataFrame): DataFrame containing neighborhood data with columns:
-                - Neighborhood
-                - accession_neighborhood
-                - display_order_neighborhood
-                - color_hex_neighborhood
-        """
-
-        # define CellTypeTaxon
-        neighborhood_ctt_attributes = self._helper_parse_cell_type_taxon_attributes(row, "Neighborhood")
-        neighborhood_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, neighborhood_ctt_attributes)
-        self.neighborhood_ctt.setdefault(neighborhood_cell_type_taxon.id, neighborhood_cell_type_taxon)
-
-        # define DisplayColor
-        neighborhood_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_neighborhood, "is_color_for_taxon": neighborhood_cell_type_taxon.id})
-        self.display_colors.setdefault(neighborhood_display_color.id, neighborhood_display_color)
-
-        return neighborhood_cell_type_taxon.id
+        return cell_type_taxon.id
 
     def parse_abbreviations(self, df):
         """
@@ -154,7 +104,6 @@ class BKETaxonomy:
         """
         for row in df.itertuples():
             # define CellTypeSet
-            #! change row.example_WMB_descriptions to row.description when official spreadsheet is updated
             cell_type_set_attributes = {"name": row.name, "accession_id": row.label, "description": row.description, "order": row.order}
             if row.name == "Neighborhood":
                 cell_type_set_attributes["contains_taxon"] = list(self.neighborhood_ctt.keys())
@@ -246,20 +195,20 @@ if __name__ == "__main__":
     # process each row individually
     for _, curr_row in hmba_df.iterrows():        
         # parse Neighborhood columns for this row
-        neighborhood_taxon = hmba_bg.parse_neighborhood(curr_row.iloc[34:41])
+        neighborhood_taxon = hmba_bg.parse_taxonomy_level(curr_row.iloc[34:41], "Neighborhood", parent_id=None) 
         # parse Class columns for this row
-        class_taxon = hmba_bg.parse_class(curr_row.iloc[28:34], parent_id=neighborhood_taxon)
+        class_taxon = hmba_bg.parse_taxonomy_level(curr_row.iloc[28:34], "Class", parent_id=neighborhood_taxon)
         # parse Subclass columns for this row
-        subclass_taxon = hmba_bg.parse_subclass(curr_row.iloc[21:28], parent_id=class_taxon)
+        subclass_taxon = hmba_bg.parse_taxonomy_level(curr_row.iloc[21:28], "Subclass", parent_id=class_taxon)
         # parse Group columns for this row
-        group_taxon = hmba_bg.parse_group(curr_row.iloc[0:21], parent_id=subclass_taxon)
+        group_taxon = hmba_bg.parse_taxonomy_level(curr_row.iloc[0:21], "Group", parent_id=subclass_taxon)
 
     # parse CellTypeSet columns
     hmba_cell_type_set_file = pkg_resources.resource_filename("bkbit", "data/HMBA_BG_descriptions.csv")
     hmba_cell_type_set_df = pd.read_csv(hmba_cell_type_set_file)
     hmba_bg.parse_cell_type_set(hmba_cell_type_set_df)
     # save objects to json files
-    with open(pkg_resources.resource_filename("bkbit", "data/HMBA_BG_taxonomy_20250918.jsonld"), "w") as f:
+    with open(pkg_resources.resource_filename("bkbit", "data/HMBA_BG_taxonomy_20250918_2.jsonld"), "w") as f:
         # use json_dumper to serialize objects
         data = []
         for i in hmba_bg.group_ctt.values():
