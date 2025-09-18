@@ -10,13 +10,13 @@ from linkml_runtime.dumpers import json_dumper
 class BKETaxonomy: 
     def __init__(self):
         self.abbreviations = {}
-        self.group_ctt = []
-        self.subclass_ctt = []
-        self.class_ctt = []
-        self.neighborhood_ctt = []
-        self.display_colors = []
+        self.group_ctt = {}
+        self.subclass_ctt = {}
+        self.class_ctt = {}
+        self.neighborhood_ctt = {}
+        self.display_colors = {}
         self.cell_type_sets = {}
-    def parse_group(self, row):
+    def parse_group(self, row, parent_id):
         """
         Parse the group data from a pandas Series (row) and generate CellTypeTaxon and DisplayColor objects.
         
@@ -28,16 +28,14 @@ class BKETaxonomy:
                 - color_hex_group
         """
         # define CellTypeTaxon
-        #? Should literature support be added as content_url?
-        #? Should literature_name_short and literature_name_long be added as xref?
-        #! columns not processed and contain data: embedding_set, curated_markers, literature_support, literature_name_short, literature_name_long
         group_ctt_attributes = self._helper_parse_cell_type_taxon_attributes(row, "Group")
+        group_ctt_attributes['has_parent'] = parent_id
         group_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, group_ctt_attributes)
-        self.group_ctt.append(group_cell_type_taxon)
+        self.group_ctt.setdefault(group_cell_type_taxon.id, group_cell_type_taxon)
 
         # define DisplayColor
         group_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row["color_hex_group"], "is_color_for_taxon": group_cell_type_taxon.id})
-        self.display_colors.append(group_display_color)
+        self.display_colors.setdefault(group_display_color.id, group_display_color)
         
         return group_cell_type_taxon.id
 
@@ -55,14 +53,13 @@ class BKETaxonomy:
         # define CellTypeTaxon
         subclass_ctt_attributes = self._helper_parse_cell_type_taxon_attributes(row, "Subclass")
         # add parent attribute
-
         subclass_ctt_attributes['has_parent'] = parent_id
         subclass_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, subclass_ctt_attributes)
-        self.subclass_ctt.append(subclass_cell_type_taxon)
+        self.subclass_ctt.setdefault(subclass_cell_type_taxon.id, subclass_cell_type_taxon)
 
         # define DisplayColor
         subclass_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_subclass, "is_color_for_taxon": subclass_cell_type_taxon.id})
-        self.display_colors.append(subclass_display_color)            
+        self.display_colors.setdefault(subclass_display_color.id, subclass_display_color)            
         
         return subclass_cell_type_taxon.id
     
@@ -81,15 +78,15 @@ class BKETaxonomy:
         class_ctt_attributes = self._helper_parse_cell_type_taxon_attributes(row, "Class")
         class_ctt_attributes['has_parent'] = parent_id
         class_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, class_ctt_attributes)
-        self.class_ctt.append(class_cell_type_taxon)
+        self.class_ctt.setdefault(class_cell_type_taxon.id, class_cell_type_taxon)
 
         # define DisplayColor
         class_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_class, "is_color_for_taxon": class_cell_type_taxon.id})
-        self.display_colors.append(class_display_color)       
+        self.display_colors.setdefault(class_display_color.id, class_display_color)       
        
         return class_cell_type_taxon.id
 
-    def parse_neighborhood(self, row, parent_id):
+    def parse_neighborhood(self, row):
         """
         Parse the neighborhood data from the DataFrame and generate CellTypeTaxon and DisplayColor objects.
         
@@ -103,13 +100,12 @@ class BKETaxonomy:
 
         # define CellTypeTaxon
         neighborhood_ctt_attributes = self._helper_parse_cell_type_taxon_attributes(row, "Neighborhood")
-        neighborhood_ctt_attributes['has_parent'] = parent_id
         neighborhood_cell_type_taxon = generate_object(bke_taxonomy.CellTypeTaxon, neighborhood_ctt_attributes)
-        self.neighborhood_ctt.append(neighborhood_cell_type_taxon)
+        self.neighborhood_ctt.setdefault(neighborhood_cell_type_taxon.id, neighborhood_cell_type_taxon)
 
         # define DisplayColor
         neighborhood_display_color = generate_object(bke_taxonomy.DisplayColor, {"color_hex_triplet":row.color_hex_neighborhood, "is_color_for_taxon": neighborhood_cell_type_taxon.id})
-        self.display_colors.append(neighborhood_display_color)
+        self.display_colors.setdefault(neighborhood_display_color.id, neighborhood_display_color)
 
         return neighborhood_cell_type_taxon.id
 
@@ -158,20 +154,21 @@ class BKETaxonomy:
         """
         for row in df.itertuples():
             # define CellTypeSet
+            #! change row.example_WMB_descriptions to row.description when official spreadsheet is updated
             cell_type_set_attributes = {"name": row.name, "accession_id": row.label, "description": row.description, "order": row.order}
             if row.name == "Neighborhood":
-                cell_type_set_attributes["contains_taxon"] = [i.id for i in self.neighborhood_ctt]
+                cell_type_set_attributes["contains_taxon"] = list(self.neighborhood_ctt.keys())
             elif row.name == "Class":
-                cell_type_set_attributes["contains_taxon"] = [i.id for i in self.class_ctt]
+                cell_type_set_attributes["contains_taxon"] = list(self.class_ctt.keys())  # Updated to use keys()
             elif row.name == "Subclass":
-                cell_type_set_attributes["contains_taxon"] = [i.id for i in self.subclass_ctt]
+                cell_type_set_attributes["contains_taxon"] = list(self.subclass_ctt.keys())  # Updated to use keys()
             elif row.name == "Group":
-                cell_type_set_attributes["contains_taxon"] = [i.id for i in self.group_ctt]
+                cell_type_set_attributes["contains_taxon"] = list(self.group_ctt.keys())  # Updated to use keys()
             else:
                 print(f"Unknown CellTypeSet name: {row.name}")
             # get self.row.name_ctt
             cell_type_set = generate_object(bke_taxonomy.CellTypeSet, cell_type_set_attributes)
-            self.cell_type_sets[cell_type_set.id] = cell_type_set
+            self.cell_type_sets.setdefault(cell_type_set.id, cell_type_set)
 
     def _helper_parse_cell_type_taxon_attributes(self, row, attribute_suffix):
         """
@@ -248,45 +245,39 @@ if __name__ == "__main__":
     
     # process each row individually
     for _, curr_row in hmba_df.iterrows():        
-        # parse Group columns for this row
-        group_taxon = hmba_bg.parse_group(curr_row.iloc[0:21])
-        # parse Subclass columns for this row
-        subclass_taxon = hmba_bg.parse_subclass(curr_row.iloc[21:28], parent_id=group_taxon)
-        # parse Class columns for this row
-        class_taxon = hmba_bg.parse_class(curr_row.iloc[28:34], parent_id=subclass_taxon)
         # parse Neighborhood columns for this row
-        neighborhood_taxon = hmba_bg.parse_neighborhood(curr_row.iloc[34:41], parent_id=class_taxon)
+        neighborhood_taxon = hmba_bg.parse_neighborhood(curr_row.iloc[34:41])
+        # parse Class columns for this row
+        class_taxon = hmba_bg.parse_class(curr_row.iloc[28:34], parent_id=neighborhood_taxon)
+        # parse Subclass columns for this row
+        subclass_taxon = hmba_bg.parse_subclass(curr_row.iloc[21:28], parent_id=class_taxon)
+        # parse Group columns for this row
+        group_taxon = hmba_bg.parse_group(curr_row.iloc[0:21], parent_id=subclass_taxon)
 
     # parse CellTypeSet columns
-    # hmba_cell_type_set_file = pkg_resources.resource_filename("bkbit", "data/HMBA_BG_descriptions.csv")
-    # hmba_cell_type_set_df = pd.read_csv(hmba_cell_type_set_file)
-    # hmba_bg.parse_cell_type_set(hmba_cell_type_set_df)
+    hmba_cell_type_set_file = pkg_resources.resource_filename("bkbit", "data/HMBA_BG_descriptions.csv")
+    hmba_cell_type_set_df = pd.read_csv(hmba_cell_type_set_file)
+    hmba_bg.parse_cell_type_set(hmba_cell_type_set_df)
     # save objects to json files
-    with open(pkg_resources.resource_filename("bkbit", "data/HMBA_BG_taxonomy.jsonld"), "w") as f:
+    with open(pkg_resources.resource_filename("bkbit", "data/HMBA_BG_taxonomy_20250918.jsonld"), "w") as f:
         # use json_dumper to serialize objects
         data = []
-        for i in hmba_bg.group_ctt:
+        for i in hmba_bg.group_ctt.values():
             data.append(json.loads(json_dumper.dumps(i)))
-        for i in hmba_bg.subclass_ctt:
+        for i in hmba_bg.subclass_ctt.values():
             data.append(json.loads(json_dumper.dumps(i)))
-        for i in hmba_bg.class_ctt:
+        for i in hmba_bg.class_ctt.values():  
             data.append(json.loads(json_dumper.dumps(i)))
-        for i in hmba_bg.neighborhood_ctt:
+        for i in hmba_bg.neighborhood_ctt.values(): 
             data.append(json.loads(json_dumper.dumps(i)))
-        for i in hmba_bg.display_colors:
+        for i in hmba_bg.display_colors.values(): 
             data.append(json.loads(json_dumper.dumps(i)))
-        for i in hmba_bg.abbreviations.values():
+        for i in hmba_bg.abbreviations.values(): 
+            data.append(json.loads(json_dumper.dumps(i)))
+        for i in hmba_bg.cell_type_sets.values():
             data.append(json.loads(json_dumper.dumps(i)))
         output = output_data = {
             "@context": "https://raw.githubusercontent.com/brain-bican/models/refs/heads/main/jsonld-context-autogen/bke_taxonomy.context.jsonld",
             "@graph": data,
         }
         json.dump(output, f, indent=4)
-
-    # with open(pkg_resources.resource_filename("bkbit", "data/HMBA_BG_display_colors.json"), "w") as f:
-    #     json.dump(hmba_bg.display_colors, f, indent=4, default=lambda o: o.__dict__)
-    # with open(pkg_resources.resource_filename("bkbit", "data/HMBA_BG_abbreviations.json"), "w") as f:
-    #     json.dump(hmba_bg.abbreviations, f, indent=4, default=lambda o: o.__dict__)
-    #     json.dump(hmba_bg.display_colors, f, indent=4, default=lambda o: o.__dict__)
-    # with open(pkg_resources.resource_filename("bkbit", "data/HMBA_BG_abbreviations.json"), "w") as f:
-    #     json.dump(hmba_bg.abbreviations, f, indent=4, default=lambda o: o.__dict__)
