@@ -1,4 +1,5 @@
 import itertools
+import click
 import pkg_resources
 from bkbit.models import bke_taxonomy
 import json
@@ -90,7 +91,7 @@ class BKETaxonomy:
             elif entity_type == "anatomical":
                 abbreviation_attributes["denotes_parcellation_term"] = abbrev_ids
             else:
-                print(f"Unknown entity type: {entity_type}")
+                print(f"Warning: Unknown Abbreviation entity type: '{entity_type}' when parsing abbreviation file.")
             abbreviation_object = generate_object(bke_taxonomy.Abbreviation, abbreviation_attributes)
             self.abbreviations[abbreviation_object.term] = abbreviation_object
     
@@ -114,7 +115,7 @@ class BKETaxonomy:
             elif row.name == "Group":
                 cell_type_set_attributes["contains_taxon"] = list(self.group_ctt.keys())  # Updated to use keys()
             else:
-                print(f"Unknown CellTypeSet name: {row.name}")
+                print(f"Warning: Unknown CellTypeSet name: '{row.name}' when parsing description file.")
             # get self.row.name_ctt
             cell_type_set = generate_object(bke_taxonomy.CellTypeSet, cell_type_set_attributes)
             self.cell_type_sets.setdefault(cell_type_set.id, cell_type_set)
@@ -176,21 +177,51 @@ def generate_object_id(attributes:dict):
     object_id = hashlib.sha256(normalized_attributes.encode()).hexdigest()
     return BKBIT_OBJECT_ID_PREFIX + object_id
 
-if __name__ == "__main__":
+@click.command()
+## ARGUMENTS ## 
+@click.argument("annotation_file", type=click.Path(exists=True))
+@click.argument("abbreviation_file", type=click.Path(exists=True))
+@click.argument("description_file", type=click.Path(exists=True))
+
+## OPTIONS ##
+# Option: Output file path
+@click.option(
+    "--output_file",
+    "-o",
+    required=False,
+    type=click.Path(),
+    default="HMBA_BG_taxonomy.jsonld",
+    show_default=True,
+    help="The output file path.",
+)
+# Option: Output format: jsonld or turtle
+@click.option(
+    "--output_format",
+    "-f",
+    required=False,
+    type=click.Choice(["jsonld", "turtle"]),
+    default="jsonld",
+    show_default=True,
+    help="The output format.",
+)
+
+def taxonomy2jsonld(annotation_file, abbreviation_file, description_file, output_file, output_format):
     # create BKETaxonomy instance
     hmba_bg = BKETaxonomy()
     
+    # open HMBA consensus annotation file
+    #hmba_annotation_file = pkg_resources.resource_filename("bkbit", "data/HMBA_BG_consensus_annotation.csv")
+    hmba_df = pd.read_csv(annotation_file)
+
+
     # open HMBA abbreviation meaning file
-    abbreviation_meaning_file = pkg_resources.resource_filename("bkbit", "data/HMBA_BG_abbrev_meanings.csv")
-    abbreviation_df = pd.read_csv(abbreviation_meaning_file)
+    #abbreviation_meaning_file = pkg_resources.resource_filename("bkbit", "data/HMBA_BG_abbrev_meanings.csv")
+    abbreviation_df = pd.read_csv(abbreviation_file)
     # replace NaN values with empty strings
     abbreviation_df.fillna("", inplace=True)
     # parse abbreviations
     hmba_bg.parse_abbreviations(abbreviation_df)
 
-    # open HMBA consensus annotation file
-    hmba_annotation_file = pkg_resources.resource_filename("bkbit", "data/HMBA_BG_consensus_annotation.csv")
-    hmba_df = pd.read_csv(hmba_annotation_file)
     
     # process each row individually
     for _, curr_row in hmba_df.iterrows():        
@@ -201,14 +232,15 @@ if __name__ == "__main__":
         # parse Subclass columns for this row
         subclass_taxon = hmba_bg.parse_taxonomy_level(curr_row.iloc[21:28], "Subclass", parent_id=class_taxon)
         # parse Group columns for this row
-        group_taxon = hmba_bg.parse_taxonomy_level(curr_row.iloc[0:21], "Group", parent_id=subclass_taxon)
+        hmba_bg.parse_taxonomy_level(curr_row.iloc[0:21], "Group", parent_id=subclass_taxon)
 
     # parse CellTypeSet columns
-    hmba_cell_type_set_file = pkg_resources.resource_filename("bkbit", "data/HMBA_BG_descriptions.csv")
-    hmba_cell_type_set_df = pd.read_csv(hmba_cell_type_set_file)
+    #hmba_cell_type_set_file = pkg_resources.resource_filename("bkbit", "data/HMBA_BG_descriptions.csv")
+    hmba_cell_type_set_df = pd.read_csv(description_file)
     hmba_bg.parse_cell_type_set(hmba_cell_type_set_df)
+
     # save objects to json files
-    with open(pkg_resources.resource_filename("bkbit", "data/HMBA_BG_taxonomy_20250918_2.jsonld"), "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         # use json_dumper to serialize objects
         data = []
         for i in hmba_bg.group_ctt.values():
@@ -225,8 +257,11 @@ if __name__ == "__main__":
             data.append(json.loads(json_dumper.dumps(i)))
         for i in hmba_bg.cell_type_sets.values():
             data.append(json.loads(json_dumper.dumps(i)))
-        output = output_data = {
+        output = {
             "@context": "https://raw.githubusercontent.com/brain-bican/models/refs/heads/main/jsonld-context-autogen/bke_taxonomy.context.jsonld",
             "@graph": data,
         }
         json.dump(output, f, indent=4)
+
+if __name__ == "__main__":
+    taxonomy2jsonld()
