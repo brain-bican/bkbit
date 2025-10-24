@@ -166,7 +166,7 @@ class YamlTrimmer:
 @click.command()
 ## ARGUMENTS ##
 # Argument #1: Schema file
-@click.argument("schema", type=click.Path(exists=True))
+@click.argument("schema")
 
 ## OPTIONS ##
 # Option #1: Classes
