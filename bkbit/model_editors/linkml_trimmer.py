@@ -156,10 +156,21 @@ class YamlTrimmer:
             if s not in visited_slots:
                 sv.delete_slot(s)
 
-    def serialize(self):
+    def serialize(self, schema_id, schema_name, schema_title, schema_version):
         """
         Serializes the schema using YAMLGenerator and prints the serialized output.
         """
+        if schema_id:
+            self.schemaview.schema.id = schema_id
+        if schema_name:
+            self.schemaview.schema.name = schema_name
+        if schema_title:
+            self.schemaview.schema.title = schema_title
+        if schema_version:
+            self.schemaview.schema.version = schema_version
+        else:
+            self.schemaview.schema.version = self.schemaview.schema.name + "-" + self.schemaview.schema.version
+        self.schemaview.schema.created_by = "BICAN_bkbit_linkml-trimmer"
         print(YAMLGenerator(self.schemaview.schema).serialize())
 
 
@@ -175,8 +186,13 @@ class YamlTrimmer:
 @click.option('--slots', '-s', help='Comma-separated list of slots to include in trimmed schema')
 # Option #3: Enums
 @click.option('--enums', '-e', help='Comma-separated list of enums to include in trimmed schema')
+@click.option('--schema_id', '-i', help='Updated schema id for trimmed schema')
+@click.option('--schema_name', '-n', help='Updated schema name for trimmed schema')
+@click.option('--schema_title', '-t', help='Updated schema title for trimmed schema')
+@click.option('--schema_version', '-v', help='Updated schema version for trimmed schema')
 
-def linkml_trimmer(schema, classes, slots, enums):
+
+def linkml_trimmer(schema, classes, slots, enums, schema_id, schema_name, schema_title, schema_version):
     """
     Trim a LinkMl schema based on a list of classes, slots, and enums to keep.
     """
@@ -186,7 +202,7 @@ def linkml_trimmer(schema, classes, slots, enums):
 
     yt = YamlTrimmer(schema)
     yt.trim_model(classes, slots, enums)
-    yt.serialize()
+    yt.serialize(schema_id, schema_name, schema_title, schema_version)
 
 if __name__ == "__main__":
     linkml_trimmer()
