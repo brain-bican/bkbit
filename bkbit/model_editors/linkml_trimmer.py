@@ -180,9 +180,9 @@ def linkml_trimmer(schema, classes, slots, enums):
     """
     Trim a LinkMl schema based on a list of classes, slots, and enums to keep.
     """
-    classes = classes.split(',')
-    slots = slots.split(',') if slots else []
-    enums = enums.split(',') if enums else []
+    classes = [c.strip() for c in classes.split(',')]
+    slots = [s.strip() for s in slots.split(',')] if slots else []
+    enums = [e.strip() for e in enums.split(',')] if enums else []
 
     yt = YamlTrimmer(schema)
     yt.trim_model(classes, slots, enums)
