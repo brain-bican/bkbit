@@ -181,7 +181,7 @@ class YamlTrimmer:
 
 ## OPTIONS ##
 # Option #1: Classes
-@click.option('--classes', '-c', required=True, help='Comma-separated list of classes to include in trimmed schema')
+@click.option('--classes', '-c', help='Comma-separated list of classes to include in trimmed schema')
 # Option #2: Slots
 @click.option('--slots', '-s', help='Comma-separated list of slots to include in trimmed schema')
 # Option #3: Enums
@@ -196,10 +196,12 @@ def linkml_trimmer(schema, classes, slots, enums, schema_id, schema_name, schema
     """
     Trim a LinkMl schema based on a list of classes, slots, and enums to keep.
     """
-    classes = [c.strip() for c in classes.split(',')]
+    classes = [c.strip() for c in classes.split(',')] if classes else []
     slots = [s.strip() for s in slots.split(',')] if slots else []
     enums = [e.strip() for e in enums.split(',')] if enums else []
 
+    if not classes and not slots and not enums:
+        raise click.UsageError("At least one of --classes, --slots, or --enums must be provided.")
     yt = YamlTrimmer(schema)
     yt.trim_model(classes, slots, enums)
     yt.serialize(schema_id, schema_name, schema_title, schema_version)
