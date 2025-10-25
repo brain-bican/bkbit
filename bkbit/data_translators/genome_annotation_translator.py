@@ -48,6 +48,7 @@ from bkbit.models import genome_annotation as ga
 from bkbit.utils.setup_logger import setup_logger
 from bkbit.utils.load_json import load_json
 from bkbit.utils.generate_bkbit_id import generate_object_id
+from bkbit.utils.serialize_to_ttl import convert_jsonld_to_ttl
 
 
 
@@ -889,12 +890,7 @@ def gff2jsonld(content_url, assembly_accession, assembly_strain, log_level, log_
     gff3.parse()
     jsonld_data = gff3.serialize_to_jsonld()
     if output_format == "turtle":
-        g = Graph()
-        try:
-            g.parse(data=jsonld_data, format="json-ld")
-            print(g.serialize(format="turtle"))
-        except Exception as e:
-            print(f"Error during conversion: {e}")
+        print(convert_jsonld_to_ttl(jsonld_data))
     else:
         print(jsonld_data)
     
