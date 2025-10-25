@@ -10,6 +10,10 @@ Options:
     --classes, -c TEXT  Comma-separated list of classes to include in the trimmed schema (required).
     --slots, -s TEXT    Comma-separated list of slots to include in the trimmed schema.
     --enums, -e TEXT    Comma-separated list of enums to include in the trimmed schema.
+    --schema_id, -i TEXT        Updated schema id for trimmed schema.
+    --schema_name, -n TEXT      Updated schema name for trimmed schema.
+    --schema_title, -t TEXT     Updated schema title for trimmed schema.
+    --schema_version, -v TEXT   Updated schema version for trimmed schema.
 
 Example:
     python script.py schema.yaml -c Person,Organization -s name,age -e StatusEnum
@@ -186,6 +190,7 @@ class YamlTrimmer:
 @click.option('--slots', '-s', help='Comma-separated list of slots to include in trimmed schema')
 # Option #3: Enums
 @click.option('--enums', '-e', help='Comma-separated list of enums to include in trimmed schema')
+# Option #4: Updated schema metadata
 @click.option('--schema_id', '-i', help='Updated schema id for trimmed schema')
 @click.option('--schema_name', '-n', help='Updated schema name for trimmed schema')
 @click.option('--schema_title', '-t', help='Updated schema title for trimmed schema')
