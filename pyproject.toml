@@ -28,6 +28,10 @@ dynamic = ["version"]
 bkbit = "bkbit.cli:cli"
 
 [project.optional-dependencies]
+dev = [
+    "black",
+    "pre-commit",
+]
 test = [
     "pytest",
 ]
