@@ -192,9 +192,6 @@ class Gff3:
         self.genome_annotation = None
         self.gene_annotations = {}
         
-        # Flag to track if setup has been completed
-        self._is_setup = False
-
     def setup(self):
         """
         Perform heavy initialization tasks like downloading and parsing.
@@ -222,12 +219,7 @@ class Gff3:
             
             # STEP 2: Download the GFF file
             self.gff_file, self.hash_values = Gff3.download_gff_file(self.content_url)
-            
-            # Mark setup as complete
-            self._is_setup = True
-            
-            return self  # For method chaining
-            
+
         except ValueError as e:
             self.logger.error("Setup failed: %s", str(e))
             raise
