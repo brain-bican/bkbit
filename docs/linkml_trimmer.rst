@@ -21,9 +21,7 @@ Command Line
 Options
 ,,,,,,,
 
-    ``-c, --classes <classes>``
-        **Required option**
-        
+    ``-c, --classes <classes>``        
         List of 'classes' to include in the trimmed schema.
 
         **Note**: Classes must be separated by commas and enclosed in quotes.
@@ -36,20 +34,37 @@ Options
         List of 'enums' to include in the trimmed schema.
 
         **Note**: Enums must be separated by commas and enclosed in quotes.
+    ``-i, --schema_id <schema_id>``
+        Updated schema id for trimmed schema.
+    ``-n, --schema_name <schema_name>``
+        Updated schema name for trimmed schema.
+    ``-t, --schema_title <schema_title>``
+        Updated schema title for trimmed schema.
+    ``-v, --schema_version <schema_version>``
+        Updated schema version for trimmed schema.
     
 Arguments
 ,,,,,,,,,
 
     ``SCHEMA``
-        Required argument
+        **Type**: str | Path | SchemaDefinition
+           
 
 
 Examples
 .........
 
-Example 1: Trim `Biolink Schema <https://biolink.github.io/biolink-model/>`_
+Example 1: Trim Schema (Local File): 
 ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 
 .. code-block:: bash
 
-    $ bkbit linkml-trimmer --classes "gene, genome, organism taxon, thing with taxon, material sample, procedure, entity, activity, named thing" biolink.yaml > bican-biolink.yaml
+    $ bkbit linkml-trimmer --classes "gene, genome, organism taxon, thing with taxon, material sample, procedure, entity, activity, named thing, relative frequency analysis result" biolink-model.yaml > bican-biolink.yaml
+
+
+Example 2: Trim Schema (URL): 
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+.. code-block:: bash
+
+    $ bkbit linkml-trimmer --classes "gene, genome, organism taxon, thing with taxon, material sample, procedure, entity, activity, named thing, relative frequency analysis result" "https://raw.githubusercontent.com/biolink/biolink-model/refs/heads/master/biolink-model.yaml" > bican-biolink.yaml
