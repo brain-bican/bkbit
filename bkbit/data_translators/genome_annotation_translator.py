@@ -232,60 +232,6 @@ class Gff3:
             self.logger.error("Setup failed: %s", str(e))
             raise
 
-    def reconfigure(self, content_url=None, assembly_accession=None, assembly_strain=None):
-        """
-        Reconfigure the Gff3 object with new parameters and re-run setup.
-        
-        Args:
-            content_url (str, optional): New content URL
-            assembly_accession (str, optional): New assembly accession
-            assembly_strain (str, optional): New assembly strain
-            
-        Returns:
-            self: Returns self for method chaining
-            
-        Raises:
-            ValueError: If the new content URL is not supported
-        """
-        # Update configuration parameters if provided
-        if content_url is not None:
-            self.content_url = content_url
-        
-        if assembly_accession is not None:
-            self.assembly_accession = assembly_accession
-            
-        if assembly_strain is not None:
-            self.assembly_strain = assembly_strain
-        
-        # Clean up any resources from previous setup
-        self._cleanup_resources()
-        
-        # Reset attributes
-        self.authority = None
-        self.gff_file = None
-        self.organism_taxon = None
-        self.genome_assembly = None
-        self.checksums = None
-        self.genome_annotation = None
-        self.gene_annotations = {}
-        self._is_setup = False
-        
-        # Run setup again
-        return self.setup()
-    
-    def _cleanup_resources(self):
-        """Clean up any resources that need to be released before reconfiguration."""
-        # Remove temporary files if they exist
-        if self.gff_file and os.path.exists(self.gff_file):
-            try:
-                os.remove(self.gff_file)
-                self.logger.debug("Removed temporary file: %s", self.gff_file)
-            except OSError as e:
-                self.logger.warning("Failed to remove temporary file %s: %s", self.gff_file, str(e))
-    def is_setup_complete(self):
-        """Check if setup has been completed successfully."""
-        return self._is_setup
-    
     def parse_gff3_file(self):
         # STEP 3: Generate the organism taxon, genome assembly, checksum, and genome annotation objects
         self.organism_taxon = Gff3.generate_organism_taxon(self.taxon_id)
