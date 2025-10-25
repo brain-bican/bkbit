@@ -10,6 +10,10 @@ Options:
     --classes, -c TEXT  Comma-separated list of classes to include in the trimmed schema (required).
     --slots, -s TEXT    Comma-separated list of slots to include in the trimmed schema.
     --enums, -e TEXT    Comma-separated list of enums to include in the trimmed schema.
+    --schema_id, -i TEXT        Updated schema id for trimmed schema.
+    --schema_name, -n TEXT      Updated schema name for trimmed schema.
+    --schema_title, -t TEXT     Updated schema title for trimmed schema.
+    --schema_version, -v TEXT   Updated schema version for trimmed schema.
 
 Example:
     python script.py schema.yaml -c Person,Organization -s name,age -e StatusEnum
@@ -156,37 +160,56 @@ class YamlTrimmer:
             if s not in visited_slots:
                 sv.delete_slot(s)
 
-    def serialize(self):
+    def serialize(self, schema_id, schema_name, schema_title, schema_version):
         """
         Serializes the schema using YAMLGenerator and prints the serialized output.
         """
+        if schema_id:
+            self.schemaview.schema.id = schema_id
+        if schema_name:
+            self.schemaview.schema.name = schema_name
+        if schema_title:
+            self.schemaview.schema.title = schema_title
+        if schema_version:
+            self.schemaview.schema.version = schema_version
+        else:
+            self.schemaview.schema.version = self.schemaview.schema.name + "-" + self.schemaview.schema.version
+        self.schemaview.schema.created_by = "BICAN_bkbit_linkml-trimmer"
         print(YAMLGenerator(self.schemaview.schema).serialize())
 
 
 @click.command()
 ## ARGUMENTS ##
 # Argument #1: Schema file
-@click.argument("schema", type=click.Path(exists=True))
+@click.argument("schema")
 
 ## OPTIONS ##
 # Option #1: Classes
-@click.option('--classes', '-c', required=True, help='Comma-separated list of classes to include in trimmed schema')
+@click.option('--classes', '-c', help='Comma-separated list of classes to include in trimmed schema')
 # Option #2: Slots
 @click.option('--slots', '-s', help='Comma-separated list of slots to include in trimmed schema')
 # Option #3: Enums
 @click.option('--enums', '-e', help='Comma-separated list of enums to include in trimmed schema')
+# Option #4: Updated schema metadata
+@click.option('--schema_id', '-i', help='Updated schema id for trimmed schema')
+@click.option('--schema_name', '-n', help='Updated schema name for trimmed schema')
+@click.option('--schema_title', '-t', help='Updated schema title for trimmed schema')
+@click.option('--schema_version', '-v', help='Updated schema version for trimmed schema')
 
-def linkml_trimmer(schema, classes, slots, enums):
+
+def linkml_trimmer(schema, classes, slots, enums, schema_id, schema_name, schema_title, schema_version):
     """
     Trim a LinkMl schema based on a list of classes, slots, and enums to keep.
     """
-    classes = classes.split(',')
-    slots = slots.split(',') if slots else []
-    enums = enums.split(',') if enums else []
+    classes = [c.strip() for c in classes.split(',')] if classes else []
+    slots = [s.strip() for s in slots.split(',')] if slots else []
+    enums = [e.strip() for e in enums.split(',')] if enums else []
 
+    if not classes and not slots and not enums:
+        raise click.UsageError("At least one of --classes, --slots, or --enums must be provided.")
     yt = YamlTrimmer(schema)
     yt.trim_model(classes, slots, enums)
-    yt.serialize()
+    yt.serialize(schema_id, schema_name, schema_title, schema_version)
 
 if __name__ == "__main__":
     linkml_trimmer()
