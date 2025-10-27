@@ -52,6 +52,13 @@ Options
         Default:
             False
 
+    ``-o, --output_format <output_format>``
+        Output format for the serialized data.
+        
+        Default:
+            jsonld
+        Options:
+            jsonld | turtle
 Arguments
 ,,,,,,,,,,,
 
