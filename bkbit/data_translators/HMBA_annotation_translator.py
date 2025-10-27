@@ -18,6 +18,7 @@ class BKETaxonomy:
         self.neighborhood_ctt = {}
         self.display_colors = {}
         self.cell_type_sets = {}
+        self.spatial_proportions = {}
 
     def parse_taxonomy_level(self, row, level, parent_id=None):
         """
@@ -187,6 +188,33 @@ class BKETaxonomy:
                     )
                 else:
                     attributes[model_value] = row.get(data_key)
+        if attribute_suffix == 'Group':
+            spatial_region_columns = ['spatial_regional_proportions', 'spatial_proportions_marmoset', 'spatial_proportions_macaque', 'spatial_proportions_human']
+            for sr in spatial_region_columns:
+                if sr in row and pd.notna(row[sr]):
+                    print(f"Parsing spatial proportions for column: {sr}")
+                    proportions = {}
+                    for item in row[sr].split(","):
+                        region, value = item.split(":")
+                        region = region.strip()
+                        value = value.strip()
+                        print(f"Region: {region}, Value: {value}")
+                        if bke_taxonomy.Region[region] in bke_taxonomy.Region:
+                            proportions[bke_taxonomy.Region[region].value] = float(value)
+                        else:
+                            print(f"Warning: Unknown region '{region}' in spatial proportions.")
+                            print(row[sr])
+                    print(row)
+                    print(proportions)
+                    spatial_region_object = generate_object(bke_taxonomy.SpatialProportions, proportions)
+                    self.spatial_proportions[spatial_region_object.id] = spatial_region_object
+                    attributes[sr] = spatial_region_object.id
+            curated_markers_columns = ['curated_markers_to_primates', 'curated_markers_to_mouse']
+            for cm in curated_markers_columns:
+                if cm in row and pd.notna(row[cm]):
+                    markers = [marker.strip() for marker in row[cm].split(",")]
+                    #! IN THE FUTURE, QUERY KG FOR GENE'S BKBIT ID
+                    attributes[cm] = markers
         return attributes
 
 
@@ -305,6 +333,8 @@ def taxonomy2jsonld(
         for i in hmba_bg.abbreviations.values():
             data.append(json.loads(json_dumper.dumps(i)))
         for i in hmba_bg.cell_type_sets.values():
+            data.append(json.loads(json_dumper.dumps(i)))
+        for i in hmba_bg.spatial_proportions.values():
             data.append(json.loads(json_dumper.dumps(i)))
         output = {
             "@context": "https://raw.githubusercontent.com/brain-bican/models/refs/heads/main/jsonld-context-autogen/bke_taxonomy.context.jsonld",
