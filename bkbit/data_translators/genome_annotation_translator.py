@@ -544,7 +544,7 @@ class Gff3:
                                 attributes, curr_line_num
                             )
                             if gene_annotation is not None:
-                                self.gene_annotations[gene_annotation] = gene_annotation
+                                self.gene_annotations[gene_annotation.id] = gene_annotation
                         elif self.genome_annotation.authority == ga.AuthorityType.NCBI:
                             gene_annotation = self.generate_ncbi_gene_annotation(
                                 attributes, curr_line_num
@@ -592,7 +592,7 @@ class Gff3:
         gene_annotation = ga.GeneAnnotation(**attributes)
 
         # handle duplicates
-        if gene_annotation not in self.gene_annotations:
+        if gene_annotation.id not in self.gene_annotations:
             return gene_annotation
         return None
 
