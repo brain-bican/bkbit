@@ -279,9 +279,11 @@ class SpecimenPortal:
                 continue
             if nimp_field_name == "was_derived_from" and was_derived_from is not None:
                 if multivalued:
-                    assigned_attributes[schema_field_name] = was_derived_from
+                    # Prefix each string with "NIMP:" and assign the list
+                    assigned_attributes[schema_field_name] = [f"NIMP:{value}" for value in was_derived_from]
                 else:
-                    assigned_attributes[schema_field_name] = was_derived_from[0]
+                    # Prefix the single string with "NIMP:" and assign it
+                    assigned_attributes[schema_field_name] = f"NIMP:{was_derived_from[0]}"
                 continue
             data_value = data.get("record", {}).get(nimp_field_name)
             if data_value is None:
@@ -293,12 +295,6 @@ class SpecimenPortal:
                     ]
                 else:
                     assigned_attributes[schema_field_name] = str(data_value)
-                # if schema_field_name == "id":
-                #     assigned_attributes[schema_field_name] = "NIMP:" + str(data.get("id"))
-                # elif multivalued:
-                #     assigned_attributes[schema_field_name] = [str(item) for item in data_value]
-                # else:
-                #     assigned_attributes[schema_field_name] = str(data_value)
             elif field_type is int:
                 assigned_attributes[schema_field_name] = int(float(data_value))
             elif field_type is float:
