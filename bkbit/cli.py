@@ -7,6 +7,7 @@ from bkbit.data_translators.specimen_metadata_translator import list_library_ali
 from bkbit.data_translators.genome_annotation_translator import gff2jsonld
 from bkbit.utils.get_ncbi_taxonomy import download_ncbi_taxonomy
 from bkbit.model_editors.linkml_trimmer import linkml_trimmer
+from bkbit.knowledge_extraction.assertion_extraction import assertion_extraction
 
 @click.group()
 def cli():
@@ -22,6 +23,7 @@ cli.add_command(list_library_aliquot)
 cli.add_command(gff2jsonld)
 cli.add_command(download_ncbi_taxonomy)
 cli.add_command(linkml_trimmer)
+cli.add_command(assertion_extraction)
 
 if __name__ == '__main__':
     cli()
