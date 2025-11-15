@@ -49,6 +49,7 @@ import os
 from multiprocessing import Pool
 from tqdm import tqdm
 import click
+from linkml_runtime.dumpers import json_dumper
 from bkbit.models import library_generation as lg
 from bkbit.utils.nimp_api_endpoints import get_data, get_ancestors, get_descendants
 from bkbit.utils.generate_bkbit_id import generate_object_id
@@ -362,7 +363,7 @@ class SpecimenPortal:
         data = []
         for obj in self.generated_objects.values():
             # data.append(obj.to_dict(exclude_none=exclude_none, exclude_unset=exclude_unset))
-            data.append(obj.__dict__)
+            data.append(json.loads(json_dumper.dumps(obj)))
         output_data = {
             "@context": CONTEXT,
             "@graph": data,
