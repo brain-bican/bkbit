@@ -51,6 +51,7 @@ from tqdm import tqdm
 import click
 from bkbit.models import library_generation as lg
 from bkbit.utils.nimp_api_endpoints import get_data, get_ancestors, get_descendants
+from bkbit.utils.generate_bkbit_id import generate_object_id
 
 CATEGORY_TO_CLASS = {
     "Library Pool": lg.LibraryPool,
@@ -191,6 +192,19 @@ class SpecimenPortal:
             except Exception as e:
                 print(f"Unexpected error generating object for '{curr_nhash_id}': {e}")
                 continue
+        for obj in self.generated_objects.values():
+            if hasattr(obj, "was_derived_from") and obj.was_derived_from is not None:
+                if type(obj.was_derived_from) is str:
+                    if obj.was_derived_from not in self.generated_objects:
+                        obj.was_derived_from = None
+                    else:
+                        obj.was_derived_from = self.generated_objects[obj.was_derived_from].id
+                else:    
+                    updated_parents = []
+                    for parent in obj.was_derived_from:
+                        if parent in self.generated_objects:
+                            updated_parents.append(self.generated_objects[parent].id)
+                    obj.was_derived_from = updated_parents
 
     def parse_nhash_id_top_down(self, nhash_id: str):
         """
@@ -239,8 +253,8 @@ class SpecimenPortal:
                 print(f"Unexpected error generating object for '{curr_nhash_id}': {e}")
                 continue
 
-    @classmethod
-    def generate_bican_object(cls, data, was_derived_from: list[str] = None):
+    #@classmethod
+    def generate_bican_object(self, data, was_derived_from: list[str] = None):
         """
         Generate a Bican object based on the provided data.
 
@@ -275,15 +289,18 @@ class SpecimenPortal:
             #! handle multivalued fields
             if nimp_field_name == "id":
                 #! might want to check if "id" is provided otherwise raise error
-                assigned_attributes[schema_field_name] = "NIMP:" + str(data.get("id"))
+                if assigned_attributes.get(schema_field_name) is not None:
+                    assigned_attributes[schema_field_name].append("NIMP:" + str(data.get("id")))
+                else:
+                    assigned_attributes[schema_field_name] = ["NIMP:" + str(data.get("id"))]
                 continue
             if nimp_field_name == "was_derived_from" and was_derived_from is not None:
                 if multivalued:
                     # Prefix each string with "NIMP:" and assign the list
-                    assigned_attributes[schema_field_name] = [f"NIMP:{value}" for value in was_derived_from]
+                    assigned_attributes[schema_field_name] = [value for value in was_derived_from]
                 else:
                     # Prefix the single string with "NIMP:" and assign it
-                    assigned_attributes[schema_field_name] = f"NIMP:{was_derived_from[0]}"
+                    assigned_attributes[schema_field_name] = was_derived_from[0]
                 continue
             data_value = data.get("record", {}).get(nimp_field_name)
             if data_value is None:
@@ -309,7 +326,7 @@ class SpecimenPortal:
             # check if the field is required; if missing raise an error
             if assigned_attributes[schema_field_name] is None and required:
                 raise ValueError(f"Missing required field: {schema_field_name}")
-
+        assigned_attributes["id"] = generate_object_id(assigned_attributes)
         return bican_class(**assigned_attributes)
 
     @staticmethod
