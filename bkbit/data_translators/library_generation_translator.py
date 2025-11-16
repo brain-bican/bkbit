@@ -49,8 +49,12 @@ import os
 from multiprocessing import Pool
 from tqdm import tqdm
 import click
+from linkml_runtime.dumpers import json_dumper
 from bkbit.models import library_generation as lg
 from bkbit.utils.nimp_api_endpoints import get_data, get_ancestors, get_descendants
+from bkbit.utils.generate_bkbit_id import generate_object_id
+from bkbit.utils.serialize_to_ttl import convert_jsonld_to_ttl
+
 
 CATEGORY_TO_CLASS = {
     "Library Pool": lg.LibraryPool,
@@ -191,6 +195,19 @@ class SpecimenPortal:
             except Exception as e:
                 print(f"Unexpected error generating object for '{curr_nhash_id}': {e}")
                 continue
+        for obj in self.generated_objects.values():
+            if hasattr(obj, "was_derived_from") and obj.was_derived_from is not None:
+                if type(obj.was_derived_from) is str:
+                    if obj.was_derived_from not in self.generated_objects:
+                        obj.was_derived_from = None
+                    else:
+                        obj.was_derived_from = self.generated_objects[obj.was_derived_from].id
+                else:    
+                    updated_parents = []
+                    for parent in obj.was_derived_from:
+                        if parent in self.generated_objects:
+                            updated_parents.append(self.generated_objects[parent].id)
+                    obj.was_derived_from = updated_parents
 
     def parse_nhash_id_top_down(self, nhash_id: str):
         """
@@ -239,8 +256,8 @@ class SpecimenPortal:
                 print(f"Unexpected error generating object for '{curr_nhash_id}': {e}")
                 continue
 
-    @classmethod
-    def generate_bican_object(cls, data, was_derived_from: list[str] = None):
+    #@classmethod
+    def generate_bican_object(self, data, was_derived_from: list[str] = None):
         """
         Generate a Bican object based on the provided data.
 
@@ -275,15 +292,18 @@ class SpecimenPortal:
             #! handle multivalued fields
             if nimp_field_name == "id":
                 #! might want to check if "id" is provided otherwise raise error
-                assigned_attributes[schema_field_name] = "NIMP:" + str(data.get("id"))
+                if assigned_attributes.get(schema_field_name) is not None:
+                    assigned_attributes[schema_field_name].append("NIMP:" + str(data.get("id")))
+                else:
+                    assigned_attributes[schema_field_name] = ["NIMP:" + str(data.get("id"))]
                 continue
             if nimp_field_name == "was_derived_from" and was_derived_from is not None:
                 if multivalued:
                     # Prefix each string with "NIMP:" and assign the list
-                    assigned_attributes[schema_field_name] = [f"NIMP:{value}" for value in was_derived_from]
+                    assigned_attributes[schema_field_name] = [value for value in was_derived_from]
                 else:
                     # Prefix the single string with "NIMP:" and assign it
-                    assigned_attributes[schema_field_name] = f"NIMP:{was_derived_from[0]}"
+                    assigned_attributes[schema_field_name] = was_derived_from[0]
                 continue
             data_value = data.get("record", {}).get(nimp_field_name)
             if data_value is None:
@@ -309,7 +329,7 @@ class SpecimenPortal:
             # check if the field is required; if missing raise an error
             if assigned_attributes[schema_field_name] is None and required:
                 raise ValueError(f"Missing required field: {schema_field_name}")
-
+        assigned_attributes["id"] = generate_object_id(assigned_attributes)
         return bican_class(**assigned_attributes)
 
     @staticmethod
@@ -345,7 +365,7 @@ class SpecimenPortal:
         data = []
         for obj in self.generated_objects.values():
             # data.append(obj.to_dict(exclude_none=exclude_none, exclude_unset=exclude_unset))
-            data.append(obj.__dict__)
+            data.append(json.loads(json_dumper.dumps(obj)))
         output_data = {
             "@context": CONTEXT,
             "@graph": data,
@@ -353,14 +373,14 @@ class SpecimenPortal:
         return json.dumps(output_data, indent=2)
 
 
-def parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):
+def parse_single_nashid(jwt_token, nhash_id, descendants, output_format, save_to_file=False):
     """
-    Parse a single nashid using the SpecimenPortal class.
 
     Parameters:
     - jwt_token (str): The JWT token for authentication.
     - nhash_id (str): The nashid to parse.
     - descendants (bool): The direction of parsing. True for descendants, False for ancestors.
+    - output_format (str): The output format. Either "jsonld" or "turtle".
     - save_to_file (bool): Whether to save the parsed data to a file. Default is False.
 
     Returns:
@@ -374,14 +394,22 @@ def parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):
         sp_obj.parse_nhash_id_bottom_up(nhash_id)
     else:
         sp_obj.parse_nhash_id_top_down(nhash_id)
-    if save_to_file:
-        with open(f"{nhash_id}.jsonld", "w") as f:
-            f.write(sp_obj.serialize_to_jsonld())
-    else:
-        print(sp_obj.serialize_to_jsonld())
+    jsonld_output = sp_obj.serialize_to_jsonld()
+    if output_format == "jsonld":
+        if save_to_file:
+            with open(f"{nhash_id}.jsonld", "w") as f:
+                f.write(jsonld_output)
+        else:
+            print(jsonld_output)
+    elif output_format == "turtle":
+        turtle_output = convert_jsonld_to_ttl(jsonld_output)
+        if save_to_file:
+            with open(f"{nhash_id}.ttl", "w") as f:
+                f.write(turtle_output)
+        else:
+            print(turtle_output)
 
-
-def parse_multiple_nashids(jwt_token, file_path, descendants):
+def parse_multiple_nashids(jwt_token, file_path, descendants, output_format):
     """
     Parse multiple nashids from a file.
 
@@ -389,6 +417,7 @@ def parse_multiple_nashids(jwt_token, file_path, descendants):
         jwt_token (str): The JWT token.
         file_path (str): The path to the file containing the nashids.
         descendants (bool): The direction of parsing. True for descendants, False for ancestors.
+        output_format (str): The output format. Either "jsonld" or "turtle".
 
     Returns:
         list: A list of results from parsing each nashid.
@@ -399,7 +428,7 @@ def parse_multiple_nashids(jwt_token, file_path, descendants):
     with Pool() as pool:
         results = pool.starmap(
             parse_single_nashid,
-            [(jwt_token, nhash_id, descendants, True) for nhash_id in nhashids],
+            [(jwt_token, nhash_id, descendants, output_format, True) for nhash_id in nhashids],
         )
     return results
 
@@ -413,7 +442,17 @@ def parse_multiple_nashids(jwt_token, file_path, descendants):
 # Option #1: Which direction to parse the nhash id. Default is ancestors.
 @click.option('--descendants', '-d', is_flag=True, help='Parse the given nhash_id and all of its children down to Library Pool.')
 
-def specimen2jsonld(nhash_id: str, descendants: bool):
+# Option #2: Output format: jsonld or turtle
+@click.option(
+    "--output_format",
+    "-o",
+    required=False,
+    type=click.Choice(["jsonld", "turtle"]),
+    default="jsonld",
+    show_default=True,
+    help="The output format.",
+)
+def specimen2jsonld(nhash_id: str, descendants: bool, output_format: str):
     """
     Convert the specimen portal data to JSON-LD format.
 
@@ -431,9 +470,9 @@ def specimen2jsonld(nhash_id: str, descendants: bool):
     if not jwt_token or jwt_token == "":
         raise ValueError("JWT token is required")
     if os.path.isfile(nhash_id):
-        parse_multiple_nashids(jwt_token, nhash_id, descendants)
+        parse_multiple_nashids(jwt_token, nhash_id, descendants, output_format)
     else:
-        parse_single_nashid(jwt_token, nhash_id, descendants)
+        parse_single_nashid(jwt_token, nhash_id, descendants, output_format)
 
 
 if __name__ == "__main__":
