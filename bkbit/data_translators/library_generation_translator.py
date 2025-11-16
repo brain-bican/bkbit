@@ -53,6 +53,8 @@ from linkml_runtime.dumpers import json_dumper
 from bkbit.models import library_generation as lg
 from bkbit.utils.nimp_api_endpoints import get_data, get_ancestors, get_descendants
 from bkbit.utils.generate_bkbit_id import generate_object_id
+from bkbit.utils.serialize_to_ttl import convert_jsonld_to_ttl
+
 
 CATEGORY_TO_CLASS = {
     "Library Pool": lg.LibraryPool,
@@ -371,14 +373,14 @@ class SpecimenPortal:
         return json.dumps(output_data, indent=2)
 
 
-def parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):
+def parse_single_nashid(jwt_token, nhash_id, descendants, output_format, save_to_file=False):
     """
-    Parse a single nashid using the SpecimenPortal class.
 
     Parameters:
     - jwt_token (str): The JWT token for authentication.
     - nhash_id (str): The nashid to parse.
     - descendants (bool): The direction of parsing. True for descendants, False for ancestors.
+    - output_format (str): The output format. Either "jsonld" or "turtle".
     - save_to_file (bool): Whether to save the parsed data to a file. Default is False.
 
     Returns:
@@ -392,14 +394,22 @@ def parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):
         sp_obj.parse_nhash_id_bottom_up(nhash_id)
     else:
         sp_obj.parse_nhash_id_top_down(nhash_id)
-    if save_to_file:
-        with open(f"{nhash_id}.jsonld", "w") as f:
-            f.write(sp_obj.serialize_to_jsonld())
-    else:
-        print(sp_obj.serialize_to_jsonld())
+    jsonld_output = sp_obj.serialize_to_jsonld()
+    if output_format == "jsonld":
+        if save_to_file:
+            with open(f"{nhash_id}.jsonld", "w") as f:
+                f.write(jsonld_output)
+        else:
+            print(jsonld_output)
+    elif output_format == "turtle":
+        turtle_output = convert_jsonld_to_ttl(jsonld_output)
+        if save_to_file:
+            with open(f"{nhash_id}.ttl", "w") as f:
+                f.write(turtle_output)
+        else:
+            print(turtle_output)
 
-
-def parse_multiple_nashids(jwt_token, file_path, descendants):
+def parse_multiple_nashids(jwt_token, file_path, descendants, output_format):
     """
     Parse multiple nashids from a file.
 
@@ -407,6 +417,7 @@ def parse_multiple_nashids(jwt_token, file_path, descendants):
         jwt_token (str): The JWT token.
         file_path (str): The path to the file containing the nashids.
         descendants (bool): The direction of parsing. True for descendants, False for ancestors.
+        output_format (str): The output format. Either "jsonld" or "turtle".
 
     Returns:
         list: A list of results from parsing each nashid.
@@ -417,7 +428,7 @@ def parse_multiple_nashids(jwt_token, file_path, descendants):
     with Pool() as pool:
         results = pool.starmap(
             parse_single_nashid,
-            [(jwt_token, nhash_id, descendants, True) for nhash_id in nhashids],
+            [(jwt_token, nhash_id, descendants, output_format, True) for nhash_id in nhashids],
         )
     return results
 
@@ -431,7 +442,17 @@ def parse_multiple_nashids(jwt_token, file_path, descendants):
 # Option #1: Which direction to parse the nhash id. Default is ancestors.
 @click.option('--descendants', '-d', is_flag=True, help='Parse the given nhash_id and all of its children down to Library Pool.')
 
-def specimen2jsonld(nhash_id: str, descendants: bool):
+# Option #2: Output format: jsonld or turtle
+@click.option(
+    "--output_format",
+    "-o",
+    required=False,
+    type=click.Choice(["jsonld", "turtle"]),
+    default="jsonld",
+    show_default=True,
+    help="The output format.",
+)
+def specimen2jsonld(nhash_id: str, descendants: bool, output_format: str):
     """
     Convert the specimen portal data to JSON-LD format.
 
@@ -449,9 +470,9 @@ def specimen2jsonld(nhash_id: str, descendants: bool):
     if not jwt_token or jwt_token == "":
         raise ValueError("JWT token is required")
     if os.path.isfile(nhash_id):
-        parse_multiple_nashids(jwt_token, nhash_id, descendants)
+        parse_multiple_nashids(jwt_token, nhash_id, descendants, output_format)
     else:
-        parse_single_nashid(jwt_token, nhash_id, descendants)
+        parse_single_nashid(jwt_token, nhash_id, descendants, output_format)
 
 
 if __name__ == "__main__":
