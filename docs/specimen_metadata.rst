@@ -6,7 +6,7 @@ Specimen Metadata
 Overview
 .........
 
-Generate JSON-LD files for specimens, subjects, and their repective ancestors or descendants. Data is retrieved from the `BICAN Specimen Portal <https://brain-specimenportal.org/>`_. 
+Generate JSON-LD files for specimens, subjects, and their respective ancestors or descendants. Data is retrieved from the `BICAN Specimen Portal <https://brain-specimenportal.org/>`_. 
 
 Command Line 
 .............
