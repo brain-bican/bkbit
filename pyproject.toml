@@ -6,9 +6,9 @@ build-backend = 'setuptools.build_meta'
 [project]
 name = "bkbit"
 authors = [
-  { name="atlaskb developers"},
+  { name="brain-bican-bkbit developers"},
 ]
-description = "A library for atlaskb data models"
+description = "A library for using brain-bican data models"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
@@ -18,10 +18,14 @@ classifiers = [
 license = {text = "Apache 2.0"}
 dependencies = [
     "linkml>=1.5",
-    "pandas"
+    "pandas",
+    "click",
+    "schemasheets",
 ]
 dynamic = ["version"]
 
+[project.scripts]
+bkbit = "bkbit.cli:cli"
 
 [project.optional-dependencies]
 dev = [
@@ -36,7 +40,14 @@ docs = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/atlaskb/bkbit"
+"Homepage" = "https://github.com/brain-bican/bkbit"
 
 [tool.setuptools_scm]
 write_to = "bkbit/_version.py"
+
+[tool.codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+skip = '.git*'
+check-hidden = true
+# ignore-regex = ''
+ignore-words-list = 'ans'

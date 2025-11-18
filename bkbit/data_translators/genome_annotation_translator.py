@@ -1,10 +1,38 @@
+"""
+Module for downloading, parsing, and processing GFF3 files from NCBI and Ensembl repositories. This module provides functionality to:
+
+1. Download a GFF3 file from a specified URL and calculate its checksums.
+2. Parse the GFF3 file to extract gene annotations.
+3. Generate various metadata objects such as organism taxon, genome assembly, and genome annotation.
+4. Serialize the extracted information into JSON-LD or Turtle format for further use.
+
+Classes:
+    Gff3: The Gff3 class is designed to handle the complete lifecycle of downloading, parsing, and processing GFF3 files from NCBI or Ensembl repositories. It extracts gene annotations and serializes the data into JSON-LD format.
+
+Functions:
+    gff2jsonld: The gff2jsonld function is responsible for creating GeneAnnotation objects from a provided GFF3 file and serializing the extracted information into the JSON-LD format.
+
+Usage:
+    The module can be run as a standalone script by executing it with appropriate arguments and options:
+    
+    ```
+    python genome_annotation_translator.py <content_url> -a <assembly_accession> -s <assembly_strain> -l <log_level> -f
+    ```
+    
+    The script will download the GFF3 file from the specified URL, parse it, and serialize the extracted information into JSON-LD format.
+
+Example:
+    ```
+    python genome_annotation_translator.py "https://example.com/path/to/gff3.gz" -a "GCF_000001405.39" -s "strain_name" -l "INFO" -f True
+    ```  
+"""
+
 import re
 import hashlib
 import tempfile
-import uuid
-import logging
 import urllib
 import urllib.request
+from urllib.parse import urlparse
 import os
 import json
 from datetime import datetime
@@ -12,143 +40,335 @@ from collections import defaultdict
 import subprocess
 import gzip
 from tqdm import tqdm
+import click
+import pkg_resources
+from linkml_runtime.dumpers import json_dumper
+from rdflib import Graph
 from bkbit.models import genome_annotation as ga
+from bkbit.utils.setup_logger import setup_logger
+from bkbit.utils.load_json import load_json
+from bkbit.utils.generate_bkbit_id import generate_object_id
+from bkbit.utils.serialize_to_ttl import convert_jsonld_to_ttl
 
-
-logging.basicConfig(
-    filename="gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log",
-    format="%(levelname)s: %(message)s (%(asctime)s)",
-    datefmt="%m/%d/%Y %I:%M:%S %p",
-    level=logging.INFO,
-)
-logger = logging.getLogger(__name__)
 
 
 ## CONSTANTS ##
 
-TAXON_SCIENTIFIC_NAME = {
-    "9606": "Homo sapiens",
-    "10090": "Mus musculus",
-    "9544": "Macaca mulatta",
-    "9483": "Callithrix jacchus",
-    "60711": "Chlorocebus sabaeus",
-    "9361": "Dasypus novemcinctus",
-    "9685": "Felis catus",
-    "9669": "Mustela putorius furo",
-    "30611": "Otolemur garnettii",
-    "9593": "Gorilla gorilla",
-    "13616": "Monodelphis domestica",
-    "9823": "Sus scrofa",
-    "9986": "Oryctolagus cuniculus",
-    "10116": "Rattus norvegicus",
-    "27679": "Saimiri boliviensis",
-    "246437": "Tupaia belangeri chinensis",
-    "9407": "Rousettus aegyptiacus",
-    "9598": "Pan troglodytes"
-}
-TAXON_COMMON_NAME = {
-    "9606": "human",
-    "10090": "mouse",
-    "9544": "rhesus macaque",
-    "9483": "common marmoset",
-    "60711": "green monkey",
-    "9361": "nine-banded armadillo",
-    "9685": "cat",
-    "9669": "ferret",
-    "30611": "galago",
-    "9593": "gorilla",
-    "13616":"gray short-tailed opossum",
-    "9823": "pig",
-    "9986": "rabbit",
-    "10116": "rat",
-    "27679": "squirrel monkey",
-    "246437": "Chinese tree shrew",
-    "9407": "egyptian fruit bat",
-    "9598": "chimpanzee"
-}
+
 PREFIX_MAP = {
-    "NCBITaxon": "http://purl.obolibrary.org/obo/NCBITaxon_",
-    "NCBIGene": "http://identifiers.org/ncbigene/",
-    "ENSEMBL": "http://identifiers.org/ensembl/",
-    "NCBIAssembly": "https://www.ncbi.nlm.nih.gov/assembly/",
+    "NCBITaxon:": "http://purl.obolibrary.org/obo/NCBITaxon_",
+    "NCBIGene:": "http://identifiers.org/ncbigene/",
+    "ENSEMBL:": "http://identifiers.org/ensembl/",
+    "NCBIAssembly:": "https://www.ncbi.nlm.nih.gov/assembly/",
 }
-NCBI_GENE_ID_PREFIX = "NCBIGene"
-ENSEMBL_GENE_ID_PREFIX = "ENSEMBL"
-TAXON_PREFIX = "NCBITaxon"
-ASSEMBLY_PREFIX = "NCBIAssembly"
+NCBI_GENE_ID_PREFIX = "NCBIGene:"
+ENSEMBL_GENE_ID_PREFIX = "ENSEMBL:"
+TAXON_PREFIX = "NCBITaxon:"
+ASSEMBLY_PREFIX = "NCBIAssembly:"
 BICAN_ANNOTATION_PREFIX = "bican:annotation-"
+BKBIT_OBJECT_ID_PREFIX = "urn:bkbit:"
 GENOME_ANNOTATION_DESCRIPTION_FORMAT = (
     "{authority} {taxon_scientific_name} Annotation Release {genome_version}"
 )
 DEFAULT_FEATURE_FILTER = ("gene", "pseudogene", "ncRNA_gene")
-DEFAULT_HASH = ("SHA256", "MD5")
-
-
+DEFAULT_HASH = ("MD5",)
+TAXON_DIR_PATH = "../utils/ncbi_taxonomy/"
+SCIENTIFIC_NAME_TO_TAXONID_PATH = pkg_resources.resource_filename(__name__, TAXON_DIR_PATH + "scientific_name_to_taxid.json")
+TAXON_SCIENTIFIC_NAME_PATH = pkg_resources.resource_filename(__name__, TAXON_DIR_PATH + "taxid_to_scientific_name.json")
+TAXON_COMMON_NAME_PATH = pkg_resources.resource_filename(__name__, TAXON_DIR_PATH + "taxid_to_common_name.json")
+INCOMPATABLE_EXTENSION = "The provided content URL is not supported. Please provide a valid URL with '.gff.gz' extension."
 class Gff3:
+    """
+    The Gff3 class is responsible for downloading, parsing, and processing of GFF3 files from NCBI and Ensembl repositories.
+
+    Attributes:
+        content_url (str): The URL of the GFF file.
+        assembly_accession (str): The ID of the genome assembly.
+        assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
+        log_level (str): The logging level. Defaults to 'WARNING'.
+        log_to_file (bool): Flag to log messages to a file. Defaults to False.
+
+    Methods:
+        __init__(content_url, assembly_accession=None, assembly_strain=None, log_level="WARNING", log_to_file=False):
+            Initializes the Gff3 class with the provided parameters.
+
+        parse_url():
+            Parses the content URL and extracts information about the genome annotation.
+
+        download_gff_file():
+            Downloads a GFF file from a given URL and calculates the MD5, SHA256, and SHA1 hashes.
+
+        generate_organism_taxon(taxon_id):
+            Generates an organism taxon object based on the provided taxon ID.
+
+        generate_genome_assembly(assembly_id, assembly_version, assembly_label, assembly_strain=None):
+            Generates a genome assembly object based on the provided parameters.
+
+        generate_genome_annotation(genome_label, genome_version):
+            Generates a genome annotation object based on the provided parameters.
+
+        generate_digest(hash_values, hash_functions=DEFAULT_HASH):
+            Generates checksum digests for the GFF file using the specified hash functions.
+
+        __get_line_count(file_path):
+            Returns the line count of a file.
+
+        parse(feature_filter=DEFAULT_FEATURE_FILTER):
+            Parses the GFF file and extracts gene annotations based on the provided feature filter.
+
+        generate_ensembl_gene_annotation(attributes, curr_line_num):
+            Generates a GeneAnnotation object for Ensembl based on the provided attributes.
+
+        generate_ncbi_gene_annotation(attributes, curr_line_num):
+            Generates a GeneAnnotation object for NCBI based on the provided attributes.
+
+        _get_attribute(attributes, attribute_name, curr_line_num):
+            Retrieves the value of a specific attribute from the given attributes dictionary.
+
+        _resolve_ncbi_gene_annotation(new_gene_annotation, curr_line_num):
+            Resolves conflicts between existing and new gene annotations based on certain conditions.
+
+        __merge_values(t):
+            Merges values from a list of lists into a dictionary of sets.
+
+        serialize_to_jsonld(exclude_none=True, exclude_unset=False):
+            Serializes the object and either writes it to the specified output file or prints it to the CLI.
+    """
+    scientific_name_to_taxonid = None
+    taxon_scientific_name = None
+    taxon_common_name = None
+
+    # Load taxonomy data at class definition
+    try:
+        scientific_name_to_taxonid = load_json(SCIENTIFIC_NAME_TO_TAXONID_PATH)
+        taxon_scientific_name = load_json(TAXON_SCIENTIFIC_NAME_PATH)
+        taxon_common_name = load_json(TAXON_COMMON_NAME_PATH)
+    except FileNotFoundError as e:
+        #logging.critical("NCBI Taxonomy not downloaded. Run 'bkbit download-ncbi-taxonomy' first.")
+        raise RuntimeError("NCBI Taxonomy not downloaded. Run 'bkbit download-ncbi-taxonomy' first.") from e
+
     def __init__(
         self,
-        content_url,
-        taxon_id,
-        assembly_id,
-        assembly_version,
-        assembly_label,
-        genome_label: str,
-        genome_version: str,
-        genome_authority: str,
-        hash_functions: tuple[str] = DEFAULT_HASH,
-        assembly_strain=None,
-        gff_file=None,
+        content_url: str,
+        assembly_accession: str = None,
+        assembly_strain: str = None,
+        log_level: str = "WARNING",
+        log_to_file: bool = False,
     ):
         """
         Initializes an instance of the GFFTranslator class.
 
         Parameters:
         - content_url (str): The URL of the GFF file.
-        - taxon_id (int): The taxon ID of the organism.
-        - assembly_id (str): The ID of the genome assembly.
-        - assembly_version (str): The version of the genome assembly.
-        - assembly_label (str): The label of the genome assembly.
-        - genome_label (str): The label of the genome.
-        - genome_version (str): The version of the genome.
-        - genome_authority (str): The authority responsible for the genome.
-        - hash_functions (tuple[str]): A list of hash functions to use for generating checksums. Defaults to ("SHA256", "MD5").
-        - assembly_strain (str, optional): The strain of the genome assembly. Defaults to None.
-        - gff_file (str, optional): The local path to the GFF file if file is already downloaded. Defaults to None.
+        - assembly_accession (str, optional): The accession ID of the genome assembly.
+        - assembly_strain (str, optional): The strain of the genome assembly.
+        - log_level (str): Logging level. Defaults to "WARNING".
+        - log_to_file (bool): Whether to log messages to a file.
         """
-        self.logger = logger
-        self.content_url = content_url
-        if gff_file is None:
-            self.gff_file = self.__download_gff_file()
-        else:
-            self.gff_file = gff_file
-        self.authority = self.assign_authority_type(genome_authority)
-        self.organism_taxon = self.generate_organism_taxon(taxon_id)
-        self.genome_assembly = self.generate_genome_assembly(
-            assembly_id, assembly_version, assembly_label, assembly_strain
-        )
-        self.checksums = self.generate_digest(hash_functions)
-        self.genome_annotation = self.generate_genome_annotation(
-            genome_label, genome_version
-        )
-        self.gene_annotations = {}
 
-    def __download_gff_file(self):
+        log_file_name = "gff3_translator_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ".log"
+        self.logger = setup_logger(log_file_name, log_level, log_to_file)
+
+        # Store configuration parameters
+        self.content_url = content_url
+        self.assembly_accession = assembly_accession
+        self.assembly_strain = assembly_strain
+
+        
+        # Initialize attributes that will be populated in setup()
+        self.authority = None
+        self.taxon_id = None
+        self.assembly_id = None
+        self.assembly_label = None
+        self.genome_version = None
+        self.genome_label = None
+        self.assembly_version = None
+        self.hash_values = None
+        self.gff_file = None
+
+        # Initialize metadata objects
+        self.organism_taxon = None
+        self.genome_assembly = None
+        self.checksums = None
+        self.genome_annotation = None
+        self.gene_annotations = {}
+        
+    def setup(self):
         """
-        Downloads a GFF file from the specified content URL, decompresses it, and returns the path to the temporary file.
+        Perform heavy initialization tasks like downloading and parsing.
+        
+        Returns:
+            self: Returns self for method chaining
+        
+        Raises:
+            ValueError: If the content URL is not supported
+        """
+        try:
+            # STEP 1: Parse the content URL to get metadata
+            url_metadata = self.parse_url(self.assembly_accession)
+            
+            # STEP 1.1: Assign metadata values
+            self.authority = url_metadata.get("authority")
+            self.taxon_id = url_metadata.get("taxonid")
+            self.assembly_id = url_metadata.get("assembly_accession")
+            self.assembly_label = url_metadata.get("assembly_name")
+            self.genome_version = url_metadata.get("release_version")
+            self.genome_label = self.authority.value + "-" + self.taxon_id + "-" + self.genome_version
+            self.assembly_version = (
+                self.assembly_id.split(".")[1] if len(self.assembly_id.split(".")) >= 1 else None
+            )
+            
+            # STEP 2: Download the GFF file
+            self.gff_file, self.hash_values = Gff3.download_gff_file(self.content_url)
+
+        except ValueError as e:
+            self.logger.error("Setup failed: %s", str(e))
+            raise
+
+    def parse_gff3_file(self):
+        # STEP 3: Generate the organism taxon, genome assembly, checksum, and genome annotation objects
+        self.organism_taxon = Gff3.generate_organism_taxon(self.taxon_id)
+        self.genome_assembly = self.generate_genome_assembly(
+            self.assembly_id, self.assembly_version, self.assembly_label, self.assembly_strain
+        )
+        self.checksums = self.generate_digest(self.hash_values, DEFAULT_HASH)
+        self.genome_annotation = self.generate_genome_annotation(
+            self.genome_label, self.genome_version
+        )
+        return self
+            
+
+    def parse_url(self, assembly_accession: str = None):
+        """
+        Parses the content URL and extracts information about the genome annotation.
 
         Returns:
-            str: The path to the temporary file containing the decompressed GFF data.
+            A dictionary containing the following information:
+            - 'authority': The authority type (NCBI or ENSEMBL).
+            - 'taxonid': The taxon ID of the genome.
+            - 'release_version': The release version of the genome annotation.
+            - 'assembly_accession': The assembly accession of the genome.
+            - 'assembly_name': The name of the assembly.
+            - 'species': The species name (only for ENSEMBL URLs).
         """
-        with urllib.request.urlopen(self.content_url) as response:
-            gzip_data = response.read()
+        # NCBI URL Patterns: 
+        #   1. https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/<taxon_id>/<release_version>/<assembly_accession>_<assembly_name>/<assembly_accession>_<assembly_name>_genomic.gff.gz             
+        #   2. https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/<taxon_id>/<assembly_accession>-<release_version>/<assembly_accession>_<assembly_name>_genomic.gff.gz  
+        # ENSEMBL URL Pattern:
+        #   1. https://ftp.ensembl.org/pub/release-<release_version>/gff3/<species_scientific_name>/<species_scientific_name>.<assembly_name>.<release_version>.gff3.gz 
+
+        # Define regex patterns for Ensembl URLs
+        ensembl_pattern = (
+            r"/pub/release-(\d+)/gff3/([^/]+)/([^/.]+)\.([^/.]+)\.([^/.]+)\.gff3\.gz"
+        )
+        
+        if not self.content_url.endswith(".gff.gz") and not self.content_url.endswith(".gff3.gz"):
+            return None
+
+        # Parse the URL to get the path
+        parsed_url = urlparse(self.content_url)
+        path = parsed_url.path
+
+        # Determine if the URL is from NCBI or Ensembl and extract information
+        if "ncbi" in parsed_url.netloc:
+            try:
+                metadata = path.split('genomes/all/annotation_releases/')[1].split('/')
+                
+                if len(metadata) in {3, 4}:
+                    release_version = metadata[1] if len(metadata) == 4 else metadata[1].split('-')[1]
+                    assembly_parts = re.split(r'(?<!GCF)_', metadata[2])
+                    return {
+                        "authority": ga.AuthorityType.NCBI,
+                        "taxonid": metadata[0],
+                        "release_version": release_version,
+                        "assembly_accession": assembly_parts[0],
+                        "assembly_name": assembly_parts[1],
+                    }
+            except (IndexError, ValueError):
+                return None
+
+        elif "ensembl" in parsed_url.netloc:
+            ensembl_match = re.search(ensembl_pattern, path)
+            if ensembl_match:
+                if assembly_accession is None:
+                    self.logger.critical(
+                        "Missing Assembly ID: The assembly ID is required for Ensembl URLs. Please provide the assembly ID."
+                    )
+                    raise ValueError(
+                        "Missing Assembly ID: The assembly ID is required for Ensembl URLs. Please provide the assembly ID."
+                    )
+                
+                scientific_name = ensembl_match.group(3)
+                taxonid = self.scientific_name_to_taxonid.get(
+                    scientific_name.replace("_", " ")
+                )
+                return {
+                    "authority": ga.AuthorityType.ENSEMBL,
+                    "taxonid": taxonid,
+                    "release_version": ensembl_match.group(1),
+                    "assembly_accession": assembly_accession,
+                    "assembly_name": ensembl_match.group(4),
+                }
+        # If no match is found, return None
+        self.logger.critical(
+            "The provided content URL is not supported. Please provide a valid URL."
+        )   
+        raise ValueError(
+            "The provided content URL is not supported. Please provide a valid URL."
+        )  
+
+    @staticmethod
+    def download_gff_file(content_url: str):
+        """
+        Downloads a GFF file from a given URL and calculates the MD5, SHA256, and SHA1 hashes.
+
+        Returns:
+            tuple: A tuple containing the path to the downloaded gzip file and a dictionary
+            with the MD5, SHA256, and SHA1 hashes of the file.
+        """
+        response = urllib.request.urlopen(content_url)
+        total_size = int(response.headers.get("content-length", 0))
+        block_size = 1024  # 1 Kilobyte
+
+        # Create hash objects
+        md5_hash = hashlib.md5()
+        sha256_hash = hashlib.sha256()
+        sha1_hash = hashlib.sha1()
 
         # Create a temporary file for the gzip data
         with tempfile.NamedTemporaryFile(suffix=".gz", delete=False) as f_gzip:
-            f_gzip.write(gzip_data)
             gzip_file_path = f_gzip.name
-        return gzip_file_path
 
-    def generate_organism_taxon(self, taxon_id: str):
+            # Create a progress bar
+            progress_bar = tqdm(
+                total=total_size,
+                unit="iB",
+                unit_scale=True,
+                desc="Downloading GFF file",
+            )
+
+            # Read the file in chunks, write to the temporary file, and update the hash
+            while True:
+                data = response.read(block_size)
+                if not data:
+                    break
+                f_gzip.write(data)
+                md5_hash.update(data)
+                sha256_hash.update(data)
+                sha1_hash.update(data)
+                progress_bar.update(len(data))
+
+            progress_bar.close()
+
+        # Return the path to the temporary file and the md5 hash
+        return gzip_file_path, {
+            "MD5": md5_hash.hexdigest(),
+            "SHA256": sha256_hash.hexdigest(),
+            "SHA1": sha1_hash.hexdigest(),
+        }
+
+    @classmethod
+    def generate_organism_taxon(cls, taxon_id: str):
         """
         Generates an organism taxon object based on the provided taxon ID.
 
@@ -158,38 +378,9 @@ class Gff3:
         Returns:
             ga.OrganismTaxon: The generated organism taxon object.
         """
-        self.logger.debug("Generating organism taxon")
-        return ga.OrganismTaxon(
-            id=TAXON_PREFIX + ":" + taxon_id,
-            full_name=TAXON_SCIENTIFIC_NAME[taxon_id],
-            name=TAXON_COMMON_NAME[taxon_id],
-            iri=PREFIX_MAP[TAXON_PREFIX] + taxon_id,
-        )
-
-    def assign_authority_type(self, authority: str):
-        """
-        Assigns the authority type based on the given authority string.
-
-        Args:
-            authority (str): The authority string to be assigned.
-
-        Returns:
-            ga.AuthorityType: The corresponding authority type.
-
-        Raises:
-            Exception: If the authority is not supported. Only NCBI and Ensembl authorities are supported.
-        """
-        self.logger.debug("Assigning authority type")
-        if authority.upper() == ga.AuthorityType.NCBI.value:
-            return ga.AuthorityType.NCBI
-        if authority.upper() == ga.AuthorityType.ENSEMBL.value:
-            return ga.AuthorityType.ENSEMBL
-        logger.critical(
-            "Authority %s is not supported. Please use NCBI or Ensembl.", authority
-        )
-        raise ValueError(
-            f"Authority {self.authority} is not supported. Please use NCBI or Ensembl."
-        )
+        attributes = {"full_name": cls.taxon_scientific_name[taxon_id], "name": cls.taxon_common_name[taxon_id], "iri": PREFIX_MAP[TAXON_PREFIX] + taxon_id, "xref": [TAXON_PREFIX + taxon_id]}
+        attributes["id"] = generate_object_id(attributes)
+        return ga.OrganismTaxon(**attributes)
 
     def generate_genome_assembly(
         self,
@@ -210,15 +401,9 @@ class Gff3:
         Returns:
         ga.GenomeAssembly: The generated genome assembly object.
         """
-        self.logger.debug("Generating genome assembly")
-        return ga.GenomeAssembly(
-            id=ASSEMBLY_PREFIX + ":" + assembly_id,
-            in_taxon=[self.organism_taxon.id],
-            in_taxon_label=self.organism_taxon.full_name,
-            version=assembly_version,
-            name=assembly_label,
-            strain=assembly_strain,
-        )
+        attributes = {"in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "name": assembly_label, "version": assembly_version, "strain": assembly_strain, "xref": [ASSEMBLY_PREFIX + assembly_id]}
+        attributes["id"] = generate_object_id(attributes)
+        return ga.GenomeAssembly(**attributes)
 
     def generate_genome_annotation(self, genome_label: str, genome_version: str):
         """
@@ -231,25 +416,13 @@ class Gff3:
         Returns:
             ga.GenomeAnnotation: The generated genome annotation.
         """
-        self.logger.debug("Generating genome annotation")
-        return ga.GenomeAnnotation(
-            id=BICAN_ANNOTATION_PREFIX + genome_label.upper(),
-            digest=[checksum.id for checksum in self.checksums],
-            content_url=[self.content_url],
-            reference_assembly=self.genome_assembly.id,
-            version=genome_version,
-            in_taxon=[self.organism_taxon.id],
-            in_taxon_label=self.organism_taxon.full_name,
-            description=GENOME_ANNOTATION_DESCRIPTION_FORMAT.format(
-                authority=self.authority.value,
-                taxon_scientific_name=self.organism_taxon.full_name,
-                genome_version=genome_version,
-            ),
-            authority=self.authority,
-        )
+        attributes = {"digest": [checksum.id for checksum in self.checksums], "content_url": [self.content_url], "reference_assembly": self.genome_assembly.id, "version": genome_version, "in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "description": GENOME_ANNOTATION_DESCRIPTION_FORMAT.format(authority=self.authority.value, taxon_scientific_name=self.organism_taxon.full_name, genome_version=genome_version), "authority": self.authority, "name": genome_label.upper()}
+        attributes["id"] = generate_object_id(attributes)
+        return ga.GenomeAnnotation(**attributes)
 
     def generate_digest(
         self,
+        hash_values: dict,
         hash_functions: tuple[str] = DEFAULT_HASH,
     ) -> list[ga.Checksum]:
         """
@@ -265,44 +438,24 @@ class Gff3:
             ValueError: If an unsupported hash algorithm is provided.
 
         """
-        gff_data = open(
-            self.gff_file, "rb"
-        ).read()  # TODO: Modify this to read the file in chunks
         checksums = []
-
         for hash_type in hash_functions:
-            # Generate a UUID version 4
-            uuid_value = uuid.uuid4()
-
-            # Construct a URN with the UUID
-            urn = f"urn:uuid:{uuid_value}"
             hash_type = hash_type.strip().upper()
             # Create a Checksum object
-            if hash_type == "SHA256":
-                digest = hashlib.sha256(gff_data).hexdigest()
-                checksums.append(
-                    ga.Checksum(
-                        id=urn,
-                        checksum_algorithm=ga.DigestType.SHA256,
-                        value=digest,
-                    )
-                )
-            elif hash_type == "MD5":
-                digest = hashlib.md5(gff_data).hexdigest()
-                checksums.append(
-                    ga.Checksum(
-                        id=urn, checksum_algorithm=ga.DigestType.MD5, value=digest
-                    )
-                )
-            elif hash_type == "SHA1":
-                digest = hashlib.sha1(gff_data).hexdigest()
-                checksums.append(
-                    ga.Checksum(
-                        id=urn, checksum_algorithm=ga.DigestType.SHA1, value=digest
-                    )
-                )
+            if hash_type == ga.DigestType.SHA256.name:
+                sha256_attributes = {"checksum_algorithm": ga.DigestType.SHA256, "value": hash_values.get("SHA256")}
+                sha256_attributes["id"] = generate_object_id(sha256_attributes)
+                checksums.append(ga.Checksum(**sha256_attributes))
+            elif hash_type == ga.DigestType.MD5.name:
+                md5_attributes = {"checksum_algorithm": ga.DigestType.MD5, "value": hash_values.get("MD5")}
+                md5_attributes["id"] = generate_object_id(md5_attributes)
+                checksums.append(ga.Checksum(**md5_attributes))
+            elif hash_type == ga.DigestType.SHA1.name:
+                sha1_attributes = {"checksum_algorithm": ga.DigestType.SHA1, "value": hash_values.get("SHA1")}
+                sha1_attributes["id"] = generate_object_id(sha1_attributes)
+                checksums.append(ga.Checksum(**sha1_attributes))
             else:
-                logger.error(
+                self.logger.error(
                     "Hash algorithm %s is not supported. Please use SHA256, MD5, or SHA1.",
                     hash_type,
                 )
@@ -321,9 +474,9 @@ class Gff3:
 
         result = subprocess.run(
             ["wc", "-l", file_path], stdout=subprocess.PIPE, check=True
-        )  # If check is True and the exit code was non-zero, it raises a CalledProcessError. 
-           # The CalledProcessError object will have the return code in the returncode attribute,
-           # and output & stderr attributes if those streams were captured.
+        )  # If check is True and the exit code was non-zero, it raises a CalledProcessError.
+        # The CalledProcessError object will have the return code in the returncode attribute,
+        # and output & stderr attributes if those streams were captured.
         output = result.stdout.decode().strip()
         line_count = int(output.split()[0])  # Extract the line count from the output
         return line_count
@@ -362,9 +515,8 @@ class Gff3:
             for line_raw in file:
                 line_strip = line_raw.strip()
                 if curr_line_num == 1 and not line_strip.startswith("##gff-version 3"):
-                    logger.critical(
-                        'Line %s: ##gff-version 3" missing from the first line.',
-                        curr_line_num,
+                    self.logger.warning(
+                        '"##gff-version 3" missing from the first line of the file. The given file may not be a valid GFF3 file.'
                     )
                 elif len(line_strip) == 0:  # blank line
                     continue
@@ -375,7 +527,7 @@ class Gff3:
                 else:  # line may be a feature or unknown
                     tokens = list(map(str.strip, line_raw.split("\t")))
                     if len(tokens) != 9:
-                        logger.warning(
+                        self.logger.warning(
                             "Line %s: Features are expected 9 columns, found %s.",
                             curr_line_num,
                             len(tokens),
@@ -387,19 +539,13 @@ class Gff3:
                             tuple(a.split("=") for a in tokens[8].split(";"))
                         )
                         # TODO: Write cleaner code that calls respective generate function based on the authority automatically
-                        if (
-                            self.genome_annotation.authority
-                            == ga.AuthorityType.ENSEMBL
-                        ):
+                        if self.genome_annotation.authority == ga.AuthorityType.ENSEMBL:
                             gene_annotation = self.generate_ensembl_gene_annotation(
                                 attributes, curr_line_num
                             )
                             if gene_annotation is not None:
-                                self.gene_annotations[gene_annotation] = gene_annotation
-                        elif (
-                            self.genome_annotation.authority
-                            == ga.AuthorityType.NCBI
-                        ):
+                                self.gene_annotations[gene_annotation.id] = gene_annotation
+                        elif self.genome_annotation.authority == ga.AuthorityType.NCBI:
                             gene_annotation = self.generate_ncbi_gene_annotation(
                                 attributes, curr_line_num
                             )
@@ -427,32 +573,26 @@ class Gff3:
             None
 
         """
-        stable_id = self.__get_attribute(attributes, "gene_id", curr_line_num)
+        stable_id = self._get_attribute(attributes, "gene_id", curr_line_num)
         if stable_id:
             stable_id = stable_id.split(".")[0]
 
         # Check and validate the name attribute
-        name = self.__get_attribute(attributes, "Name", curr_line_num)
+        name = self._get_attribute(attributes, "Name", curr_line_num)
 
         # Check and validate the description attribute
-        description = self.__get_attribute(attributes, "description", curr_line_num)
+        description = self._get_attribute(attributes, "description", curr_line_num)
 
         # Check and validate the biotype attribute
-        biotype = self.__get_attribute(attributes, "biotype", curr_line_num)
+        biotype = self._get_attribute(attributes, "biotype", curr_line_num)
 
-        gene_annotation = ga.GeneAnnotation(
-            id=ENSEMBL_GENE_ID_PREFIX + ":" + stable_id,
-            source_id=stable_id,
-            symbol=name,
-            name=name,
-            description=description,
-            molecular_type=biotype,
-            referenced_in=self.genome_annotation.id,
-            in_taxon=[self.organism_taxon.id],
-            in_taxon_label=self.organism_taxon.full_name,
-        )
+        attributes = {"source_id": stable_id, "symbol": name, "name": name, "description": description, "molecular_type": biotype, "referenced_in": self.genome_annotation.id, "in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "xref": [ENSEMBL_GENE_ID_PREFIX + stable_id]}
+        #! add a try/catch incase the hash returns an error and log it
+        attributes["id"] = generate_object_id(attributes)
+        gene_annotation = ga.GeneAnnotation(**attributes)
+
         # handle duplicates
-        if gene_annotation not in self.gene_annotations:
+        if gene_annotation.id not in self.gene_annotations:
             return gene_annotation
         return None
 
@@ -483,27 +623,27 @@ class Gff3:
             if len(geneid_values) == 1:
                 stable_id = geneid_values.pop()
         else:
-            logger.error(
+            self.logger.error(
                 "Line %s: No GeneAnnotation object created for this row due to missing dbxref attribute.",
                 curr_line_num,
             )
             return None
 
         if not stable_id:
-            logger.error(
+            self.logger.error(
                 "Line %s: No GeneAnnotation object created for this row due to number of GeneIDs provided in dbxref attribute is not equal to one.",
                 curr_line_num,
             )
             return None
 
         # Check and validate the name attribute
-        name = self.__get_attribute(attributes, "Name", curr_line_num)
+        name = self._get_attribute(attributes, "Name", curr_line_num)
 
         # Check and validate the description attribute
-        description = self.__get_attribute(attributes, "description", curr_line_num)
+        description = self._get_attribute(attributes, "description", curr_line_num)
 
         # Check and validate the biotype attribute
-        biotype = self.__get_attribute(attributes, "gene_biotype", curr_line_num)
+        biotype = self._get_attribute(attributes, "gene_biotype", curr_line_num)
 
         # Parse synonyms
         synonyms = []
@@ -513,40 +653,33 @@ class Gff3:
             )
             synonyms.sort()  # note: this is not required, but it makes the output more predictable therefore easier to test
         else:
-            logger.warning(
+            self.logger.debug(
                 "Line %s: synonym is not set for this row's GeneAnnotation object due to missing gene_synonym attribute.",
                 curr_line_num,
             )
 
-        gene_annotation = ga.GeneAnnotation(
-            id=NCBI_GENE_ID_PREFIX + ":" + stable_id,
-            source_id=stable_id,
-            symbol=name,
-            name=name,
-            description=description,
-            molecular_type=biotype,
-            referenced_in=self.genome_annotation.id,
-            in_taxon=[self.organism_taxon.id],
-            in_taxon_label=self.organism_taxon.full_name,
-            synonym=synonyms,
-        )
+        attributes = {"source_id": stable_id, "symbol": name, "name": name, "description": description, "molecular_type": biotype, "referenced_in": self.genome_annotation.id, "in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "synonym": synonyms, "xref": [NCBI_GENE_ID_PREFIX + stable_id]}
+        #! add a try/catch incase the hash returns an error and log it
+        attributes["id"] = generate_object_id(attributes)
+        gene_annotation = ga.GeneAnnotation(**attributes)
+
         if gene_annotation.id in self.gene_annotations:
             if gene_annotation != self.gene_annotations[gene_annotation.id]:
-                return self.__resolve_ncbi_gene_annotation(
+                return self._resolve_ncbi_gene_annotation(
                     gene_annotation, curr_line_num
                 )
             if name != self.gene_annotations[gene_annotation.id].name:
-                logger.warning(
+                self.logger.debug(
                     "Line %s: GeneAnnotation object with id %s already exists with a different name. Current name: %s, Existing name: %s",
                     curr_line_num,
                     stable_id,
                     name,
-                    self.gene_annotations[gene_annotation.id].name
+                    self.gene_annotations[gene_annotation.id].name,
                 )
                 return None
         return gene_annotation
 
-    def __get_attribute(self, attributes, attribute_name, curr_line_num):
+    def _get_attribute(self, attributes, attribute_name, curr_line_num):
         """
         Get the value of a specific attribute from the given attributes dictionary.
 
@@ -561,7 +694,7 @@ class Gff3:
         value = None
         if attribute_name in attributes:
             if len(attributes[attribute_name]) != 1:
-                logger.warning(
+                self.logger.debug(
                     "Line %s: %s not set for this row's GeneAnnotation object due to more than one %s provided.",
                     curr_line_num,
                     attribute_name,
@@ -576,7 +709,7 @@ class Gff3:
             else:
                 value = attributes[attribute_name].pop()
                 if value.find(",") != -1:
-                    logger.warning(
+                    self.logger.debug(
                         'Line %s: %s not set for this row\'s GeneAnnotation object due to value of %s attribute containing ",".',
                         curr_line_num,
                         attribute_name,
@@ -584,7 +717,7 @@ class Gff3:
                     )
                     value = None
         else:
-            logger.warning(
+            self.logger.debug(
                 "Line %s: %s not set for this row's GeneAnnotation object due to missing %s attribute.",
                 curr_line_num,
                 attribute_name,
@@ -592,7 +725,7 @@ class Gff3:
             )
         return value
 
-    def __resolve_ncbi_gene_annotation(self, new_gene_annotation, curr_line_num):
+    def _resolve_ncbi_gene_annotation(self, new_gene_annotation, curr_line_num):
         """
         Resolves conflicts between existing and new gene annotations based on certain conditions.
 
@@ -611,18 +744,13 @@ class Gff3:
         """
         existing_gene_annotation = self.gene_annotations[new_gene_annotation.id]
         if (
-            existing_gene_annotation.description is None
-            and new_gene_annotation.description is not None
-        ):
-            return new_gene_annotation
-        if (
             existing_gene_annotation.description is not None
             and new_gene_annotation.description is None
         ):
             return None
         if (
-            existing_gene_annotation.molecular_type is None
-            and new_gene_annotation.molecular_type is not None
+            existing_gene_annotation.description is None
+            and new_gene_annotation.description is not None
         ):
             return new_gene_annotation
         if (
@@ -631,17 +759,17 @@ class Gff3:
         ):
             return None
         if (
-            existing_gene_annotation.molecular_type == ga.BioType.noncoding.value
-            and new_gene_annotation.molecular_type != ga.BioType.noncoding.value
+            existing_gene_annotation.molecular_type is None
+            and new_gene_annotation.molecular_type is not None
         ):
             return new_gene_annotation
-        if (
-            existing_gene_annotation.molecular_type != ga.BioType.noncoding.value
-            and new_gene_annotation.molecular_type == ga.BioType.noncoding.value
-        ):
+        if existing_gene_annotation.molecular_type == ga.BioType.protein_coding.value:
             return None
-        logger.critical(
-            "Line %s: Unable to resolve duplicates for GeneID: %s.\nexisting gene: %s\nnew gene:      %s",
+        if new_gene_annotation.molecular_type == ga.BioType.protein_coding.value:
+            return new_gene_annotation
+
+        self.logger.error(
+            "Line %s: Unable to resolve duplicates for GeneID: %s.\nexisting gene: %s\nnew gene: %s",
             curr_line_num,
             new_gene_annotation.id,
             existing_gene_annotation,
@@ -660,7 +788,6 @@ class Gff3:
             dict: A dictionary where each key maps to a set of values.
 
         """
-        self.logger.debug("Merging values")
         result = defaultdict(set)
         for lst in t:
             key = lst[0].strip()
@@ -669,46 +796,103 @@ class Gff3:
                 result[key].add(e.strip())
         return result
 
-    def serialize_to_jsonld(
-        self, output_file: str, exclude_none: bool = True, exclude_unset: bool = False
-    ):
+    def serialize_to_jsonld(self):
         """
-        Serialize the object and write it to the specified output file.
+        Serialize the object and either write it to the specified output file or print it to the CLI.
 
         Parameters:
-            output_file (str): The path of the output file.
+            exclude_none (bool): Whether to exclude None values in the output.
+            exclude_unset (bool): Whether to exclude unset values in the output.
 
         Returns:
-            None
+            str: The serialized JSON-LD string.
         """
-        logger.debug("Serializing to JSON-LD")
-        with open(output_file, "w", encoding="utf-8") as f:
-            data = [
-                self.organism_taxon.dict(
-                    exclude_none=exclude_none, exclude_unset=exclude_unset
-                ),
-                self.genome_assembly.dict(
-                    exclude_none=exclude_none, exclude_unset=exclude_unset
-                ),
-                self.genome_annotation.dict(
-                    exclude_none=exclude_none, exclude_unset=exclude_unset
-                ),
-            ]
-            for ck in self.checksums:
-                data.append(
-                    ck.dict(exclude_none=exclude_none, exclude_unset=exclude_unset)
-                )
-            for ga in self.gene_annotations.values():
-                data.append(
-                    ga.dict(exclude_none=exclude_none, exclude_unset=exclude_unset)
-                )
+        data = []
+        data.append(json.loads(json_dumper.dumps(self.organism_taxon)))
+        data.append(json.loads(json_dumper.dumps(self.genome_assembly)))
+        data.append(json.loads(json_dumper.dumps(self.genome_annotation)))
+        
+        # Append checksums
+        for checksum in self.checksums:
+            data.append(json.loads(json_dumper.dumps(checksum)))
+            
+        # Append gene annotations
+        for gene_annotation in self.gene_annotations.values():
+            data.append(json.loads(json_dumper.dumps(gene_annotation)))
 
-            output_data = {
-                "@context": "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/genome_annotation.context.jsonld",
-                "@graph": data,
-            }
-            f.write(json.dumps(output_data, indent=2))
+        output_data = {
+            "@context": "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/genome_annotation.context.jsonld",
+            "@graph": data,
+        }
+        return (json.dumps(output_data, indent=2))
+    
+@click.command()
+##ARGUMENTS##
+# Argument #1: The URL of the GFF file
+@click.argument("content_url", type=str)
 
+##OPTIONS##
+# Option #1: The ID of the genome assembly
+@click.option(
+    "--assembly_accession",
+     "-a", 
+     required=False, 
+     default=None, 
+     type=str,
+     help="The ID of the genome assembly. Only required for Ensembl URLs.")
 
+# Option #2: The strain of the genome assembly
+@click.option(
+    "--assembly_strain",
+    "-s",
+    required=False,
+    default=None,
+    type=str,
+    help="The strain of the genome assembly.",
+)
+# Option #3: The log level
+@click.option(
+    "--log_level",
+    "-l",
+    required=False,
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
+    default="WARNING",
+    show_default=True,
+    help="The log level.",
+)
+# Option #4: Log to file
+@click.option(
+    "--log_to_file",
+    "-f",
+    show_default=True,
+    help="Log to a file instead of the console.",
+)
+
+# Option #5: Output format: jsonld or turtle
+@click.option(
+    "--output_format",
+    "-o",
+    required=False,
+    type=click.Choice(["jsonld", "turtle"]),
+    default="jsonld",
+    show_default=True,
+    help="The output format.",
+)
+def gff2jsonld(content_url, assembly_accession, assembly_strain, log_level, log_to_file, output_format):
+    '''
+    Creates GeneAnnotation objects from a GFF3 file and serializes them to JSON-LD format.
+    '''
+    gff3 = Gff3(
+        content_url, assembly_accession, assembly_strain, log_level, log_to_file
+    )
+    gff3.setup()  # Initialize the Gff3 object, which downloads the GFF file and parses the URL
+    gff3.parse_gff3_file()
+    gff3.parse()
+    jsonld_data = gff3.serialize_to_jsonld()
+    if output_format == "turtle":
+        print(convert_jsonld_to_ttl(jsonld_data))
+    else:
+        print(jsonld_data)
+    
 if __name__ == "__main__":
-    pass
+    gff2jsonld()

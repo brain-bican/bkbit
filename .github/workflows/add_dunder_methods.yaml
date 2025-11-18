@@ -1,0 +1,41 @@
+name: add dunder methods to genome_annotation model
+
+on:
+  push:
+    paths:
+      - 'bkbit/models/genome_annotation.py'
+
+permissions:
+  contents: write
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+    
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+
+      
+      - name: Run add_dunderMethods_genomeAnnotation
+        run: python bkbit/model_editors/add_dunderMethods_genomeAnnotation.py
+
+      - name: Commit changes
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          if ! git diff --quiet; then
+            git add bkbit/models/genome_annotation.py
+            git commit -m 'Update genome_annotation.py with dunder methods'
+            git push
+          else
+            echo "No changes to commit"
+          fi

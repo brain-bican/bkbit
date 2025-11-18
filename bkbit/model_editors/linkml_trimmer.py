@@ -1,24 +1,80 @@
+"""
+This script provides a utility for trimming a LinkML schema by retaining specified classes, slots, and enums, along with their dependencies.
+
+It defines a `YamlTrimmer` class for schema manipulation and offers a command-line interface using Click for easy usage from the terminal.
+
+Usage:
+    python script.py [OPTIONS] SCHEMA
+
+Options:
+    --classes, -c TEXT  Comma-separated list of classes to include in the trimmed schema (required).
+    --slots, -s TEXT    Comma-separated list of slots to include in the trimmed schema.
+    --enums, -e TEXT    Comma-separated list of enums to include in the trimmed schema.
+    --schema_id, -i TEXT        Updated schema id for trimmed schema.
+    --schema_name, -n TEXT      Updated schema name for trimmed schema.
+    --schema_title, -t TEXT     Updated schema title for trimmed schema.
+    --schema_version, -v TEXT   Updated schema version for trimmed schema.
+
+Example:
+    python script.py schema.yaml -c Person,Organization -s name,age -e StatusEnum
+
+The script performs the following steps:
+1. Loads the specified LinkML schema.
+2. Trims the schema by keeping only the specified classes, slots, and enums, along with their dependencies.
+3. Serializes and prints the trimmed schema in YAML format.
+
+Dependencies:
+    - click
+    - linkml-runtime
+    - linkml
+
+"""
+
 from dataclasses import dataclass
 from typing import Union
 from pathlib import Path
 from linkml_runtime.linkml_model.meta import SchemaDefinition
 from linkml_runtime.utils.schemaview import SchemaView
-
-from linkml._version import __version__
-from linkml.generators.yamlgen import YAMLGenerator
+from linkml_runtime.utils.yamlutils import as_yaml
+import click
 
 
 @dataclass
 class YamlTrimmer:
+    """
+    A utility class for trimming a LinkML schema by retaining specified classes, slots, and enums, along with their dependencies.
+
+    This class helps in generating a simplified version of a LinkML schema by removing all elements that are not reachable from the specified classes, slots, and enums to keep.
+
+    Args:
+        schema (Union[str, Path, SchemaDefinition]): The LinkML schema to be trimmed. It can be a file path, URL, or a `SchemaDefinition` object.
+
+    Attributes:
+        schemaview (SchemaView): An object representing the loaded schema, used for manipulation and traversal.
+
+    Methods:
+        trim_model(keep_classes: list[str], keep_slots: list[str] = [], keep_enums: list[str] = []):
+            Trims the schema by keeping only the specified classes, slots, and enums, and their dependencies.
+
+        serialize():
+            Serializes and prints the trimmed schema in YAML format.
+
+    Example:
+        >>> yt = YamlTrimmer('path/to/schema.yaml')
+        >>> yt.trim_model(['Person', 'Organization'], keep_slots=['name'], keep_enums=['StatusEnum'])
+        >>> yt.serialize()
+    """
+
     def __init__(self, schema: Union[str, Path, SchemaDefinition]):
         self.schemaview = SchemaView(schema)
 
     def trim_model(
         self,
         keep_classes: list[str],
-        keep_slots: list[str] = [],
-        keep_enums: list[str] = [],
+        keep_slots: list[str],
+        keep_enums: list[str],
     ):
+
         """
         Trims the model by removing classes, slots, and enums that are not reachable from the specified keep_classes, keep_slots, and keep_enums.
 
@@ -27,11 +83,13 @@ class YamlTrimmer:
             keep_slots (list[str], optional): List of slots to keep. Defaults to [].
             keep_enums (list[str], optional): List of enums to keep. Defaults to [].
         """
+
         sv = self.schemaview
         # vistited_classes, visited_enums, and visited slots keep track of the classes, enums, and slots that are reachable from the input class, slots, and enums we are interested in keeping
         visited_classes = set()
         visited_slots = set()
         visited_enums = set()
+        visited_types = set()
 
         # stack is a list of classes, enums, and slots that we will traverse to find all reachable classes, enums, and slots
         stack = []
@@ -43,6 +101,7 @@ class YamlTrimmer:
         all_classes = set(sv.all_classes(imports=False))
         all_enums = set(sv.all_enums(imports=False))
         all_slots = set(sv.all_slots(imports=False, attributes=False))
+        all_types = set(sv.all_types(imports=False))
 
         while stack:
             curr_node = stack.pop()
@@ -77,8 +136,10 @@ class YamlTrimmer:
                     sv.get_slot(curr_node, strict=True)
                 ):
                     if (
-                        slot_range in all_classes and slot_range not in visited_classes
-                    ) or (slot_range in all_enums and slot_range not in visited_enums):
+                        (slot_range in all_classes and slot_range not in visited_classes)
+                        or (slot_range in all_enums and slot_range not in visited_enums)
+                        or (slot_range in all_types and slot_range not in visited_types)
+                    ):
                         stack.append(slot_range)
                 for parent_slot in sv.slot_parents(curr_node, imports=False):
                     if parent_slot not in visited_slots and parent_slot in all_slots:
@@ -90,7 +151,8 @@ class YamlTrimmer:
                 for parent_enum in sv.enum_parents(curr_node, imports=False):
                     if parent_enum not in visited_enums and parent_enum in all_enums:
                         stack.append(parent_enum)
-
+            elif curr_node in all_types:
+                visited_types.add(curr_node)
             else:
                 raise ValueError(
                     f"ERROR: {curr_node} not found in schema classes, slots, or enums"
@@ -105,13 +167,75 @@ class YamlTrimmer:
         for s in all_slots:
             if s not in visited_slots:
                 sv.delete_slot(s)
+        for t in all_types:
+            if t not in visited_types:
+                sv.delete_type(t)
 
-    def serialize(self):
+    def serialize(self, schema_id, schema_name, schema_title, schema_version):
         """
-        Serializes the schema using YAMLGenerator and prints the serialized output.
+        Serializes the schema using as_yaml and prints the serialized output.
         """
-        print(YAMLGenerator(self.schemaview.schema).serialize())
+        if schema_id:
+            self.schemaview.schema.id = schema_id
+        if schema_name:
+            self.schemaview.schema.name = schema_name
+        if schema_title:
+            self.schemaview.schema.title = schema_title
+        if schema_version:
+            self.schemaview.schema.version = schema_version
+        else:
+            self.schemaview.schema.version = (
+                self.schemaview.schema.name + "-" + self.schemaview.schema.version
+            )
+        self.schemaview.schema.created_by = "BICAN_bkbit_linkml-trimmer"
+        print(as_yaml(self.schemaview.schema))
+
+
+@click.command()
+## ARGUMENTS ##
+# Argument #1: Schema file
+@click.argument("schema")
+
+## OPTIONS ##
+# Option #1: Classes
+@click.option(
+    "--classes",
+    "-c",
+    help="Comma-separated list of classes to include in trimmed schema",
+)
+# Option #2: Slots
+@click.option(
+    "--slots", "-s", help="Comma-separated list of slots to include in trimmed schema"
+)
+# Option #3: Enums
+@click.option(
+    "--enums", "-e", help="Comma-separated list of enums to include in trimmed schema"
+)
+# Option #4: Updated schema metadata
+@click.option("--schema_id", "-i", help="Updated schema id for trimmed schema")
+@click.option("--schema_name", "-n", help="Updated schema name for trimmed schema")
+@click.option("--schema_title", "-t", help="Updated schema title for trimmed schema")
+@click.option(
+    "--schema_version", "-v", help="Updated schema version for trimmed schema"
+)
+def linkml_trimmer(
+    schema, classes, slots, enums, schema_id, schema_name, schema_title, schema_version
+):
+    """
+    Trim a LinkMl schema based on a list of classes, slots, and enums to keep.
+    """
+    classes = [c.strip() for c in classes.split(",")] if classes else []
+    slots = [s.strip() for s in slots.split(",")] if slots else []
+    enums = [e.strip() for e in enums.split(",")] if enums else []
+
+    if not classes and not slots and not enums:
+        raise click.UsageError(
+            "At least one of --classes, --slots, or --enums must be provided."
+        )
+    yt = YamlTrimmer(schema)
+    yt.trim_model(classes, slots, enums)
+    yt.serialize(schema_id, schema_name, schema_title, schema_version)
 
 
 if __name__ == "__main__":
-    pass
+    linkml_trimmer()
