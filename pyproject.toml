@@ -39,6 +39,12 @@ docs = [
     "mkdocs-material"
 ]
 
+all = [
+    "bkbit[dev]",
+    "bkbit[docs]",
+    "bkbit[test]",
+]
+
 [project.urls]
 "Homepage" = "https://github.com/brain-bican/bkbit"
 
