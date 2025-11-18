@@ -28,6 +28,10 @@ dynamic = ["version"]
 bkbit = "bkbit.cli:cli"
 
 [project.optional-dependencies]
+dev = [
+    "black",
+    "pre-commit",
+]
 test = [
     "pytest",
 ]
@@ -35,11 +39,18 @@ docs = [
     "mkdocs-material"
 ]
 
+all = [
+    "bkbit[dev]",
+    "bkbit[docs]",
+    "bkbit[test]",
+]
+
 [project.urls]
 "Homepage" = "https://github.com/brain-bican/bkbit"
 
 [tool.setuptools_scm]
 write_to = "bkbit/_version.py"
+
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
 skip = '.git*'
