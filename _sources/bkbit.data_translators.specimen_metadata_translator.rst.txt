@@ -1,0 +1,7 @@
+bkbit.data\_translators.specimen\_metadata\_translator module
+=============================================================
+
+.. automodule:: bkbit.data_translators.specimen_metadata_translator
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,624 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bkbit.data_translators.library_generation_translator &mdash; bkbit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bkbit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">DATA TRANSLATORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../specimen_file_manifest.html">Specimen Digital File Manifest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../list_specimen_library_aliquot.html">Specimen Library Aliquot List</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../specimen_metadata.html">Specimen Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genome_annotation.html">Annotated Genome Data</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL CONVERTERS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../spreadsheet_converter.html">Spreadsheet to LinkML Schema</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL EDITORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../linkml_trimmer.html">LinkML Schema Trimmer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">REFERENCE</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">bkbit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bkbit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bkbit.data_translators.library_generation_translator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bkbit.data_translators.library_generation_translator</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module for parsing and processing specimen data using BICAN models and NIMP API endpoints. This module provides functionality to:</span>
+
+<span class="sd">1. Parse nhash IDs for specimens from the NIMP API, either in a top-down (descendants) or bottom-up (ancestors) fashion.</span>
+<span class="sd">2. Generate BICAN objects based on the parsed specimen data.</span>
+<span class="sd">3. Serialize the extracted information into JSON-LD format for further use.</span>
+<span class="sd">4. Check if values belong to a specific enumeration set.</span>
+
+<span class="sd">Classes:</span>
+<span class="sd">    SpecimenPortal: A class responsible for handling the parsing and generation of BICAN objects for specimen data.</span>
+
+<span class="sd">Functions:</span>
+<span class="sd">    get_field_type: Determines if an annotation is multivalued and returns the field type.</span>
+<span class="sd">    generate_bican_object: Generates a BICAN object based on the provided data and parent relationships.</span>
+<span class="sd">    parse_nhash_id_bottom_up: Parses ancestors of the provided nhash ID, generating BICAN objects.</span>
+<span class="sd">    parse_nhash_id_top_down: Parses descendants of the provided nhash ID, generating BICAN objects.</span>
+<span class="sd">    serialize_to_jsonld: Serializes the generated BICAN objects into JSON-LD format.</span>
+<span class="sd">    specimen2jsonld: Command-line function for parsing nhash IDs and serializing the result into JSON-LD format.</span>
+
+<span class="sd">Usage:</span>
+<span class="sd">    The module can be run as a standalone script using the command-line interface with the appropriate arguments and options:</span>
+
+<span class="sd">    ```</span>
+<span class="sd">    python specimen_portal.py &lt;nhash_id&gt; [-d]</span>
+<span class="sd">    ```</span>
+
+<span class="sd">    This script will parse the nhash ID and serialize the generated data into JSON-LD format, with the option to parse descendants or ancestors.</span>
+
+<span class="sd">Example:</span>
+<span class="sd">    ```</span>
+<span class="sd">    python specimen_portal.py &quot;DO-GICE7463&quot; -d</span>
+<span class="sd">    ```</span>
+
+<span class="sd">    This will parse the descendants of the specimen identified by the nhash ID and save the result as a JSON-LD file.</span>
+
+<span class="sd">Dependencies:</span>
+<span class="sd">    - json</span>
+<span class="sd">    - os</span>
+<span class="sd">    - click</span>
+<span class="sd">    - tqdm</span>
+<span class="sd">    - multiprocessing.Pool</span>
+<span class="sd">    - bkbit.models.library_generation</span>
+<span class="sd">    - bkbit.utils.nimp_api_endpoints (get_data, get_ancestors, get_descendants)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">multiprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">click</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">linkml_runtime.dumpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">json_dumper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bkbit.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">library_generation</span> <span class="k">as</span> <span class="n">lg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bkbit.utils.nimp_api_endpoints</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_data</span><span class="p">,</span> <span class="n">get_ancestors</span><span class="p">,</span> <span class="n">get_descendants</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bkbit.utils.generate_bkbit_id</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_object_id</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bkbit.utils.serialize_to_ttl</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert_jsonld_to_ttl</span>
+
+
+<span class="n">CATEGORY_TO_CLASS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;Library Pool&quot;</span><span class="p">:</span> <span class="n">lg</span><span class="o">.</span><span class="n">LibraryPool</span><span class="p">,</span>
+    <span class="s2">&quot;Library Aliquot&quot;</span><span class="p">:</span> <span class="n">lg</span><span class="o">.</span><span class="n">LibraryAliquot</span><span class="p">,</span>
+    <span class="s2">&quot;Library&quot;</span><span class="p">:</span> <span class="n">lg</span><span class="o">.</span><span class="n">Library</span><span class="p">,</span>
+    <span class="s2">&quot;Amplified cDNA&quot;</span><span class="p">:</span> <span class="n">lg</span><span class="o">.</span><span class="n">AmplifiedCdna</span><span class="p">,</span>
+    <span class="s2">&quot;Barcoded Cell Sample&quot;</span><span class="p">:</span> <span class="n">lg</span><span class="o">.</span><span class="n">BarcodedCellSample</span><span class="p">,</span>
+    <span class="s2">&quot;Enriched Cell Sample&quot;</span><span class="p">:</span> <span class="n">lg</span><span class="o">.</span><span class="n">EnrichedCellSample</span><span class="p">,</span>
+    <span class="s2">&quot;Dissociated Cell Sample&quot;</span><span class="p">:</span> <span class="n">lg</span><span class="o">.</span><span class="n">DissociatedCellSample</span><span class="p">,</span>
+    <span class="s2">&quot;Tissue&quot;</span><span class="p">:</span> <span class="n">lg</span><span class="o">.</span><span class="n">TissueSample</span><span class="p">,</span>
+    <span class="s2">&quot;Donor&quot;</span><span class="p">:</span> <span class="n">lg</span><span class="o">.</span><span class="n">Donor</span><span class="p">,</span>
+    <span class="s2">&quot;Specimen Dissected ROI&quot;</span><span class="p">:</span> <span class="n">lg</span><span class="o">.</span><span class="n">DissectionRoiPolygon</span><span class="p">,</span>
+    <span class="s2">&quot;Slab&quot;</span><span class="p">:</span> <span class="n">lg</span><span class="o">.</span><span class="n">BrainSlab</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">JWT_TOKEN_OS_VAR_NAME</span> <span class="o">=</span> <span class="s2">&quot;jwt_token&quot;</span>
+<span class="n">CONTEXT</span> <span class="o">=</span> <span class="s2">&quot;https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/library_generation.context.jsonld&quot;</span>
+
+
+<div class="viewcode-block" id="SpecimenPortal">
+<a class="viewcode-back" href="../../../bkbit.data_translators.library_generation_translator.html#bkbit.data_translators.library_generation_translator.SpecimenPortal">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SpecimenPortal</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The SpecimenPortal class is responsible for parsing and generating BICAN objects for specimen data</span>
+<span class="sd">    by traversing through nodes (ancestors or descendants) based on nhash IDs. It provides utilities to</span>
+<span class="sd">    recursively parse node relationships and convert the data into a JSON-LD format.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        jwt_token (str): The authentication token used to access the specimen data.</span>
+<span class="sd">        generated_objects (dict): A dictionary that stores generated BICAN objects, keyed by nhash IDs.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        get_field_type(annotation, collected_annotations=None):</span>
+<span class="sd">            Static method that determines whether a field is multivalued and returns the type of the field.</span>
+
+<span class="sd">        parse_nhash_id_bottom_up(nhash_id):</span>
+<span class="sd">            Parses ancestors of the provided nhash_id, starting from the node and moving upwards to the root (Donor).</span>
+
+<span class="sd">        parse_nhash_id_top_down(nhash_id):</span>
+<span class="sd">            Parses descendants of the provided nhash_id, starting from the node and moving downwards to the leaves (Library Pool).</span>
+
+<span class="sd">        generate_bican_object(data, was_derived_from=None):</span>
+<span class="sd">            Generates a BICAN object based on the provided data and parent relationships.</span>
+
+<span class="sd">        serialize_to_jsonld(exclude_none=True, exclude_unset=False):</span>
+<span class="sd">            Serializes the generated objects into JSON-LD format for further use or storage.</span>
+
+<span class="sd">        parse_single_nashid(jwt_token, nhash_id, descendants, save_to_file=False):</span>
+<span class="sd">            Parses a single nhash ID and optionally saves the result to a JSON-LD file.</span>
+
+<span class="sd">        parse_multiple_nashids(jwt_token, file_path, descendants):</span>
+<span class="sd">            Parses multiple nhash IDs from a file and saves the results to JSON-LD files.</span>
+
+<span class="sd">    Static Methods:</span>
+<span class="sd">        __check_valueset_membership(enum_type, nimp_value):</span>
+<span class="sd">            Checks if a given value belongs to a specified enum.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">jwt_token</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jwt_token</span> <span class="o">=</span> <span class="n">jwt_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generated_objects</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="SpecimenPortal.get_field_type">
+<a class="viewcode-back" href="../../../bkbit.data_translators.library_generation_translator.html#bkbit.data_translators.library_generation_translator.SpecimenPortal.get_field_type">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_field_type</span><span class="p">(</span><span class="n">annotation</span><span class="p">,</span> <span class="n">collected_annotations</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determines the field type based on the provided annotation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            annotation: The annotation to determine the field type for.</span>
+<span class="sd">            collected_annotations: A dictionary to collect annotations encountered during recursion.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A tuple containing a boolean indicating if the field is multivalued and the selected field type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">is_multivalued</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">primitive_types</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">}</span>
+        <span class="n">selected_type</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">annotation</span><span class="p">,</span> <span class="s2">&quot;__args__&quot;</span><span class="p">):</span>
+            <span class="n">arguments</span> <span class="o">=</span> <span class="n">annotation</span><span class="o">.</span><span class="n">__args__</span>
+            <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">arguments</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">arg</span> <span class="o">!=</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">):</span>
+                    <span class="n">nested_multivalued</span><span class="p">,</span> <span class="n">nested_annotations</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">SpecimenPortal</span><span class="o">.</span><span class="n">get_field_type</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">collected_annotations</span><span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="n">is_multivalued</span> <span class="o">=</span> <span class="n">is_multivalued</span> <span class="ow">or</span> <span class="n">nested_multivalued</span>
+                    <span class="c1"># Prioritize primitive types in case of Union</span>
+                    <span class="k">if</span> <span class="n">selected_type</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span>
+                        <span class="n">selected_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">primitive_types</span>
+                        <span class="ow">and</span> <span class="n">nested_annotations</span> <span class="ow">in</span> <span class="n">primitive_types</span>
+                    <span class="p">):</span>
+                        <span class="n">selected_type</span> <span class="o">=</span> <span class="n">nested_annotations</span>
+
+            <span class="c1"># Check if the original annotation is a List or other multivalued type</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">annotation</span><span class="p">,</span> <span class="s2">&quot;_name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;List&quot;</span><span class="p">,</span> <span class="s2">&quot;Set&quot;</span><span class="p">,</span> <span class="s2">&quot;Tuple&quot;</span><span class="p">}:</span>
+                <span class="n">is_multivalued</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">annotation</span>
+
+        <span class="k">return</span> <span class="n">is_multivalued</span><span class="p">,</span> <span class="n">selected_type</span></div>
+
+
+<div class="viewcode-block" id="SpecimenPortal.parse_nhash_id_bottom_up">
+<a class="viewcode-back" href="../../../bkbit.data_translators.library_generation_translator.html#bkbit.data_translators.library_generation_translator.SpecimenPortal.parse_nhash_id_bottom_up">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_nhash_id_bottom_up</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nhash_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parses the given nhash_id from bottom to top, retrieving ancestors and generating respective BICAN objects.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            nhash_id (str): The nhash_id to parse.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None: If there is an error retrieving ancestors or generating objects.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If there is an error retrieving ancestors or generating objects.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Traverse the nodes all the way to the root (Donor)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ancestors</span> <span class="o">=</span> <span class="n">get_ancestors</span><span class="p">(</span><span class="n">nhash_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">jwt_token</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">&quot;error&quot;</span> <span class="ow">in</span> <span class="n">ancestors</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">ancestors</span><span class="p">[</span><span class="s2">&quot;error&quot;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ValueError retrieving ancestors for &#39;</span><span class="si">{</span><span class="n">nhash_id</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected error retrieving ancestors for &#39;</span><span class="si">{</span><span class="n">nhash_id</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">curr_nhash_id</span><span class="p">,</span> <span class="n">curr_value</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+            <span class="n">ancestors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span>
+            <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Processing ancestors and generating respective BICAN objects for NHash ID: &quot;</span>
+            <span class="o">+</span> <span class="n">nhash_id</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;ancestor&quot;</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">curr_data</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="n">curr_nhash_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">jwt_token</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">)</span>
+                <span class="n">parents</span> <span class="o">=</span> <span class="n">curr_value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;has_parent&quot;</span><span class="p">)</span>
+                <span class="n">generated_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_bican_object</span><span class="p">(</span><span class="n">curr_data</span><span class="p">,</span> <span class="n">parents</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">generated_object</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">generated_objects</span><span class="p">[</span><span class="n">curr_nhash_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">generated_object</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ValueError generating object for &#39;</span><span class="si">{</span><span class="n">curr_nhash_id</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected error generating object for &#39;</span><span class="si">{</span><span class="n">curr_nhash_id</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">generated_objects</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;was_derived_from&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">obj</span><span class="o">.</span><span class="n">was_derived_from</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">was_derived_from</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">was_derived_from</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">generated_objects</span><span class="p">:</span>
+                        <span class="n">obj</span><span class="o">.</span><span class="n">was_derived_from</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">obj</span><span class="o">.</span><span class="n">was_derived_from</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generated_objects</span><span class="p">[</span><span class="n">obj</span><span class="o">.</span><span class="n">was_derived_from</span><span class="p">]</span><span class="o">.</span><span class="n">id</span>
+                <span class="k">else</span><span class="p">:</span>    
+                    <span class="n">updated_parents</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">was_derived_from</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">parent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">generated_objects</span><span class="p">:</span>
+                            <span class="n">updated_parents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generated_objects</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                    <span class="n">obj</span><span class="o">.</span><span class="n">was_derived_from</span> <span class="o">=</span> <span class="n">updated_parents</span></div>
+
+
+<div class="viewcode-block" id="SpecimenPortal.parse_nhash_id_top_down">
+<a class="viewcode-back" href="../../../bkbit.data_translators.library_generation_translator.html#bkbit.data_translators.library_generation_translator.SpecimenPortal.parse_nhash_id_top_down">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_nhash_id_top_down</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nhash_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parses the given nhash_id in a top-down manner, traversing the nodes all the way to the leaves (Library Pool).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            nhash_id (str): The nhash_id to be parsed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None: If an error occurs while retrieving descendants or generating objects.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If an error occurs while retrieving descendants.</span>
+<span class="sd">            Exception: If an unexpected error occurs while retrieving descendants or generating objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Traverse the nodes all the way to the leaves (Library Pool)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">descendants</span> <span class="o">=</span> <span class="n">get_descendants</span><span class="p">(</span><span class="n">nhash_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">jwt_token</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">&quot;error&quot;</span> <span class="ow">in</span> <span class="n">descendants</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">descendants</span><span class="p">[</span><span class="s2">&quot;error&quot;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ValueError retrieving descendants for &#39;</span><span class="si">{</span><span class="n">nhash_id</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected error retrieving descendants for &#39;</span><span class="si">{</span><span class="n">nhash_id</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">curr_nhash_id</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+            <span class="n">descendants</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+            <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Processing descendants and generating respective BICAN objects for NHash ID: &quot;</span>
+            <span class="o">+</span> <span class="n">nhash_id</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;descendant&quot;</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">curr_data</span> <span class="o">=</span> <span class="n">get_data</span><span class="p">(</span><span class="n">curr_nhash_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">jwt_token</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">)</span>
+                <span class="n">ancestors</span> <span class="o">=</span> <span class="n">get_ancestors</span><span class="p">(</span><span class="n">curr_nhash_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">jwt_token</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                <span class="n">parents</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">ancestors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">curr_nhash_id</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;has_parent&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">generated_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_bican_object</span><span class="p">(</span><span class="n">curr_data</span><span class="p">,</span> <span class="n">parents</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">generated_object</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">generated_objects</span><span class="p">[</span><span class="n">curr_nhash_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">generated_object</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ValueError generating object for &#39;</span><span class="si">{</span><span class="n">curr_nhash_id</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected error generating object for &#39;</span><span class="si">{</span><span class="n">curr_nhash_id</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">continue</span></div>
+
+
+    <span class="c1">#@classmethod</span>
+<div class="viewcode-block" id="SpecimenPortal.generate_bican_object">
+<a class="viewcode-back" href="../../../bkbit.data_translators.library_generation_translator.html#bkbit.data_translators.library_generation_translator.SpecimenPortal.generate_bican_object">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_bican_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">was_derived_from</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate a Bican object based on the provided data.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            data (dict): The data retrieved from the NIMP portal.</span>
+<span class="sd">            was_derived_from (list): A list of parent NHash IDs.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The generated Bican object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">category</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;category&quot;</span><span class="p">)</span>
+        <span class="n">bican_class</span> <span class="o">=</span> <span class="n">CATEGORY_TO_CLASS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">category</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bican_class</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported category: </span><span class="si">{</span><span class="n">category</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="n">assigned_attributes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">schema_field_name</span><span class="p">,</span> <span class="n">schema_field_metadata</span> <span class="ow">in</span> <span class="n">bican_class</span><span class="o">.</span><span class="n">__fields__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">nimp_field_name</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">schema_field_metadata</span><span class="o">.</span><span class="n">json_schema_extra</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;linkml_meta&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                <span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;local_names&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                <span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;NIMP&quot;</span><span class="p">,</span> <span class="p">{})</span>
+                <span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;local_name_value&quot;</span><span class="p">,</span> <span class="n">schema_field_name</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">multivalued</span><span class="p">,</span> <span class="n">field_type</span> <span class="o">=</span> <span class="n">SpecimenPortal</span><span class="o">.</span><span class="n">get_field_type</span><span class="p">(</span>
+                <span class="n">schema_field_metadata</span><span class="o">.</span><span class="n">annotation</span>
+            <span class="p">)</span>
+            <span class="n">required</span> <span class="o">=</span> <span class="n">schema_field_metadata</span><span class="o">.</span><span class="n">is_required</span><span class="p">()</span>
+            <span class="c1">#! handle multivalued fields</span>
+            <span class="k">if</span> <span class="n">nimp_field_name</span> <span class="o">==</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span>
+                <span class="c1">#! might want to check if &quot;id&quot; is provided otherwise raise error</span>
+                <span class="k">if</span> <span class="n">assigned_attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">schema_field_name</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">assigned_attributes</span><span class="p">[</span><span class="n">schema_field_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;NIMP:&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">assigned_attributes</span><span class="p">[</span><span class="n">schema_field_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;NIMP:&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">))]</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">nimp_field_name</span> <span class="o">==</span> <span class="s2">&quot;was_derived_from&quot;</span> <span class="ow">and</span> <span class="n">was_derived_from</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">multivalued</span><span class="p">:</span>
+                    <span class="c1"># Prefix each string with &quot;NIMP:&quot; and assign the list</span>
+                    <span class="n">assigned_attributes</span><span class="p">[</span><span class="n">schema_field_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">value</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">was_derived_from</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Prefix the single string with &quot;NIMP:&quot; and assign it</span>
+                    <span class="n">assigned_attributes</span><span class="p">[</span><span class="n">schema_field_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">was_derived_from</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">continue</span>
+            <span class="n">data_value</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;record&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">nimp_field_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">data_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">assigned_attributes</span><span class="p">[</span><span class="n">schema_field_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">schema_field_metadata</span><span class="o">.</span><span class="n">default</span>
+            <span class="k">elif</span> <span class="n">field_type</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">multivalued</span><span class="p">:</span>
+                    <span class="n">assigned_attributes</span><span class="p">[</span><span class="n">schema_field_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">data_value</span>
+                    <span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">assigned_attributes</span><span class="p">[</span><span class="n">schema_field_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data_value</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">field_type</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
+                <span class="n">assigned_attributes</span><span class="p">[</span><span class="n">schema_field_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">data_value</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">field_type</span> <span class="ow">is</span> <span class="nb">float</span><span class="p">:</span>
+                <span class="n">assigned_attributes</span><span class="p">[</span><span class="n">schema_field_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">data_value</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">field_type</span> <span class="ow">is</span> <span class="nb">bool</span><span class="p">:</span>
+                <span class="n">assigned_attributes</span><span class="p">[</span><span class="n">schema_field_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">data_value</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">field_type</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+                <span class="n">assigned_attributes</span><span class="p">[</span><span class="n">schema_field_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">SpecimenPortal</span><span class="o">.</span><span class="n">__check_valueset_membership</span><span class="p">(</span><span class="n">field_type</span><span class="p">,</span> <span class="n">data_value</span><span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="c1"># check if the field is required; if missing raise an error</span>
+            <span class="k">if</span> <span class="n">assigned_attributes</span><span class="p">[</span><span class="n">schema_field_name</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">required</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing required field: </span><span class="si">{</span><span class="n">schema_field_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">assigned_attributes</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">generate_object_id</span><span class="p">(</span><span class="n">assigned_attributes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bican_class</span><span class="p">(</span><span class="o">**</span><span class="n">assigned_attributes</span><span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__check_valueset_membership</span><span class="p">(</span><span class="n">enum_type</span><span class="p">,</span> <span class="n">nimp_value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if the given value belongs to the specified enum.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            enum_type(Enum): The enum class</span>
+<span class="sd">            nimp_value: The value to check for membership in the enum.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The enum member if the value belongs to the enum, None otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">enum_type</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">member</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">nimp_value</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">member</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="SpecimenPortal.serialize_to_jsonld">
+<a class="viewcode-back" href="../../../bkbit.data_translators.library_generation_translator.html#bkbit.data_translators.library_generation_translator.SpecimenPortal.serialize_to_jsonld">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">serialize_to_jsonld</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">exclude_none</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">exclude_unset</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Serialize the object and write it to the specified output file.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            output_file (str): The path of the output file.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">generated_objects</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="c1"># data.append(obj.to_dict(exclude_none=exclude_none, exclude_unset=exclude_unset))</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_dumper</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">obj</span><span class="p">)))</span>
+        <span class="n">output_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;@context&quot;</span><span class="p">:</span> <span class="n">CONTEXT</span><span class="p">,</span>
+            <span class="s2">&quot;@graph&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">output_data</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="parse_single_nashid">
+<a class="viewcode-back" href="../../../bkbit.data_translators.library_generation_translator.html#bkbit.data_translators.library_generation_translator.parse_single_nashid">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_single_nashid</span><span class="p">(</span><span class="n">jwt_token</span><span class="p">,</span> <span class="n">nhash_id</span><span class="p">,</span> <span class="n">descendants</span><span class="p">,</span> <span class="n">output_format</span><span class="p">,</span> <span class="n">save_to_file</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - jwt_token (str): The JWT token for authentication.</span>
+<span class="sd">    - nhash_id (str): The nashid to parse.</span>
+<span class="sd">    - descendants (bool): The direction of parsing. True for descendants, False for ancestors.</span>
+<span class="sd">    - output_format (str): The output format. Either &quot;jsonld&quot; or &quot;turtle&quot;.</span>
+<span class="sd">    - save_to_file (bool): Whether to save the parsed data to a file. Default is False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - None</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">    - None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sp_obj</span> <span class="o">=</span> <span class="n">SpecimenPortal</span><span class="p">(</span><span class="n">jwt_token</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">descendants</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">sp_obj</span><span class="o">.</span><span class="n">parse_nhash_id_bottom_up</span><span class="p">(</span><span class="n">nhash_id</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sp_obj</span><span class="o">.</span><span class="n">parse_nhash_id_top_down</span><span class="p">(</span><span class="n">nhash_id</span><span class="p">)</span>
+    <span class="n">jsonld_output</span> <span class="o">=</span> <span class="n">sp_obj</span><span class="o">.</span><span class="n">serialize_to_jsonld</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">output_format</span> <span class="o">==</span> <span class="s2">&quot;jsonld&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">save_to_file</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">nhash_id</span><span class="si">}</span><span class="s2">.jsonld&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">jsonld_output</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">jsonld_output</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">output_format</span> <span class="o">==</span> <span class="s2">&quot;turtle&quot;</span><span class="p">:</span>
+        <span class="n">turtle_output</span> <span class="o">=</span> <span class="n">convert_jsonld_to_ttl</span><span class="p">(</span><span class="n">jsonld_output</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">save_to_file</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">nhash_id</span><span class="si">}</span><span class="s2">.ttl&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">turtle_output</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">turtle_output</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="parse_multiple_nashids">
+<a class="viewcode-back" href="../../../bkbit.data_translators.library_generation_translator.html#bkbit.data_translators.library_generation_translator.parse_multiple_nashids">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_multiple_nashids</span><span class="p">(</span><span class="n">jwt_token</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">descendants</span><span class="p">,</span> <span class="n">output_format</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse multiple nashids from a file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        jwt_token (str): The JWT token.</span>
+<span class="sd">        file_path (str): The path to the file containing the nashids.</span>
+<span class="sd">        descendants (bool): The direction of parsing. True for descendants, False for ancestors.</span>
+<span class="sd">        output_format (str): The output format. Either &quot;jsonld&quot; or &quot;turtle&quot;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: A list of results from parsing each nashid.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">nhashids</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">file</span><span class="o">.</span><span class="n">readlines</span><span class="p">()]</span>
+    <span class="k">with</span> <span class="n">Pool</span><span class="p">()</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span>
+            <span class="n">parse_single_nashid</span><span class="p">,</span>
+            <span class="p">[(</span><span class="n">jwt_token</span><span class="p">,</span> <span class="n">nhash_id</span><span class="p">,</span> <span class="n">descendants</span><span class="p">,</span> <span class="n">output_format</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">nhash_id</span> <span class="ow">in</span> <span class="n">nhashids</span><span class="p">],</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">results</span></div>
+
+
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="c1">##ARGUMENTS##</span>
+<span class="c1"># Argument #1: The nhash id of the record to retrieve.</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;nhash_id&quot;</span><span class="p">)</span>
+
+<span class="c1">##OPTIONS##</span>
+<span class="c1"># Option #1: Which direction to parse the nhash id. Default is ancestors.</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--descendants&#39;</span><span class="p">,</span> <span class="s1">&#39;-d&#39;</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Parse the given nhash_id and all of its children down to Library Pool.&#39;</span><span class="p">)</span>
+
+<span class="c1"># Option #2: Output format: jsonld or turtle</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--output_format&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;-o&quot;</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Choice</span><span class="p">([</span><span class="s2">&quot;jsonld&quot;</span><span class="p">,</span> <span class="s2">&quot;turtle&quot;</span><span class="p">]),</span>
+    <span class="n">default</span><span class="o">=</span><span class="s2">&quot;jsonld&quot;</span><span class="p">,</span>
+    <span class="n">show_default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The output format.&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">specimen2jsonld</span><span class="p">(</span><span class="n">nhash_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">descendants</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">output_format</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert the specimen portal data to JSON-LD format.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        nhash_id (str): The nhash ID of the specimen.</span>
+<span class="sd">        descendants (bool): Which direction to parse the nhash id. Default is ancestors.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If JWT token is missing or empty.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">jwt_token</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">JWT_TOKEN_OS_VAR_NAME</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">jwt_token</span> <span class="ow">or</span> <span class="n">jwt_token</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;JWT token is required&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">nhash_id</span><span class="p">):</span>
+        <span class="n">parse_multiple_nashids</span><span class="p">(</span><span class="n">jwt_token</span><span class="p">,</span> <span class="n">nhash_id</span><span class="p">,</span> <span class="n">descendants</span><span class="p">,</span> <span class="n">output_format</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">parse_single_nashid</span><span class="p">(</span><span class="n">jwt_token</span><span class="p">,</span> <span class="n">nhash_id</span><span class="p">,</span> <span class="n">descendants</span><span class="p">,</span> <span class="n">output_format</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># example inputs: &#39;DO-GICE7463&#39;,&#39;LP-LOMHPL202182&#39;</span>
+    <span class="n">specimen2jsonld</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, BICAN.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

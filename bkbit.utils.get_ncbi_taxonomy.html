@@ -1,0 +1,251 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bkbit.utils.get_ncbi_taxonomy module &mdash; bkbit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bkbit.utils.load_json module" href="bkbit.utils.load_json.html" />
+    <link rel="prev" title="bkbit.utils package" href="bkbit.utils.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            bkbit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">DATA TRANSLATORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="specimen_file_manifest.html">Specimen Digital File Manifest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_specimen_library_aliquot.html">Specimen Library Aliquot List</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specimen_metadata.html">Specimen Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genome_annotation.html">Annotated Genome Data</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL CONVERTERS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="spreadsheet_converter.html">Spreadsheet to LinkML Schema</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL EDITORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="linkml_trimmer.html">LinkML Schema Trimmer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">REFERENCE</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">bkbit</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="bkbit.html">bkbit package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="bkbit.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="bkbit.data_translators.html">bkbit.data_translators package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.model_converters.html">bkbit.model_converters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.model_editors.html">bkbit.model_editors package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.models.html">bkbit.models package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="bkbit.utils.html">bkbit.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.html#module-bkbit">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">bkbit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">bkbit</a></li>
+          <li class="breadcrumb-item"><a href="bkbit.html">bkbit package</a></li>
+          <li class="breadcrumb-item"><a href="bkbit.utils.html">bkbit.utils package</a></li>
+      <li class="breadcrumb-item active">bkbit.utils.get_ncbi_taxonomy module</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/brain-bican/bkbit/blob/main/docs/bkbit.utils.get_ncbi_taxonomy.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-bkbit.utils.get_ncbi_taxonomy">
+<span id="bkbit-utils-get-ncbi-taxonomy-module"></span><h1>bkbit.utils.get_ncbi_taxonomy module<a class="headerlink" href="#module-bkbit.utils.get_ncbi_taxonomy" title="Link to this heading"></a></h1>
+<p>This script downloads a zip file containing taxonomic data from a given URL, extracts and processes
+the content of the ‘names.dmp’ file in memory, and saves the parsed data into JSON files. The script
+includes three main functions:</p>
+<ol class="arabic simple">
+<li><dl class="simple">
+<dt>download_and_extract_zip_in_memory(url):</dt><dd><p>Downloads a zip file from the given URL and extracts the content of the ‘names.dmp’ file in memory.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>parse_dmp_content(dmp_content):</dt><dd><p>Parses the content of a DMP file and extracts taxonomic information into dictionaries.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>process_and_save_taxdmp_in_memory(url, output_dir):</dt><dd><p>Downloads and processes the taxdump file from the given URL, and saves the parsed data into
+separate JSON files in the specified output directory.</p>
+</dd>
+</dl>
+</li>
+</ol>
+<dl class="simple">
+<dt>Usage:</dt><dd><p>The script can be executed as a standalone program. Modify the URL and output directory as needed.</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.utils.get_ncbi_taxonomy.download_and_extract_zip_in_memory">
+<span class="sig-prename descclassname"><span class="pre">bkbit.utils.get_ncbi_taxonomy.</span></span><span class="sig-name descname"><span class="pre">download_and_extract_zip_in_memory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/utils/get_ncbi_taxonomy.html#download_and_extract_zip_in_memory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.utils.get_ncbi_taxonomy.download_and_extract_zip_in_memory" title="Link to this definition"></a></dt>
+<dd><p>Downloads a zip file from the given URL and extracts the content of the ‘names.dmp’ file in memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>url</strong> (<em>str</em>) – The URL of the zip file to download.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The content of the ‘names.dmp’ file as a string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>requests.exceptions.HTTPError</strong> – If the file download fails with a non-200 status code.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.utils.get_ncbi_taxonomy.load_json">
+<span class="sig-prename descclassname"><span class="pre">bkbit.utils.get_ncbi_taxonomy.</span></span><span class="sig-name descname"><span class="pre">load_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/utils/get_ncbi_taxonomy.html#load_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.utils.get_ncbi_taxonomy.load_json" title="Link to this definition"></a></dt>
+<dd><p>Load JSON data from a file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> (<em>str</em>) – The path to the JSON file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The loaded JSON data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.utils.get_ncbi_taxonomy.parse_dmp_content">
+<span class="sig-prename descclassname"><span class="pre">bkbit.utils.get_ncbi_taxonomy.</span></span><span class="sig-name descname"><span class="pre">parse_dmp_content</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dmp_content</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/utils/get_ncbi_taxonomy.html#parse_dmp_content"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.utils.get_ncbi_taxonomy.parse_dmp_content" title="Link to this definition"></a></dt>
+<dd><p>Parses the content of a DMP file and extracts taxonomic information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dmp_content</strong> (<em>str</em>) – The content of the DMP file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A tuple containing three dictionaries:</dt><dd><ul class="simple">
+<li><p>taxid_to_scientific_name: A dictionary mapping taxonomic IDs to scientific names.</p></li>
+<li><p>taxid_to_common_name: A dictionary mapping taxonomic IDs to common names.</p></li>
+<li><p>scientific_name_to_taxid: A dictionary mapping scientific names to taxonomic IDs.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.utils.get_ncbi_taxonomy.process_and_save_taxdmp_in_memory">
+<span class="sig-prename descclassname"><span class="pre">bkbit.utils.get_ncbi_taxonomy.</span></span><span class="sig-name descname"><span class="pre">process_and_save_taxdmp_in_memory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/utils/get_ncbi_taxonomy.html#process_and_save_taxdmp_in_memory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.utils.get_ncbi_taxonomy.process_and_save_taxdmp_in_memory" title="Link to this definition"></a></dt>
+<dd><p>Downloads and processes the taxdump file from the given URL,
+and saves the parsed data into separate JSON files in the specified output directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>url</strong> (<em>str</em>) – The URL of the taxdump file to download and process.</p></li>
+<li><p><strong>output_dir</strong> (<em>str</em>) – The directory where the parsed data will be saved.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="bkbit.utils.html" class="btn btn-neutral float-left" title="bkbit.utils package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="bkbit.utils.load_json.html" class="btn btn-neutral float-right" title="bkbit.utils.load_json module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, BICAN.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

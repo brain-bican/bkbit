@@ -1,0 +1,370 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bkbit.model_editors.linkml_trimmer &mdash; bkbit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bkbit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">DATA TRANSLATORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../specimen_file_manifest.html">Specimen Digital File Manifest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../list_specimen_library_aliquot.html">Specimen Library Aliquot List</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../specimen_metadata.html">Specimen Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genome_annotation.html">Annotated Genome Data</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL CONVERTERS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../spreadsheet_converter.html">Spreadsheet to LinkML Schema</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL EDITORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../linkml_trimmer.html">LinkML Schema Trimmer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">REFERENCE</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">bkbit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bkbit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bkbit.model_editors.linkml_trimmer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bkbit.model_editors.linkml_trimmer</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This script provides a utility for trimming a LinkML schema by retaining specified classes, slots, and enums, along with their dependencies.</span>
+
+<span class="sd">It defines a `YamlTrimmer` class for schema manipulation and offers a command-line interface using Click for easy usage from the terminal.</span>
+
+<span class="sd">Usage:</span>
+<span class="sd">    python script.py [OPTIONS] SCHEMA</span>
+
+<span class="sd">Options:</span>
+<span class="sd">    --classes, -c TEXT  Comma-separated list of classes to include in the trimmed schema (required).</span>
+<span class="sd">    --slots, -s TEXT    Comma-separated list of slots to include in the trimmed schema.</span>
+<span class="sd">    --enums, -e TEXT    Comma-separated list of enums to include in the trimmed schema.</span>
+<span class="sd">    --schema_id, -i TEXT        Updated schema id for trimmed schema.</span>
+<span class="sd">    --schema_name, -n TEXT      Updated schema name for trimmed schema.</span>
+<span class="sd">    --schema_title, -t TEXT     Updated schema title for trimmed schema.</span>
+<span class="sd">    --schema_version, -v TEXT   Updated schema version for trimmed schema.</span>
+
+<span class="sd">Example:</span>
+<span class="sd">    python script.py schema.yaml -c Person,Organization -s name,age -e StatusEnum</span>
+
+<span class="sd">The script performs the following steps:</span>
+<span class="sd">1. Loads the specified LinkML schema.</span>
+<span class="sd">2. Trims the schema by keeping only the specified classes, slots, and enums, along with their dependencies.</span>
+<span class="sd">3. Serializes and prints the trimmed schema in YAML format.</span>
+
+<span class="sd">Dependencies:</span>
+<span class="sd">    - click</span>
+<span class="sd">    - linkml-runtime</span>
+<span class="sd">    - linkml</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">linkml_runtime.linkml_model.meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">SchemaDefinition</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">linkml_runtime.utils.schemaview</span><span class="w"> </span><span class="kn">import</span> <span class="n">SchemaView</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">linkml_runtime.utils.yamlutils</span><span class="w"> </span><span class="kn">import</span> <span class="n">as_yaml</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">click</span>
+
+
+<div class="viewcode-block" id="YamlTrimmer">
+<a class="viewcode-back" href="../../../bkbit.model_editors.linkml_trimmer.html#bkbit.model_editors.linkml_trimmer.YamlTrimmer">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">YamlTrimmer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A utility class for trimming a LinkML schema by retaining specified classes, slots, and enums, along with their dependencies.</span>
+
+<span class="sd">    This class helps in generating a simplified version of a LinkML schema by removing all elements that are not reachable from the specified classes, slots, and enums to keep.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        schema (Union[str, Path, SchemaDefinition]): The LinkML schema to be trimmed. It can be a file path, URL, or a `SchemaDefinition` object.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        schemaview (SchemaView): An object representing the loaded schema, used for manipulation and traversal.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        trim_model(keep_classes: list[str], keep_slots: list[str] = [], keep_enums: list[str] = []):</span>
+<span class="sd">            Trims the schema by keeping only the specified classes, slots, and enums, and their dependencies.</span>
+
+<span class="sd">        serialize():</span>
+<span class="sd">            Serializes and prints the trimmed schema in YAML format.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; yt = YamlTrimmer(&#39;path/to/schema.yaml&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; yt.trim_model([&#39;Person&#39;, &#39;Organization&#39;], keep_slots=[&#39;name&#39;], keep_enums=[&#39;StatusEnum&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; yt.serialize()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">,</span> <span class="n">SchemaDefinition</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schemaview</span> <span class="o">=</span> <span class="n">SchemaView</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+
+<div class="viewcode-block" id="YamlTrimmer.trim_model">
+<a class="viewcode-back" href="../../../bkbit.model_editors.linkml_trimmer.html#bkbit.model_editors.linkml_trimmer.YamlTrimmer.trim_model">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trim_model</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">keep_classes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">keep_slots</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">keep_enums</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="p">):</span>
+
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Trims the model by removing classes, slots, and enums that are not reachable from the specified keep_classes, keep_slots, and keep_enums.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            keep_classes (list[str]): List of classes to keep.</span>
+<span class="sd">            keep_slots (list[str], optional): List of slots to keep. Defaults to [].</span>
+<span class="sd">            keep_enums (list[str], optional): List of enums to keep. Defaults to [].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">sv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schemaview</span>
+        <span class="c1"># vistited_classes, visited_enums, and visited slots keep track of the classes, enums, and slots that are reachable from the input class, slots, and enums we are interested in keeping</span>
+        <span class="n">visited_classes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">visited_slots</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">visited_enums</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">visited_types</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="c1"># stack is a list of classes, enums, and slots that we will traverse to find all reachable classes, enums, and slots</span>
+        <span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">stack</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">keep_classes</span><span class="p">)</span>
+        <span class="n">stack</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">keep_slots</span><span class="p">)</span>
+        <span class="n">stack</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">keep_enums</span><span class="p">)</span>
+
+        <span class="c1"># all_classes, all_enums, and all_slots are the set of all classes, enums, and slots defined in the given schema</span>
+        <span class="n">all_classes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">sv</span><span class="o">.</span><span class="n">all_classes</span><span class="p">(</span><span class="n">imports</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="n">all_enums</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">sv</span><span class="o">.</span><span class="n">all_enums</span><span class="p">(</span><span class="n">imports</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="n">all_slots</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">sv</span><span class="o">.</span><span class="n">all_slots</span><span class="p">(</span><span class="n">imports</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">attributes</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+        <span class="n">all_types</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">sv</span><span class="o">.</span><span class="n">all_types</span><span class="p">(</span><span class="n">imports</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+
+        <span class="k">while</span> <span class="n">stack</span><span class="p">:</span>
+            <span class="n">curr_node</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">curr_node</span> <span class="ow">in</span> <span class="n">visited_classes</span>
+                <span class="ow">or</span> <span class="n">curr_node</span> <span class="ow">in</span> <span class="n">visited_enums</span>
+                <span class="ow">or</span> <span class="n">curr_node</span> <span class="ow">in</span> <span class="n">visited_slots</span>
+            <span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># if curr_node is a class</span>
+            <span class="k">if</span> <span class="n">curr_node</span> <span class="ow">in</span> <span class="n">all_classes</span><span class="p">:</span>
+                <span class="n">visited_classes</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">curr_node</span><span class="p">)</span>
+                <span class="c1"># add parent classes to stack</span>
+                <span class="k">for</span> <span class="n">inherited_class</span> <span class="ow">in</span> <span class="n">sv</span><span class="o">.</span><span class="n">class_parents</span><span class="p">(</span><span class="n">curr_node</span><span class="p">,</span> <span class="n">imports</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="p">(</span>
+                        <span class="n">inherited_class</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited_classes</span>
+                        <span class="ow">and</span> <span class="n">inherited_class</span> <span class="ow">in</span> <span class="n">all_classes</span>
+                    <span class="p">):</span>
+                        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">inherited_class</span><span class="p">)</span>
+
+                <span class="c1"># iterate through attributes/slots and add respective range to stack if type is a class or enum</span>
+                <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="n">sv</span><span class="o">.</span><span class="n">class_slots</span><span class="p">(</span>
+                    <span class="n">curr_node</span><span class="p">,</span> <span class="n">imports</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">attributes</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">):</span>
+                    <span class="k">if</span> <span class="n">slot</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited_slots</span> <span class="ow">and</span> <span class="n">slot</span> <span class="ow">in</span> <span class="n">all_slots</span><span class="p">:</span>
+                        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="n">curr_node</span> <span class="ow">in</span> <span class="n">all_slots</span><span class="p">:</span>
+                <span class="n">visited_slots</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">curr_node</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">slot_range</span> <span class="ow">in</span> <span class="n">sv</span><span class="o">.</span><span class="n">slot_range_as_union</span><span class="p">(</span>
+                    <span class="n">sv</span><span class="o">.</span><span class="n">get_slot</span><span class="p">(</span><span class="n">curr_node</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="p">):</span>
+                    <span class="k">if</span> <span class="p">(</span>
+                        <span class="p">(</span><span class="n">slot_range</span> <span class="ow">in</span> <span class="n">all_classes</span> <span class="ow">and</span> <span class="n">slot_range</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited_classes</span><span class="p">)</span>
+                        <span class="ow">or</span> <span class="p">(</span><span class="n">slot_range</span> <span class="ow">in</span> <span class="n">all_enums</span> <span class="ow">and</span> <span class="n">slot_range</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited_enums</span><span class="p">)</span>
+                        <span class="ow">or</span> <span class="p">(</span><span class="n">slot_range</span> <span class="ow">in</span> <span class="n">all_types</span> <span class="ow">and</span> <span class="n">slot_range</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited_types</span><span class="p">)</span>
+                    <span class="p">):</span>
+                        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">slot_range</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">parent_slot</span> <span class="ow">in</span> <span class="n">sv</span><span class="o">.</span><span class="n">slot_parents</span><span class="p">(</span><span class="n">curr_node</span><span class="p">,</span> <span class="n">imports</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">parent_slot</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited_slots</span> <span class="ow">and</span> <span class="n">parent_slot</span> <span class="ow">in</span> <span class="n">all_slots</span><span class="p">:</span>
+                        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parent_slot</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="n">curr_node</span> <span class="ow">in</span> <span class="n">all_enums</span><span class="p">:</span>
+                <span class="n">visited_enums</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">curr_node</span><span class="p">)</span>
+                <span class="c1"># add parent classes to stack</span>
+                <span class="k">for</span> <span class="n">parent_enum</span> <span class="ow">in</span> <span class="n">sv</span><span class="o">.</span><span class="n">enum_parents</span><span class="p">(</span><span class="n">curr_node</span><span class="p">,</span> <span class="n">imports</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">parent_enum</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited_enums</span> <span class="ow">and</span> <span class="n">parent_enum</span> <span class="ow">in</span> <span class="n">all_enums</span><span class="p">:</span>
+                        <span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parent_enum</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">curr_node</span> <span class="ow">in</span> <span class="n">all_types</span><span class="p">:</span>
+                <span class="n">visited_types</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">curr_node</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;ERROR: </span><span class="si">{</span><span class="n">curr_node</span><span class="si">}</span><span class="s2"> not found in schema classes, slots, or enums&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">all_classes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited_classes</span><span class="p">:</span>
+                <span class="n">sv</span><span class="o">.</span><span class="n">delete_class</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">all_enums</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">e</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited_enums</span><span class="p">:</span>
+                <span class="n">sv</span><span class="o">.</span><span class="n">delete_enum</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">all_slots</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited_slots</span><span class="p">:</span>
+                <span class="n">sv</span><span class="o">.</span><span class="n">delete_slot</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">all_types</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited_types</span><span class="p">:</span>
+                <span class="n">sv</span><span class="o">.</span><span class="n">delete_type</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="YamlTrimmer.serialize">
+<a class="viewcode-back" href="../../../bkbit.model_editors.linkml_trimmer.html#bkbit.model_editors.linkml_trimmer.YamlTrimmer.serialize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema_id</span><span class="p">,</span> <span class="n">schema_name</span><span class="p">,</span> <span class="n">schema_title</span><span class="p">,</span> <span class="n">schema_version</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Serializes the schema using as_yaml and prints the serialized output.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">schema_id</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schemaview</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">schema_id</span>
+        <span class="k">if</span> <span class="n">schema_name</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schemaview</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">schema_name</span>
+        <span class="k">if</span> <span class="n">schema_title</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schemaview</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">schema_title</span>
+        <span class="k">if</span> <span class="n">schema_version</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schemaview</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">schema_version</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schemaview</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">schemaview</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">schemaview</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">version</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schemaview</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">created_by</span> <span class="o">=</span> <span class="s2">&quot;BICAN_bkbit_linkml-trimmer&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">as_yaml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schemaview</span><span class="o">.</span><span class="n">schema</span><span class="p">))</span></div>
+</div>
+
+
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="c1">## ARGUMENTS ##</span>
+<span class="c1"># Argument #1: Schema file</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s2">&quot;schema&quot;</span><span class="p">)</span>
+
+<span class="c1">## OPTIONS ##</span>
+<span class="c1"># Option #1: Classes</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--classes&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;-c&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Comma-separated list of classes to include in trimmed schema&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># Option #2: Slots</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--slots&quot;</span><span class="p">,</span> <span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Comma-separated list of slots to include in trimmed schema&quot;</span>
+<span class="p">)</span>
+<span class="c1"># Option #3: Enums</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--enums&quot;</span><span class="p">,</span> <span class="s2">&quot;-e&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Comma-separated list of enums to include in trimmed schema&quot;</span>
+<span class="p">)</span>
+<span class="c1"># Option #4: Updated schema metadata</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--schema_id&quot;</span><span class="p">,</span> <span class="s2">&quot;-i&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Updated schema id for trimmed schema&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--schema_name&quot;</span><span class="p">,</span> <span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Updated schema name for trimmed schema&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--schema_title&quot;</span><span class="p">,</span> <span class="s2">&quot;-t&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Updated schema title for trimmed schema&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--schema_version&quot;</span><span class="p">,</span> <span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Updated schema version for trimmed schema&quot;</span>
+<span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">linkml_trimmer</span><span class="p">(</span>
+    <span class="n">schema</span><span class="p">,</span> <span class="n">classes</span><span class="p">,</span> <span class="n">slots</span><span class="p">,</span> <span class="n">enums</span><span class="p">,</span> <span class="n">schema_id</span><span class="p">,</span> <span class="n">schema_name</span><span class="p">,</span> <span class="n">schema_title</span><span class="p">,</span> <span class="n">schema_version</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Trim a LinkMl schema based on a list of classes, slots, and enums to keep.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">classes</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">classes</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span> <span class="k">if</span> <span class="n">classes</span> <span class="k">else</span> <span class="p">[]</span>
+    <span class="n">slots</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">slots</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span> <span class="k">if</span> <span class="n">slots</span> <span class="k">else</span> <span class="p">[]</span>
+    <span class="n">enums</span> <span class="o">=</span> <span class="p">[</span><span class="n">e</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">enums</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span> <span class="k">if</span> <span class="n">enums</span> <span class="k">else</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">classes</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">slots</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">enums</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">click</span><span class="o">.</span><span class="n">UsageError</span><span class="p">(</span>
+            <span class="s2">&quot;At least one of --classes, --slots, or --enums must be provided.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">yt</span> <span class="o">=</span> <span class="n">YamlTrimmer</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+    <span class="n">yt</span><span class="o">.</span><span class="n">trim_model</span><span class="p">(</span><span class="n">classes</span><span class="p">,</span> <span class="n">slots</span><span class="p">,</span> <span class="n">enums</span><span class="p">)</span>
+    <span class="n">yt</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">schema_id</span><span class="p">,</span> <span class="n">schema_name</span><span class="p">,</span> <span class="n">schema_title</span><span class="p">,</span> <span class="n">schema_version</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">linkml_trimmer</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, BICAN.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
