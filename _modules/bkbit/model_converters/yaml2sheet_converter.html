@@ -1,0 +1,297 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bkbit.model_converters.yaml2sheet_converter &mdash; bkbit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bkbit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">DATA TRANSLATORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../specimen_file_manifest.html">Specimen Digital File Manifest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../list_specimen_library_aliquot.html">Specimen Library Aliquot List</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../specimen_metadata.html">Specimen Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genome_annotation.html">Annotated Genome Data</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL CONVERTERS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../spreadsheet_converter.html">Spreadsheet to LinkML Schema</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL EDITORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../linkml_trimmer.html">LinkML Schema Trimmer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">REFERENCE</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">bkbit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bkbit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bkbit.model_converters.yaml2sheet_converter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bkbit.model_converters.yaml2sheet_converter</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">csv</span><span class="o">,</span><span class="w"> </span><span class="nn">yaml</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">click</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">linkml_runtime.utils.schemaview</span><span class="w"> </span><span class="kn">import</span> <span class="n">SchemaView</span>
+
+<span class="n">SIMPLE_TYPES_NOSTR</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;integer&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">,</span> <span class="s2">&quot;boolean&quot;</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="s2">&quot;datetime&quot;</span><span class="p">]</span>
+
+<span class="n">CLASS_HEADERS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># header, linkml_header, linkml_header_minor</span>
+    <span class="p">(</span><span class="s2">&quot;Class Name&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt; class&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Inheritance: is_a&quot;</span><span class="p">,</span> <span class="s2">&quot;is_a&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Inheritance: mixin&quot;</span><span class="p">,</span> <span class="s2">&quot;mixins&quot;</span><span class="p">,</span> <span class="s1">&#39;internal_separator: &quot;|&quot;&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Subsets&quot;</span><span class="p">,</span> <span class="s2">&quot;in_subset&quot;</span><span class="p">,</span> <span class="s1">&#39;internal_separator: &quot;|&quot;&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Description&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;NIMP Terminology NHash&quot;</span><span class="p">,</span> <span class="s2">&quot;exact_mappings: {curie_prefix: NIMP}&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="p">]</span>
+
+<span class="n">SLOTS_HEADERS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># header, linkml_header, linkml_header_minor</span>
+    <span class="p">(</span><span class="s2">&quot;Proposed BICAN Field&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt; alias&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;LinkML Slot or Attribute Name&quot;</span><span class="p">,</span> <span class="s2">&quot;attribute&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;BICAN UUID&quot;</span><span class="p">,</span> <span class="s2">&quot;slot_uri: {curie_prefix: bican}&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;SubGroup/LinkML Class Name&quot;</span><span class="p">,</span> <span class="s2">&quot;class&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Definition&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Required (True/False)&quot;</span><span class="p">,</span> <span class="s2">&quot;is_required&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Multivalued (True/False)&quot;</span><span class="p">,</span> <span class="s2">&quot;multivalued&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Data Type/Value Set&quot;</span><span class="p">,</span> <span class="s2">&quot;range&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Data Examples&quot;</span><span class="p">,</span> <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Min Value&quot;</span><span class="p">,</span> <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Max Value&quot;</span><span class="p">,</span> <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Unit&quot;</span><span class="p">,</span> <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Statistical Type&quot;</span><span class="p">,</span> <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Subsets&quot;</span><span class="p">,</span> <span class="s2">&quot;in_subset&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Notes&quot;</span><span class="p">,</span> <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;NIMP Category&quot;</span><span class="p">,</span> <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;NIMP Terminology NHash&quot;</span><span class="p">,</span> <span class="s2">&quot;exact_mappings: {curie_prefix: NIMP}&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Local Variable Name (e.g. NIMP)&quot;</span><span class="p">,</span> <span class="s2">&quot;local_names&quot;</span><span class="p">,</span> <span class="s2">&quot;inner_key: local_name_value&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Local Variable Source (e.g. NIMP)&quot;</span><span class="p">,</span> <span class="s2">&quot;local_names&quot;</span><span class="p">,</span> <span class="s2">&quot;inner_key: local_name_source&quot;</span><span class="p">)</span>
+<span class="p">]</span>
+
+<span class="n">ENUM_HEADERS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># header, linkml_header, linkml_header_minor</span>
+    <span class="p">(</span><span class="s2">&quot;Value Set Name&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt; enum&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Permissible Value&quot;</span><span class="p">,</span> <span class="s2">&quot;permissible_value&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Description&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;NIMP Terminology NHash&quot;</span><span class="p">,</span> <span class="s2">&quot;meaning: {curie_prefix: NIMP}&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="p">]</span>
+
+<span class="n">PREFIXES_HEADERS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="c1"># header, linkml_header</span>
+    <span class="p">(</span><span class="s2">&quot;Schema Name&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt; schema&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Title&quot;</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Description&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;ID&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Default Prefix&quot;</span><span class="p">,</span> <span class="s2">&quot;default_prefix&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Imports&quot;</span><span class="p">,</span> <span class="s2">&quot;imports&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Prefix&quot;</span><span class="p">,</span> <span class="s2">&quot;prefix&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;Prefix URI&quot;</span><span class="p">,</span> <span class="s2">&quot;prefix_reference&quot;</span><span class="p">),</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="create_classes_slots_cvs">
+<a class="viewcode-back" href="../../../bkbit.model_converters.yaml2sheet_converter.html#bkbit.model_converters.yaml2sheet_converter.create_classes_slots_cvs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_classes_slots_cvs</span><span class="p">(</span><span class="n">classes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+    <span class="c1"># creating headers (including linkml header lines)</span>
+    <span class="n">classes_cvs</span> <span class="o">=</span> <span class="p">[[],</span> <span class="p">[],</span> <span class="p">[]]</span>
+    <span class="k">for</span> <span class="n">header</span><span class="p">,</span> <span class="n">linkml_header</span><span class="p">,</span> <span class="n">linkml_header_minor</span> <span class="ow">in</span> <span class="n">CLASS_HEADERS</span><span class="p">:</span>
+        <span class="n">classes_cvs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+        <span class="n">classes_cvs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">linkml_header</span><span class="p">)</span>
+        <span class="n">classes_cvs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">linkml_header_minor</span><span class="p">)</span>
+
+    <span class="n">slots_cvs</span> <span class="o">=</span> <span class="p">[[],</span> <span class="p">[],</span> <span class="p">[]]</span>
+    <span class="k">for</span> <span class="n">header</span><span class="p">,</span> <span class="n">linkml_header</span><span class="p">,</span> <span class="n">linkml_header_minor</span> <span class="ow">in</span> <span class="n">SLOTS_HEADERS</span><span class="p">:</span>
+        <span class="n">slots_cvs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+        <span class="n">slots_cvs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">linkml_header</span><span class="p">)</span>
+        <span class="n">slots_cvs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">linkml_header_minor</span><span class="p">)</span>
+
+    <span class="n">sl_header</span> <span class="o">=</span> \
+        <span class="p">[</span><span class="s2">&quot;Proposed BICAN Field&quot;</span><span class="p">,</span> <span class="s2">&quot;LinkML Slot or Attribute Name&quot;</span><span class="p">,</span> <span class="s2">&quot;BICAN UUID&quot;</span><span class="p">,</span>	<span class="s2">&quot;SubGroup/LinkML Class Name&quot;</span><span class="p">,</span> <span class="s2">&quot;Definition&quot;</span><span class="p">,</span> <span class="s2">&quot;Required (True/False)&quot;</span><span class="p">,</span> <span class="s2">&quot;Multivalued (True/False)&quot;</span><span class="p">,</span> <span class="s2">&quot;Data Type/Value Set&quot;</span><span class="p">,</span>	<span class="s2">&quot;Data Examples&quot;</span><span class="p">,</span> <span class="s2">&quot;Min Value&quot;</span><span class="p">,</span> <span class="s2">&quot;Max Value&quot;</span><span class="p">,</span> <span class="s2">&quot;Unit&quot;</span><span class="p">,</span> <span class="s2">&quot;Statistical Type&quot;</span><span class="p">,</span> <span class="s2">&quot;Subsets&quot;</span><span class="p">,</span> <span class="s2">&quot;Notes&quot;</span><span class="p">,</span> <span class="s2">&quot;NIMP Category&quot;</span><span class="p">,</span>	<span class="s2">&quot;NIMP Terminology NHash&quot;</span><span class="p">,</span>               <span class="s2">&quot;Local Variable Name (e.g. NIMP)&quot;</span><span class="p">,</span> <span class="s2">&quot;Local Variable Source (e.g. NIMP)&quot;</span><span class="p">]</span>
+    <span class="n">sl_linkml_header</span> <span class="o">=</span> \
+        <span class="p">[</span><span class="s2">&quot;&gt; alias&quot;</span><span class="p">,</span>              <span class="s2">&quot;attribute&quot;</span><span class="p">,</span> <span class="s2">&quot;slot_uri: {curie_prefix: bican}&quot;</span><span class="p">,</span> <span class="s2">&quot;class&quot;</span><span class="p">,</span>                    <span class="s2">&quot;description&quot;</span><span class="p">,</span> <span class="s2">&quot;is_required&quot;</span><span class="p">,</span>          <span class="s2">&quot;multivalued&quot;</span><span class="p">,</span>              <span class="s2">&quot;range&quot;</span><span class="p">,</span>               <span class="s2">&quot;ignore&quot;</span><span class="p">,</span>        <span class="s2">&quot;ignore&quot;</span><span class="p">,</span>    <span class="s2">&quot;ignore&quot;</span><span class="p">,</span>    <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="s2">&quot;ignore&quot;</span><span class="p">,</span>         <span class="s2">&quot;in_subset&quot;</span><span class="p">,</span> <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="s2">&quot;ignore&quot;</span><span class="p">,</span>     <span class="s2">&quot;exact_mappings: {curie_prefix: NIMP}&quot;</span><span class="p">,</span> <span class="s2">&quot;local_names&quot;</span><span class="p">,</span>                     <span class="s2">&quot;local_names&quot;</span><span class="p">]</span>
+    <span class="n">sl_linkml_header_minor</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&gt;&quot;</span><span class="p">,</span>        <span class="s2">&quot;&quot;</span><span class="p">,</span>          <span class="s2">&quot;&quot;</span><span class="p">,</span>                                <span class="s2">&quot;&quot;</span><span class="p">,</span>                         <span class="s2">&quot;&quot;</span><span class="p">,</span>            <span class="s2">&quot;&quot;</span><span class="p">,</span>                     <span class="s2">&quot;&quot;</span><span class="p">,</span>                         <span class="s2">&quot;&quot;</span><span class="p">,</span>                    <span class="s2">&quot;&quot;</span><span class="p">,</span>              <span class="s2">&quot;&quot;</span><span class="p">,</span>          <span class="s2">&quot;&quot;</span><span class="p">,</span>          <span class="s2">&quot;&quot;</span><span class="p">,</span>       <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s1">&#39;internal_separator: &quot;|&quot;&#39;</span><span class="p">,</span>	<span class="s2">&quot;&quot;</span><span class="p">,</span>       <span class="s2">&quot;&quot;</span><span class="p">,</span>           <span class="s2">&quot;&quot;</span><span class="p">,</span>                                     <span class="s2">&quot;inner_key: local_name_value&quot;</span><span class="p">,</span>     <span class="s2">&quot;inner_key: local_name_source&quot;</span><span class="p">]</span>
+    <span class="n">slots_cvs</span> <span class="o">=</span> <span class="p">[</span><span class="n">sl_header</span><span class="p">,</span> <span class="n">sl_linkml_header</span><span class="p">,</span> <span class="n">sl_linkml_header_minor</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">class_name</span><span class="p">,</span> <span class="n">class_d</span> <span class="ow">in</span> <span class="n">classes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="s2">&quot;NamedThing&quot;</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">cl_l</span> <span class="o">=</span> <span class="p">[</span><span class="n">class_name</span><span class="p">,</span> <span class="n">class_d</span><span class="o">.</span><span class="n">is_a</span><span class="p">,</span> <span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">class_d</span><span class="o">.</span><span class="n">mixins</span><span class="p">),</span> <span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">class_d</span><span class="o">.</span><span class="n">in_subset</span><span class="p">),</span> <span class="n">class_d</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+        <span class="n">classes_cvs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cl_l</span><span class="p">)</span>
+        <span class="n">class_attr_dict</span> <span class="o">=</span> <span class="n">class_d</span><span class="o">.</span><span class="n">attributes</span>
+        <span class="n">class_attr_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">class_d</span><span class="o">.</span><span class="n">slot_usage</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">slot_name</span><span class="p">,</span> <span class="n">slot_obj</span> <span class="ow">in</span> <span class="n">class_attr_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">slot_obj</span><span class="o">.</span><span class="n">range</span><span class="p">:</span>
+                <span class="nb">range</span> <span class="o">=</span> <span class="n">slot_obj</span><span class="o">.</span><span class="n">range</span>
+            <span class="k">elif</span> <span class="n">slot_obj</span><span class="o">.</span><span class="n">any_of</span><span class="p">:</span>
+                <span class="c1"># removing an additional type</span>
+                <span class="nb">range</span> <span class="o">=</span> <span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_removing_str_type</span><span class="p">(</span><span class="n">slot_obj</span><span class="o">.</span><span class="n">any_of</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">range</span> <span class="o">=</span> <span class="s2">&quot;string&quot;</span> <span class="c1"># default range</span>
+            <span class="n">sl_l</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">slot_name</span><span class="p">,</span> <span class="n">slot_obj</span><span class="o">.</span><span class="n">slot_uri</span><span class="p">,</span> <span class="n">class_name</span><span class="p">,</span> <span class="n">slot_obj</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="n">slot_obj</span><span class="o">.</span><span class="n">required</span><span class="p">,</span> <span class="n">slot_obj</span><span class="o">.</span><span class="n">multivalued</span><span class="p">,</span> <span class="nb">range</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+            <span class="n">slots_cvs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sl_l</span><span class="p">)</span>
+    <span class="n">_write_cvs</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="s2">&quot;classes.csv&quot;</span><span class="p">),</span> <span class="n">classes_cvs</span><span class="p">)</span>
+    <span class="n">_write_cvs</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="s2">&quot;slots.csv&quot;</span><span class="p">),</span> <span class="n">slots_cvs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="create_enums_cvs">
+<a class="viewcode-back" href="../../../bkbit.model_converters.yaml2sheet_converter.html#bkbit.model_converters.yaml2sheet_converter.create_enums_cvs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_enums_cvs</span><span class="p">(</span><span class="n">enums</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+    <span class="n">enums_cvs</span> <span class="o">=</span> <span class="p">[[],</span> <span class="p">[],</span> <span class="p">[]]</span>
+    <span class="k">for</span> <span class="n">header</span><span class="p">,</span> <span class="n">linkml_header</span><span class="p">,</span> <span class="n">linkml_header_minor</span> <span class="ow">in</span> <span class="n">ENUM_HEADERS</span><span class="p">:</span>
+        <span class="n">enums_cvs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+        <span class="n">enums_cvs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">linkml_header</span><span class="p">)</span>
+        <span class="n">enums_cvs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">linkml_header_minor</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">enums</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">enum_name</span><span class="p">,</span> <span class="n">enum</span> <span class="ow">in</span> <span class="n">enums</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">value_nm</span><span class="p">,</span> <span class="n">value_obj</span> <span class="ow">in</span> <span class="n">enum</span><span class="o">.</span><span class="n">permissible_values</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">enums_cvs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">enum_name</span><span class="p">,</span> <span class="n">value_nm</span><span class="p">,</span> <span class="n">value_obj</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">value_obj</span><span class="o">.</span><span class="n">meaning</span><span class="p">])</span>
+    <span class="n">_write_cvs</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="s2">&quot;enums.csv&quot;</span><span class="p">),</span> <span class="n">enums_cvs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="create_prefix_headers_csv">
+<a class="viewcode-back" href="../../../bkbit.model_converters.yaml2sheet_converter.html#bkbit.model_converters.yaml2sheet_converter.create_prefix_headers_csv">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_prefix_headers_csv</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n">SchemaView</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+    <span class="n">prefixes_cvs</span> <span class="o">=</span> <span class="p">[[],</span> <span class="p">[]]</span>
+    <span class="k">for</span> <span class="n">header</span><span class="p">,</span> <span class="n">linkml_header</span> <span class="ow">in</span> <span class="n">PREFIXES_HEADERS</span><span class="p">:</span>
+        <span class="n">prefixes_cvs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+        <span class="n">prefixes_cvs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">linkml_header</span><span class="p">)</span>
+
+    <span class="n">prefixes_cvs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">schema</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">schema</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">schema</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="n">schema</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">schema</span><span class="o">.</span><span class="n">default_prefix</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">imp</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">imports</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">imp</span> <span class="o">!=</span> <span class="s2">&quot;linkml:types&quot;</span><span class="p">:</span> <span class="c1"># this is imported by default</span>
+            <span class="n">prefixes_cvs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">imp</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">prefixes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">prefixes_cvs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">prefix</span><span class="o">.</span><span class="n">prefix_prefix</span><span class="p">,</span> <span class="n">prefix</span><span class="o">.</span><span class="n">prefix_reference</span><span class="p">])</span>
+    <span class="n">_write_cvs</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="s2">&quot;prefixes.csv&quot;</span><span class="p">),</span> <span class="n">prefixes_cvs</span><span class="p">)</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_removing_str_type</span><span class="p">(</span><span class="n">any_of_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;If the range list contains only more complex types, it removes string from the list.</span>
+<span class="sd">    String is used in these cases as an additional type to be able to refer by id,</span>
+<span class="sd">    no need to include it in the google sheet</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">range_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">el</span><span class="o">.</span><span class="n">range</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">any_of_list</span><span class="p">]</span>
+    <span class="n">simple_types</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;integer&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">,</span> <span class="s2">&quot;boolean&quot;</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="s2">&quot;datetime&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s2">&quot;string&quot;</span> <span class="ow">in</span> <span class="n">range_list</span> <span class="ow">and</span> <span class="ow">not</span><span class="p">(</span><span class="nb">any</span><span class="p">([</span><span class="n">el</span> <span class="ow">in</span> <span class="n">simple_types</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">range_list</span><span class="p">])):</span>
+        <span class="n">range_list</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;string&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">range_list</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_write_cvs</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">csv_writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">csv_writer</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="s1">&#39;--output_dir&#39;</span><span class="p">,</span>
+              <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Path</span><span class="p">(),</span>
+              <span class="n">default</span><span class="o">=</span><span class="s2">&quot;output_dir_cvs&quot;</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the output directory, where csv files will be stored.&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s1">&#39;yaml_model&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">exists</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">yaml2cvs</span><span class="p">(</span><span class="n">yaml_model</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This converter create csv files from the yaml model.</span>
+<span class="sd">    The cvs files can be used to create Google Spreadsheet (automation TODO)</span>
+<span class="sd">    Takes a path to yaml model as an input.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+    <span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">schema</span> <span class="o">=</span> <span class="n">SchemaView</span><span class="p">(</span><span class="n">yaml_model</span><span class="p">)</span>
+    <span class="n">create_prefix_headers_csv</span><span class="p">(</span><span class="n">schema</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">)</span>
+    <span class="n">create_enums_cvs</span><span class="p">(</span><span class="n">schema</span><span class="o">.</span><span class="n">all_enums</span><span class="p">(),</span> <span class="n">output_dir</span><span class="p">)</span>
+    <span class="n">create_classes_slots_cvs</span><span class="p">(</span><span class="n">schema</span><span class="o">.</span><span class="n">all_classes</span><span class="p">(),</span> <span class="n">output_dir</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">yaml2cvs</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, BICAN.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

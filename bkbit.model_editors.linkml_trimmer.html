@@ -1,0 +1,254 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bkbit.model_editors.linkml_trimmer module &mdash; bkbit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bkbit.models package" href="bkbit.models.html" />
+    <link rel="prev" title="bkbit.model_editors.add_dunderMethods_genomeAnnotation module" href="bkbit.model_editors.add_dunderMethods_genomeAnnotation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            bkbit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">DATA TRANSLATORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="specimen_file_manifest.html">Specimen Digital File Manifest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_specimen_library_aliquot.html">Specimen Library Aliquot List</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specimen_metadata.html">Specimen Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genome_annotation.html">Annotated Genome Data</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL CONVERTERS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="spreadsheet_converter.html">Spreadsheet to LinkML Schema</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL EDITORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="linkml_trimmer.html">LinkML Schema Trimmer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">REFERENCE</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">bkbit</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="bkbit.html">bkbit package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="bkbit.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="bkbit.data_translators.html">bkbit.data_translators package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.model_converters.html">bkbit.model_converters package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="bkbit.model_editors.html">bkbit.model_editors package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.models.html">bkbit.models package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.utils.html">bkbit.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.html#module-bkbit">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">bkbit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">bkbit</a></li>
+          <li class="breadcrumb-item"><a href="bkbit.html">bkbit package</a></li>
+          <li class="breadcrumb-item"><a href="bkbit.model_editors.html">bkbit.model_editors package</a></li>
+      <li class="breadcrumb-item active">bkbit.model_editors.linkml_trimmer module</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/brain-bican/bkbit/blob/main/docs/bkbit.model_editors.linkml_trimmer.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-bkbit.model_editors.linkml_trimmer">
+<span id="bkbit-model-editors-linkml-trimmer-module"></span><h1>bkbit.model_editors.linkml_trimmer module<a class="headerlink" href="#module-bkbit.model_editors.linkml_trimmer" title="Link to this heading"></a></h1>
+<p>This script provides a utility for trimming a LinkML schema by retaining specified classes, slots, and enums, along with their dependencies.</p>
+<p>It defines a <cite>YamlTrimmer</cite> class for schema manipulation and offers a command-line interface using Click for easy usage from the terminal.</p>
+<dl>
+<dt>Usage:</dt><dd><p>python script.py [OPTIONS] SCHEMA</p>
+</dd>
+<dt>Options:</dt><dd><dl class="option-list">
+<dt><kbd><span class="option">--classes</span>, <span class="option">-c <var>TEXT</var></span></kbd></dt>
+<dd><p>Comma-separated list of classes to include in the trimmed schema (required).</p>
+</dd>
+<dt><kbd><span class="option">--slots</span>, <span class="option">-s <var>TEXT</var></span></kbd></dt>
+<dd><p>Comma-separated list of slots to include in the trimmed schema.</p>
+</dd>
+<dt><kbd><span class="option">--enums</span>, <span class="option">-e <var>TEXT</var></span></kbd></dt>
+<dd><p>Comma-separated list of enums to include in the trimmed schema.</p>
+</dd>
+<dt><kbd><span class="option">--schema_id</span>, <span class="option">-i <var>TEXT</var></span></kbd></dt>
+<dd><p>Updated schema id for trimmed schema.</p>
+</dd>
+<dt><kbd><span class="option">--schema_name</span>, <span class="option">-n <var>TEXT</var></span></kbd></dt>
+<dd><p>Updated schema name for trimmed schema.</p>
+</dd>
+<dt><kbd><span class="option">--schema_title</span>, <span class="option">-t <var>TEXT</var></span></kbd></dt>
+<dd><p>Updated schema title for trimmed schema.</p>
+</dd>
+<dt><kbd><span class="option">--schema_version</span>, <span class="option">-v <var>TEXT</var></span></kbd></dt>
+<dd><p>Updated schema version for trimmed schema.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<p>python script.py schema.yaml -c Person,Organization -s name,age -e StatusEnum</p>
+<p>The script performs the following steps:
+1. Loads the specified LinkML schema.
+2. Trims the schema by keeping only the specified classes, slots, and enums, along with their dependencies.
+3. Serializes and prints the trimmed schema in YAML format.</p>
+<dl class="simple">
+<dt>Dependencies:</dt><dd><ul class="simple">
+<li><p>click</p></li>
+<li><p>linkml-runtime</p></li>
+<li><p>linkml</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="bkbit.model_editors.linkml_trimmer.YamlTrimmer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bkbit.model_editors.linkml_trimmer.</span></span><span class="sig-name descname"><span class="pre">YamlTrimmer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">SchemaDefinition</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/model_editors/linkml_trimmer.html#YamlTrimmer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.model_editors.linkml_trimmer.YamlTrimmer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A utility class for trimming a LinkML schema by retaining specified classes, slots, and enums, along with their dependencies.</p>
+<p>This class helps in generating a simplified version of a LinkML schema by removing all elements that are not reachable from the specified classes, slots, and enums to keep.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>schema</strong> (<em>Union</em><em>[</em><em>str</em><em>, </em><em>Path</em><em>, </em><em>SchemaDefinition</em><em>]</em>) – The LinkML schema to be trimmed. It can be a file path, URL, or a <cite>SchemaDefinition</cite> object.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.model_editors.linkml_trimmer.YamlTrimmer.schemaview">
+<span class="sig-name descname"><span class="pre">schemaview</span></span><a class="headerlink" href="#bkbit.model_editors.linkml_trimmer.YamlTrimmer.schemaview" title="Link to this definition"></a></dt>
+<dd><p>An object representing the loaded schema, used for manipulation and traversal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SchemaView</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">trim_model(keep_classes</span></span></dt>
+<dd><p>list[str], keep_slots: list[str] = [], keep_enums: list[str] = []):
+Trims the schema by keeping only the specified classes, slots, and enums, and their dependencies.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.model_editors.linkml_trimmer.YamlTrimmer.serialize">
+<span class="sig-name descname"><span class="pre">serialize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/model_editors/linkml_trimmer.html#YamlTrimmer.serialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.model_editors.linkml_trimmer.YamlTrimmer.serialize" title="Link to this definition"></a></dt>
+<dd><p>Serializes and prints the trimmed schema in YAML format.</p>
+</dd></dl>
+
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">yt</span> <span class="o">=</span> <span class="n">YamlTrimmer</span><span class="p">(</span><span class="s1">&#39;path/to/schema.yaml&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">yt</span><span class="o">.</span><span class="n">trim_model</span><span class="p">([</span><span class="s1">&#39;Person&#39;</span><span class="p">,</span> <span class="s1">&#39;Organization&#39;</span><span class="p">],</span> <span class="n">keep_slots</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">keep_enums</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;StatusEnum&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">yt</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">serialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">schema_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema_title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema_version</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/model_editors/linkml_trimmer.html#YamlTrimmer.serialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd><p>Serializes the schema using as_yaml and prints the serialized output.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.model_editors.linkml_trimmer.YamlTrimmer.trim_model">
+<span class="sig-name descname"><span class="pre">trim_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keep_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_slots</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_enums</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/model_editors/linkml_trimmer.html#YamlTrimmer.trim_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.model_editors.linkml_trimmer.YamlTrimmer.trim_model" title="Link to this definition"></a></dt>
+<dd><p>Trims the model by removing classes, slots, and enums that are not reachable from the specified keep_classes, keep_slots, and keep_enums.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>keep_classes</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – List of classes to keep.</p></li>
+<li><p><strong>keep_slots</strong> (<em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – List of slots to keep. Defaults to [].</p></li>
+<li><p><strong>keep_enums</strong> (<em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – List of enums to keep. Defaults to [].</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="bkbit.model_editors.add_dunderMethods_genomeAnnotation.html" class="btn btn-neutral float-left" title="bkbit.model_editors.add_dunderMethods_genomeAnnotation module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="bkbit.models.html" class="btn btn-neutral float-right" title="bkbit.models package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, BICAN.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

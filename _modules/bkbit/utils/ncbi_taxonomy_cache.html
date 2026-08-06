@@ -1,0 +1,459 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bkbit.utils.ncbi_taxonomy_cache &mdash; bkbit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bkbit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">DATA TRANSLATORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../specimen_file_manifest.html">Specimen Digital File Manifest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../list_specimen_library_aliquot.html">Specimen Library Aliquot List</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../specimen_metadata.html">Specimen Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genome_annotation.html">Annotated Genome Data</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL CONVERTERS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../spreadsheet_converter.html">Spreadsheet to LinkML Schema</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL EDITORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../linkml_trimmer.html">LinkML Schema Trimmer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">REFERENCE</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">bkbit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bkbit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bkbit.utils.ncbi_taxonomy_cache</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bkbit.utils.ncbi_taxonomy_cache</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Lazy, self-provisioning access to NCBI taxonomy names.</span>
+
+<span class="sd">bkbit needs three lookups from the NCBI taxonomy: scientific name -&gt; taxon id,</span>
+<span class="sd">taxon id -&gt; scientific name, and taxon id -&gt; common name. This module serves</span>
+<span class="sd">those lookups from two layers, in order:</span>
+
+<span class="sd">1. A subset bundled inside the wheel (`ncbi_taxonomy_data/taxonomy_subset.json.gz`,</span>
+<span class="sd">   ~600KB, every taxon that has a GenBank common name). No network, no setup,</span>
+<span class="sd">   loads in milliseconds. This covers effectively every organism a genome</span>
+<span class="sd">   annotation pipeline is run against.</span>
+<span class="sd">2. The full NCBI taxonomy dump, downloaded and cached on first use for taxa that</span>
+<span class="sd">   are not in the subset. The cache lives in a per-user cache directory - never</span>
+<span class="sd">   inside `site-packages`, which may be read-only and is wiped on upgrade.</span>
+
+<span class="sd">Nothing here runs at import time: the bundled subset is loaded on first lookup</span>
+<span class="sd">and the full dump is only fetched if a lookup actually misses the subset.</span>
+
+<span class="sd">Environment variables:</span>
+<span class="sd">    BKBIT_DATA_DIR: Overrides the cache directory used for the full taxonomy.</span>
+<span class="sd">    BKBIT_NO_DOWNLOAD: If set to a truthy value, a lookup that misses the</span>
+<span class="sd">        bundled subset raises instead of downloading the full taxonomy.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">gzip</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">zipfile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">lru_cache</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">importlib.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">files</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">platformdirs</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+
+<span class="n">NCBI_TAXON_URL</span> <span class="o">=</span> <span class="s2">&quot;https://ftp.ncbi.nih.gov/pub/taxonomy/taxdmp.zip&quot;</span>
+
+<span class="n">BUNDLED_SUBSET_PACKAGE</span> <span class="o">=</span> <span class="s2">&quot;bkbit.utils.ncbi_taxonomy_data&quot;</span>
+<span class="n">BUNDLED_SUBSET_FILENAME</span> <span class="o">=</span> <span class="s2">&quot;taxonomy_subset.json.gz&quot;</span>
+<span class="n">SUBSET_FORMAT_VERSION</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="n">DATA_DIR_ENV_VAR</span> <span class="o">=</span> <span class="s2">&quot;BKBIT_DATA_DIR&quot;</span>
+<span class="n">NO_DOWNLOAD_ENV_VAR</span> <span class="o">=</span> <span class="s2">&quot;BKBIT_NO_DOWNLOAD&quot;</span>
+
+<span class="n">CACHE_SUBDIR</span> <span class="o">=</span> <span class="s2">&quot;ncbi_taxonomy&quot;</span>
+<span class="n">CACHE_FILENAMES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;scientific&quot;</span><span class="p">:</span> <span class="s2">&quot;taxid_to_scientific_name.json&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;common&quot;</span><span class="p">:</span> <span class="s2">&quot;taxid_to_common_name.json&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;scientific_to_taxid&quot;</span><span class="p">:</span> <span class="s2">&quot;scientific_name_to_taxid.json&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Older bkbit versions wrote the cache into the installed package directory.</span>
+<span class="c1"># Reused read-only if it happens to still be there, but never written to.</span>
+<span class="n">LEGACY_CACHE_DIR</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="n">CACHE_SUBDIR</span>
+
+
+<span class="c1">## CACHE LOCATION ##</span>
+
+
+<div class="viewcode-block" id="data_dir">
+<a class="viewcode-back" href="../../../bkbit.utils.ncbi_taxonomy_cache.html#bkbit.utils.get_ncbi_taxonomy.data_dir">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">data_dir</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the directory bkbit uses for the downloaded NCBI taxonomy cache.</span>
+
+<span class="sd">    Honours ``BKBIT_DATA_DIR`` if set, otherwise falls back to the platform&#39;s</span>
+<span class="sd">    per-user cache directory (which respects ``XDG_CACHE_HOME`` on Linux).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">override</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">DATA_DIR_ENV_VAR</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">override</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">override</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">platformdirs</span><span class="o">.</span><span class="n">user_cache_dir</span><span class="p">(</span><span class="s2">&quot;bkbit&quot;</span><span class="p">,</span> <span class="n">appauthor</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span> <span class="o">/</span> <span class="n">CACHE_SUBDIR</span></div>
+
+
+
+<div class="viewcode-block" id="full_cache_paths">
+<a class="viewcode-back" href="../../../bkbit.utils.ncbi_taxonomy_cache.html#bkbit.utils.get_ncbi_taxonomy.full_cache_paths">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">full_cache_paths</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the paths of the three JSON files that make up the full cache.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cache_dir: Directory to resolve against. Defaults to :func:`data_dir`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: Keys ``scientific``, ``common``, and ``scientific_to_taxid``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">base</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">cache_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">data_dir</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">base</span> <span class="o">/</span> <span class="n">name</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">CACHE_FILENAMES</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_existing_cache_dir</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a directory containing a complete taxonomy cache, or None.</span>
+
+<span class="sd">    Prefers the current cache location and falls back to the legacy in-package</span>
+<span class="sd">    directory written by older bkbit versions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">candidates</span> <span class="o">=</span> <span class="p">[</span><span class="n">data_dir</span><span class="p">()]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">DATA_DIR_ENV_VAR</span><span class="p">):</span>
+        <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LEGACY_CACHE_DIR</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">full_cache_paths</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="k">return</span> <span class="n">candidate</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="c1">## DOWNLOAD / BUILD ##</span>
+
+
+<div class="viewcode-block" id="download_and_extract_zip_in_memory">
+<a class="viewcode-back" href="../../../bkbit.utils.ncbi_taxonomy_cache.html#bkbit.utils.get_ncbi_taxonomy.download_and_extract_zip_in_memory">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">download_and_extract_zip_in_memory</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">NCBI_TAXON_URL</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Downloads the taxdump zip from the given URL and returns &#39;names.dmp&#39;.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        url: The URL of the zip file to download.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The content of the &#39;names.dmp&#39; file as a string.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        requests.exceptions.HTTPError: If the download fails.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">))</span> <span class="k">as</span> <span class="n">z</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">z</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;names.dmp&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">names_dmp_file</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">names_dmp_file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="parse_dmp_content">
+<a class="viewcode-back" href="../../../bkbit.utils.ncbi_taxonomy_cache.html#bkbit.utils.get_ncbi_taxonomy.parse_dmp_content">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_dmp_content</span><span class="p">(</span><span class="n">dmp_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parses the content of a names.dmp file into taxonomy name lookups.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dmp_content: The content of the DMP file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: ``(taxid_to_scientific_name, taxid_to_common_name,</span>
+<span class="sd">        scientific_name_to_taxid)``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">taxid_to_scientific_name</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">taxid_to_common_name</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">scientific_name_to_taxid</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">dmp_content</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">):</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)]</span>
+        <span class="c1"># names.dmp columns: tax_id | name_txt | unique name | name class</span>
+        <span class="n">taxid</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">unique_name</span><span class="p">,</span> <span class="n">name_class</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">parts</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">name_class</span> <span class="o">==</span> <span class="s2">&quot;scientific name&quot;</span> <span class="ow">and</span> <span class="n">taxid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">taxid_to_scientific_name</span><span class="p">:</span>
+            <span class="n">resolved</span> <span class="o">=</span> <span class="n">unique_name</span> <span class="ow">or</span> <span class="n">name</span>
+            <span class="n">taxid_to_scientific_name</span><span class="p">[</span><span class="n">taxid</span><span class="p">]</span> <span class="o">=</span> <span class="n">resolved</span>
+            <span class="n">scientific_name_to_taxid</span><span class="p">[</span><span class="n">resolved</span><span class="p">]</span> <span class="o">=</span> <span class="n">taxid</span>
+        <span class="k">elif</span> <span class="n">name_class</span> <span class="o">==</span> <span class="s2">&quot;genbank common name&quot;</span> <span class="ow">and</span> <span class="n">taxid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">taxid_to_common_name</span><span class="p">:</span>
+            <span class="n">taxid_to_common_name</span><span class="p">[</span><span class="n">taxid</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+
+    <span class="k">return</span> <span class="n">taxid_to_scientific_name</span><span class="p">,</span> <span class="n">taxid_to_common_name</span><span class="p">,</span> <span class="n">scientific_name_to_taxid</span></div>
+
+
+
+<div class="viewcode-block" id="build_full_cache">
+<a class="viewcode-back" href="../../../bkbit.utils.ncbi_taxonomy_cache.html#bkbit.utils.get_ncbi_taxonomy.build_full_cache">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_full_cache</span><span class="p">(</span>
+    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">NCBI_TAXON_URL</span><span class="p">,</span> <span class="n">cache_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Downloads the NCBI taxdump and writes the full cache to disk.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        url: The URL of the taxdump zip to download and process.</span>
+<span class="sd">        cache_dir: Destination directory. Defaults to :func:`data_dir`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: The written cache paths, as returned by :func:`full_cache_paths`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">paths</span> <span class="o">=</span> <span class="n">full_cache_paths</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">)</span>
+    <span class="n">target_dir</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">parent</span>
+    <span class="n">target_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">names_dmp_content</span> <span class="o">=</span> <span class="n">download_and_extract_zip_in_memory</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="n">scientific</span><span class="p">,</span> <span class="n">common</span><span class="p">,</span> <span class="n">scientific_to_taxid</span> <span class="o">=</span> <span class="n">parse_dmp_content</span><span class="p">(</span><span class="n">names_dmp_content</span><span class="p">)</span>
+
+    <span class="c1"># Written compactly; these maps run to hundreds of MB when pretty-printed.</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">payload</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="p">(</span><span class="s2">&quot;scientific&quot;</span><span class="p">,</span> <span class="n">scientific</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;common&quot;</span><span class="p">,</span> <span class="n">common</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;scientific_to_taxid&quot;</span><span class="p">,</span> <span class="n">scientific_to_taxid</span><span class="p">),</span>
+    <span class="p">):</span>
+        <span class="k">with</span> <span class="n">paths</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;:&quot;</span><span class="p">),</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">paths</span></div>
+
+
+
+<div class="viewcode-block" id="ensure_full_cache">
+<a class="viewcode-back" href="../../../bkbit.utils.ncbi_taxonomy_cache.html#bkbit.utils.get_ncbi_taxonomy.ensure_full_cache">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ensure_full_cache</span><span class="p">(</span><span class="n">reload</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">cache_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Makes sure the full taxonomy cache exists on disk, downloading if needed.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        reload: Re-download even if a complete cache is already present.</span>
+<span class="sd">        cache_dir: Destination directory. Defaults to :func:`data_dir`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Path: The directory containing the cache.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">reload</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cache_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">existing</span> <span class="o">=</span> <span class="n">_existing_cache_dir</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">existing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">existing</span>
+        <span class="k">elif</span> <span class="nb">all</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">full_cache_paths</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">)</span>
+
+    <span class="n">paths</span> <span class="o">=</span> <span class="n">build_full_cache</span><span class="p">(</span><span class="n">cache_dir</span><span class="o">=</span><span class="n">cache_dir</span><span class="p">)</span>
+    <span class="n">_full_taxonomy</span><span class="o">.</span><span class="n">cache_clear</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">paths</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">parent</span></div>
+
+
+
+<span class="c1">## LOOKUPS ##</span>
+
+
+<span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_bundled_taxa</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loads the bundled taxonomy subset: ``{taxid: [scientific, common]}``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="p">(</span><span class="n">files</span><span class="p">(</span><span class="n">BUNDLED_SUBSET_PACKAGE</span><span class="p">)</span> <span class="o">/</span> <span class="n">BUNDLED_SUBSET_FILENAME</span><span class="p">)</span><span class="o">.</span><span class="n">read_bytes</span><span class="p">()</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">gzip</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;format&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="n">SUBSET_FORMAT_VERSION</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Unsupported bundled taxonomy subset format: </span><span class="si">{</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;format&#39;</span><span class="p">)</span><span class="si">!r}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;taxa&quot;</span><span class="p">]</span>
+
+
+<span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_bundled_scientific_name_to_taxid</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Inverts the bundled subset into a scientific name -&gt; taxon id lookup.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">taxid</span> <span class="k">for</span> <span class="n">taxid</span><span class="p">,</span> <span class="n">names</span> <span class="ow">in</span> <span class="n">_bundled_taxa</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+
+<span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_full_taxonomy</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loads the full taxonomy from the cache, downloading it if necessary.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: ``(taxid_to_scientific_name, taxid_to_common_name,</span>
+<span class="sd">        scientific_name_to_taxid)``.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        RuntimeError: If the cache is missing and downloads are disabled via</span>
+<span class="sd">            ``BKBIT_NO_DOWNLOAD``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cache_dir</span> <span class="o">=</span> <span class="n">_existing_cache_dir</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">cache_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">NO_DOWNLOAD_ENV_VAR</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;This taxon is not in the taxonomy subset bundled with bkbit and &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">NO_DOWNLOAD_ENV_VAR</span><span class="si">}</span><span class="s2"> is set. Run &#39;bkbit download-ncbi-taxonomy&#39; &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;or unset </span><span class="si">{</span><span class="n">NO_DOWNLOAD_ENV_VAR</span><span class="si">}</span><span class="s2"> to allow the download.&quot;</span>
+            <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="s2">&quot;Taxon not found in the bundled NCBI taxonomy subset; downloading the &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;full NCBI taxonomy to </span><span class="si">{</span><span class="n">data_dir</span><span class="p">()</span><span class="si">}</span><span class="s2"> (this happens once).&quot;</span>
+        <span class="p">)</span>
+        <span class="n">cache_dir</span> <span class="o">=</span> <span class="n">ensure_full_cache</span><span class="p">()</span>
+
+    <span class="n">paths</span> <span class="o">=</span> <span class="n">full_cache_paths</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">paths</span><span class="p">[</span><span class="s2">&quot;scientific&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">scientific</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">paths</span><span class="p">[</span><span class="s2">&quot;common&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">common</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">paths</span><span class="p">[</span><span class="s2">&quot;scientific_to_taxid&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">scientific_to_taxid</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">scientific</span><span class="p">,</span> <span class="n">common</span><span class="p">,</span> <span class="n">scientific_to_taxid</span>
+
+
+<div class="viewcode-block" id="lookup_taxid">
+<a class="viewcode-back" href="../../../bkbit.utils.ncbi_taxonomy_cache.html#bkbit.utils.get_ncbi_taxonomy.lookup_taxid">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_taxid</span><span class="p">(</span><span class="n">scientific_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the taxon id for a scientific name, or None if it is unknown.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        scientific_name: Scientific name, e.g. ``&quot;Homo sapiens&quot;``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">taxid</span> <span class="o">=</span> <span class="n">_bundled_scientific_name_to_taxid</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">scientific_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">taxid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">taxid</span>
+    <span class="k">return</span> <span class="n">_full_taxonomy</span><span class="p">()[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">scientific_name</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="lookup_scientific_name">
+<a class="viewcode-back" href="../../../bkbit.utils.ncbi_taxonomy_cache.html#bkbit.utils.get_ncbi_taxonomy.lookup_scientific_name">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_scientific_name</span><span class="p">(</span><span class="n">taxid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the scientific name for a taxon id, or None if it is unknown.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        taxid: NCBI taxon id, as a string, e.g. ``&quot;9606&quot;``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">_bundled_taxa</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">taxid</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">_full_taxonomy</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">taxid</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="lookup_common_name">
+<a class="viewcode-back" href="../../../bkbit.utils.ncbi_taxonomy_cache.html#bkbit.utils.get_ncbi_taxonomy.lookup_common_name">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lookup_common_name</span><span class="p">(</span><span class="n">taxid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the GenBank common name for a taxon id, or None if it has none.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        taxid: NCBI taxon id, as a string, e.g. ``&quot;9606&quot;``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">_bundled_taxa</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">taxid</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">names</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">_full_taxonomy</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">taxid</span><span class="p">))</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, BICAN.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

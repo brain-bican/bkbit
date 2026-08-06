@@ -1,0 +1,440 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bkbit.model_converters.sheets_converter &mdash; bkbit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bkbit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">DATA TRANSLATORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../specimen_file_manifest.html">Specimen Digital File Manifest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../list_specimen_library_aliquot.html">Specimen Library Aliquot List</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../specimen_metadata.html">Specimen Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genome_annotation.html">Annotated Genome Data</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL CONVERTERS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../spreadsheet_converter.html">Spreadsheet to LinkML Schema</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL EDITORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../linkml_trimmer.html">LinkML Schema Trimmer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">REFERENCE</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">bkbit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bkbit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bkbit.model_converters.sheets_converter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bkbit.model_converters.sheets_converter</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">sys</span><span class="o">,</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">csv</span><span class="o">,</span><span class="w"> </span><span class="nn">yaml</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">click</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">linkml_runtime.linkml_model.meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">SchemaDefinition</span><span class="p">,</span> <span class="n">SlotDefinition</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">linkml_runtime.utils.schema_as_dict</span><span class="w"> </span><span class="kn">import</span> <span class="n">schema_as_dict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">linkml_runtime.utils.schemaview</span><span class="w"> </span><span class="kn">import</span> <span class="n">SchemaView</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">schemasheets</span><span class="w"> </span><span class="kn">import</span> <span class="n">schemamaker</span> <span class="k">as</span> <span class="n">sm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+
+<span class="n">SIMPLE_TYPES_NOSTR</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;integer&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">,</span> <span class="s2">&quot;boolean&quot;</span><span class="p">,</span> <span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="s2">&quot;datetime&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="fix_tsv_files">
+<a class="viewcode-back" href="../../../bkbit.model_converters.sheets_converter.html#bkbit.model_converters.sheets_converter.fix_tsv_files">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fix_tsv_files</span><span class="p">(</span><span class="n">tsv_files</span><span class="p">,</span> <span class="n">inlined</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ref_by_ind</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fixing all the tsv files, modifying the range column, and adding any_of, exactly_one_of, and inlined columns.</span>
+<span class="sd">    :param tsv_files: list of tsv files</span>
+<span class="sd">    :param inlined: if True, the inlined column will be added</span>
+<span class="sd">    &quot;param ref_by_ind: if True (and if inlined is True) the range will be modified (adding string) to be able to reference by index</span>
+<span class="sd">    :return: list of fixed tsv files</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">tsv_file_fixed_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">dir_fixed</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tsv_files</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;fixed_sheets&quot;</span>
+    <span class="n">dir_fixed</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">tsv_file</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">tsv_files</span><span class="p">):</span>
+        <span class="c1"># TODO: check if the file indeed has 3 lines of headers</span>
+        <span class="n">tsv_file_fixed</span> <span class="o">=</span> <span class="n">dir_fixed</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="n">tsv_file</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">tsv_file_fixed_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">tsv_file_fixed</span><span class="p">))</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tsv_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="c1"># cleaned of any ^M characters</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="c1"># convert the cleaned content back to a file-like object</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+        <span class="c1"># read the file-like object to a pandas dataframe</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">columns_to_change_new</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;mapping&quot;</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="n">columns_to_change_new</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">columns_to_change_new</span><span class="p">:</span>
+            <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;%20&quot;</span><span class="p">)</span>
+
+        <span class="c1"># finding the range column, and other columns that are relevant for the following changes</span>
+        <span class="n">range_ind</span><span class="p">,</span> <span class="n">range_col</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="n">multival_col</span><span class="p">,</span> <span class="n">exactlyone_col</span><span class="p">,</span> <span class="n">valset_col</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">ind</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s2">&quot;range&quot;</span> <span class="ow">in</span> <span class="n">col</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                <span class="n">range_ind</span> <span class="o">=</span> <span class="n">ind</span>
+                <span class="n">range_col</span> <span class="o">=</span> <span class="n">col</span>
+            <span class="k">elif</span> <span class="s2">&quot;multivalued&quot;</span> <span class="ow">in</span> <span class="n">col</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                <span class="n">multival_col</span> <span class="o">=</span> <span class="n">col</span>
+            <span class="k">elif</span> <span class="s2">&quot;exactlyoneof&quot;</span> <span class="ow">in</span> <span class="n">col</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                <span class="n">exactlyone_col</span> <span class="o">=</span> <span class="n">col</span>
+            <span class="k">elif</span> <span class="s2">&quot;permissible&quot;</span> <span class="ow">in</span> <span class="n">col</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                <span class="n">valset_col</span> <span class="o">=</span> <span class="n">col</span>
+
+        <span class="k">if</span> <span class="n">range_ind</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">any_of_col</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">range_col</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">: any_of&quot;</span><span class="p">,</span> <span class="s2">&quot;any_of&quot;</span><span class="p">,</span> <span class="s2">&quot;inner_key: range&quot;</span><span class="p">)</span>
+            <span class="n">exactly_one_of_col</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">range_col</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">: exactly_one_of&quot;</span><span class="p">,</span> <span class="s2">&quot;exactly_one_of&quot;</span><span class="p">,</span> <span class="s2">&quot;inner_key: range&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">inlined</span><span class="p">:</span>
+                <span class="n">inline_col</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;inlined&quot;</span><span class="p">,</span> <span class="s2">&quot;inlined&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span> <span class="c1"># ignoring if inlined is set to False</span>
+                <span class="n">inline_col</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;inlined&quot;</span><span class="p">,</span> <span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">range_ind</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">any_of_col</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">range_ind</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">exactly_one_of_col</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">range_ind</span> <span class="o">+</span> <span class="mi">3</span><span class="p">,</span> <span class="n">inline_col</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">fix_range</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot; Fixing the range column, moving some ranges to any_of or exactly_one_of columns</span>
+<span class="sd">                It also depends on the values of ref_by_ind and inlined.</span>
+<span class="sd">                &quot;&quot;&quot;</span>
+                <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">range_col</span><span class="p">]):</span>
+                    <span class="k">return</span> <span class="n">row</span>
+                <span class="c1"># do not add string to range if range already has string or all the elements are simple types</span>
+                <span class="k">elif</span> <span class="s2">&quot;string&quot;</span> <span class="ow">in</span> <span class="n">row</span><span class="p">[</span><span class="n">range_col</span><span class="p">]</span> <span class="ow">or</span> <span class="nb">all</span><span class="p">([</span><span class="n">el</span> <span class="ow">in</span> <span class="n">SIMPLE_TYPES_NOSTR</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">row</span><span class="p">[</span><span class="n">range_col</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)]):</span>
+                    <span class="k">pass</span>
+                <span class="c1"># checking if the range is not value set (TODO: in the future might need modification)</span>
+                <span class="k">elif</span> <span class="n">valset_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">row</span><span class="p">[</span><span class="n">valset_col</span><span class="p">]:</span>
+                    <span class="k">pass</span>
+                <span class="k">elif</span> <span class="n">inlined</span><span class="p">:</span>  <span class="c1"># setting inlined to True for range that have complex types</span>
+                    <span class="n">row</span><span class="p">[</span><span class="n">inline_col</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">if</span> <span class="n">ref_by_ind</span><span class="p">:</span> <span class="c1"># adding string to the range to be able to reference by index</span>
+                        <span class="n">row</span><span class="p">[</span><span class="n">range_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="n">range_col</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;|string&quot;</span>
+
+                <span class="c1"># checking if range has multiple values, and if it should be treated as any_of or exactly_one_of</span>
+                <span class="k">if</span> <span class="s2">&quot;|&quot;</span> <span class="ow">in</span> <span class="n">row</span><span class="p">[</span><span class="n">range_col</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">multival_col</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">exactlyone_col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">exactlyone_col</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">):</span>
+                        <span class="n">row</span><span class="p">[</span><span class="n">exactly_one_of_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="n">range_col</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">row</span><span class="p">[</span><span class="n">any_of_col</span><span class="p">]</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="n">range_col</span><span class="p">]</span>
+                    <span class="n">row</span><span class="p">[</span><span class="n">range_col</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">return</span> <span class="n">row</span>
+
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">fix_range</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">tsv_file_fixed</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># fixing the headers that are saved by pandas</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tsv_file_fixed</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">lines</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+        <span class="n">lines</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">el</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Unnamed&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">el</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)])</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">el</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Unnamed&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">el</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)])</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tsv_file_fixed</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">file</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tsv_file_fixed_list</span></div>
+
+
+
+
+<div class="viewcode-block" id="bican_fix">
+<a class="viewcode-back" href="../../../bkbit.model_converters.sheets_converter.html#bkbit.model_converters.sheets_converter.bican_fix">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">bican_fix</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n">SchemaDefinition</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SchemaDefinition</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply BICAN specific fixes to the schema</span>
+<span class="sd">    :param schema:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># fixing values for categories</span>
+    <span class="k">for</span> <span class="n">nm</span><span class="p">,</span> <span class="n">cl</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="s2">&quot;category&quot;</span> <span class="ow">in</span> <span class="n">cl</span><span class="o">.</span><span class="n">slots</span><span class="p">:</span>
+            <span class="n">cl</span><span class="o">.</span><span class="n">slot_usage</span><span class="p">[</span><span class="s2">&quot;category&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SlotDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;category&quot;</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;^bican:[A-Z][A-Za-z]+$&quot;</span><span class="p">)</span>
+        <span class="c1"># not needed anymore</span>
+        <span class="c1"># if &quot;name_pr&quot; in cl.slots:</span>
+        <span class="c1">#     cl.slots[&quot;name&quot;] = cl.slots.pop(&quot;name_pr&quot;)</span>
+        <span class="c1"># if &quot;slot_usage&quot; in cl and &quot;name_pr&quot; in cl[&quot;slot_usage&quot;]:</span>
+        <span class="c1">#     cl.slot_usage[&quot;name&quot;] = cl.slot_usage.pop(&quot;name_pr&quot;)</span>
+
+    <span class="c1"># removing names from the slots</span>
+    <span class="k">if</span> <span class="s2">&quot;name&quot;</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">slots</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">schema</span><span class="o">.</span><span class="n">slots</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+
+    <span class="c1"># removing slots that are from the imported schemas</span>
+    <span class="n">slots_from_imports</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">imports</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">el</span><span class="si">}</span><span class="s2">.yaml&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">sv</span> <span class="o">=</span> <span class="n">SchemaView</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">el</span><span class="si">}</span><span class="s1">.yaml&#39;</span><span class="p">)</span>
+            <span class="n">slots_from_imports</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">sv</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">slots</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">slots_to_remove</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">schema</span><span class="o">.</span><span class="n">slots</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">slots_from_imports</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">nm</span> <span class="ow">in</span> <span class="n">slots_to_remove</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">schema</span><span class="o">.</span><span class="n">slots</span><span class="p">[</span><span class="n">nm</span><span class="p">]</span>
+
+    <span class="c1"># removing empty subsets that are from imported biolink schema</span>
+    <span class="n">biolink_subsets</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">nm</span><span class="p">,</span> <span class="n">subs</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">subsets</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">subs</span><span class="o">.</span><span class="n">description</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">subs</span><span class="o">.</span><span class="n">from_schema</span><span class="p">:</span>
+            <span class="n">biolink_subsets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nm</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">nm</span> <span class="ow">in</span> <span class="n">biolink_subsets</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">schema</span><span class="o">.</span><span class="n">subsets</span><span class="p">[</span><span class="n">nm</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">schema</span></div>
+
+
+
+<div class="viewcode-block" id="adding_template">
+<a class="viewcode-back" href="../../../bkbit.model_converters.sheets_converter.html#bkbit.model_converters.sheets_converter.adding_template">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">adding_template</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span><span class="n">SchemaDefinition</span><span class="p">,</span> <span class="n">template_yaml</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SchemaDefinition</span><span class="p">:</span>
+    <span class="k">with</span> <span class="p">(</span><span class="n">template_yaml</span><span class="p">)</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">classes_base</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">classes_base</span><span class="p">[</span><span class="s2">&quot;classes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">schema</span><span class="o">.</span><span class="n">classes</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">classes_base</span><span class="p">[</span><span class="s2">&quot;slots&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">schema</span><span class="o">.</span><span class="n">slots</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+    <span class="k">return</span> <span class="n">schema</span></div>
+
+
+
+<div class="viewcode-block" id="download_google_sheet_as_tsv">
+<a class="viewcode-back" href="../../../bkbit.model_converters.sheets_converter.html#bkbit.model_converters.sheets_converter.download_google_sheet_as_tsv">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">download_google_sheet_as_tsv</span><span class="p">(</span><span class="n">sheet_id</span><span class="p">,</span> <span class="n">save_path</span><span class="p">,</span> <span class="n">sheet_gid</span><span class="p">):</span>
+    <span class="c1"># Construct the URL to export the Google Sheet as TSV</span>
+    <span class="n">tsv_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;https://docs.google.com/spreadsheets/d/</span><span class="si">{</span><span class="n">sheet_id</span><span class="si">}</span><span class="s1">/export?format=tsv&amp;gid=</span><span class="si">{</span><span class="n">sheet_gid</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tsv_url</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>  <span class="c1"># Ensure the request was successful</span>
+    <span class="c1"># Save the TSV content to a file</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">save_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="read_and_parse_gsheet_yaml">
+<a class="viewcode-back" href="../../../bkbit.model_converters.sheets_converter.html#bkbit.model_converters.sheets_converter.read_and_parse_gsheet_yaml">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_and_parse_gsheet_yaml</span><span class="p">(</span><span class="n">gsheet_yaml</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">gsheet_yaml</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+    <span class="n">gsheet_id</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;gsheet_id&#39;</span><span class="p">]</span>
+    <span class="n">sheets</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;sheets&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">gsheet_id</span><span class="p">,</span> <span class="n">sheets</span></div>
+
+
+
+<div class="viewcode-block" id="download_gsheets">
+<a class="viewcode-back" href="../../../bkbit.model_converters.sheets_converter.html#bkbit.model_converters.sheets_converter.download_gsheets">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">download_gsheets</span><span class="p">(</span><span class="n">gsheet_id</span><span class="p">,</span> <span class="n">sheets</span><span class="p">,</span> <span class="n">gsheet_download_dir</span><span class="p">):</span>
+    <span class="n">downloaded_files</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">sht</span> <span class="ow">in</span> <span class="n">sheets</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;gid&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sht</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Each sheet has to have gid,but not found in </span><span class="si">{</span><span class="n">sht</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">shnm</span> <span class="o">=</span> <span class="n">sht</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">sht</span><span class="p">[</span><span class="s2">&quot;gid&quot;</span><span class="p">])</span>
+        <span class="n">gsheet_save_path</span> <span class="o">=</span> <span class="n">gsheet_download_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">shnm</span><span class="si">}</span><span class="s2">.tsv&quot;</span>
+        <span class="n">download_google_sheet_as_tsv</span><span class="p">(</span><span class="n">gsheet_id</span><span class="p">,</span> <span class="n">gsheet_save_path</span><span class="p">,</span> <span class="n">sht</span><span class="p">[</span><span class="s2">&quot;gid&quot;</span><span class="p">])</span>
+        <span class="n">downloaded_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gsheet_save_path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">downloaded_files</span></div>
+
+
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="s1">&#39;--output&#39;</span><span class="p">,</span>
+              <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">),</span>
+              <span class="n">default</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path for the yaml output file.&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;-t&#39;</span><span class="p">,</span> <span class="s1">&#39;--template&#39;</span><span class="p">,</span>
+              <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">exists</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+              <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Optional template yaml file with standard classes that will be added to the model.&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--gsheet/--no-gsheet&quot;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+              <span class="n">show_default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Using Google Sheet as a source. &quot;</span>
+                   <span class="s2">&quot;If True, the arguments MUST be a yaml file with gsheet_id and gid of all the sheets&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--gsheet-download-dir&quot;</span><span class="p">,</span>
+              <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">Path</span><span class="p">(),</span>
+              <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path used to download Google Sheets. If not specified a default directory will be created.&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--fix_tsv/--no-fix_tsv&quot;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">show_default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Fixing known issues with tsv files from Google Sheets.&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--fix_tsv_save/--no-fix_tsv_save&quot;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+              <span class="n">show_default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Keeping the fixed files, relevant only if fix_tsv=True&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--repair/--no-repair&quot;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">show_default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Standard Linkml auto-repair schema&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--inlined/--no-inlined&quot;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">show_default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Adding inlined=True to all slots that have complex type as a range&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--ref_by_ind/--no-ref_by_ind&quot;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">show_default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Adding string to the range to be able to reference by index (relevant only if inlined=True)&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--fix_bican_model/--no-fix_bican_model&quot;</span><span class="p">,</span>
+              <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">show_default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Automated repair specifically for the BICAN YAML model&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s1">&#39;spreadsheets&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">schema2model</span><span class="p">(</span><span class="n">spreadsheets</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">fix_tsv</span><span class="p">,</span> <span class="n">fix_tsv_save</span><span class="p">,</span> <span class="n">repair</span><span class="p">,</span> <span class="n">fix_bican_model</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span>
+                 <span class="n">gsheet</span><span class="p">,</span> <span class="n">gsheet_download_dir</span><span class="p">,</span> <span class="n">inlined</span><span class="p">,</span> <span class="n">ref_by_ind</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This converter allows creating a yaml linkml model from a set of spreadsheets.</span>
+<span class="sd">    It can either use tsv files or Google Sheet as an input.</span>
+
+<span class="sd">    The default behavior is to run the converter starting with TSV files,</span>
+<span class="sd">     specifying their paths as arguments, for example, model_spreadsheets/*tsv.</span>
+
+<span class="sd">    If `--gsheet` option is used, the converter starts from downloading spreadsheets</span>
+<span class="sd">     from Google Sheets.</span>
+<span class="sd">     The argument must be a YAML file that has `gsheet_id` and a list of `sheets`</span>
+<span class="sd">     with `gid` (a unique identifier for each individual sheet) and `name` (optionally)</span>
+<span class="sd">     that will be used as a name of the downloaded TSV file (if not available `gid` will be used).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">schema_maker</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">SchemaMaker</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">gsheet</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">spreadsheets</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="n">spreadsheets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">exists</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;if gsheet is used the argument must me a yaml file with gsheet_id, &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;but file </span><span class="si">{</span><span class="n">spreadsheets</span><span class="si">}</span><span class="s2"> doesn&#39;t exist&quot;</span><span class="p">)</span>
+        <span class="n">gsheet_id</span><span class="p">,</span> <span class="n">sheets</span> <span class="o">=</span> <span class="n">read_and_parse_gsheet_yaml</span><span class="p">(</span><span class="n">spreadsheets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">gsheet_download_dir</span><span class="p">:</span>
+            <span class="n">gsheet_download_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">gsheet_download_dir</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">gsheet_download_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;google_sheet_</span><span class="si">{</span><span class="n">gsheet_id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">gsheet_download_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">spreadsheets</span> <span class="o">=</span> <span class="n">download_gsheets</span><span class="p">(</span><span class="n">gsheet_id</span><span class="p">,</span> <span class="n">sheets</span><span class="p">,</span> <span class="n">gsheet_download_dir</span><span class="p">)</span>
+
+    <span class="c1"># checking template and default name of template</span>
+    <span class="k">if</span> <span class="n">template</span><span class="p">:</span>
+        <span class="n">template</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">spreadsheets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;classes_base.yaml&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">template</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">spreadsheets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;classes_base.yaml&quot;</span>
+
+    <span class="k">if</span> <span class="n">fix_tsv</span><span class="p">:</span>
+        <span class="n">spreadsheets</span> <span class="o">=</span> <span class="n">fix_tsv_files</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">spreadsheets</span><span class="p">),</span> <span class="n">inlined</span><span class="o">=</span><span class="n">inlined</span><span class="p">,</span> <span class="n">ref_by_ind</span><span class="o">=</span><span class="n">ref_by_ind</span><span class="p">)</span>
+    <span class="n">schema</span> <span class="o">=</span> <span class="n">schema_maker</span><span class="o">.</span><span class="n">create_schema</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">spreadsheets</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">repair</span><span class="p">:</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">schema_maker</span><span class="o">.</span><span class="n">repair_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">fix_bican_model</span><span class="p">:</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">bican_fix</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">template</span><span class="p">:</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">adding_template</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="n">template_yaml</span><span class="o">=</span><span class="n">template</span><span class="p">)</span>
+
+    <span class="n">schema_dict</span> <span class="o">=</span> <span class="n">schema_as_dict</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">yaml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">schema_dict</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># removing the fixed files:</span>
+    <span class="k">if</span> <span class="n">fix_tsv</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">fix_tsv_save</span><span class="p">:</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">spreadsheets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">schema2model</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, BICAN.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
