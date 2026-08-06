@@ -16,7 +16,26 @@ Each JSON-LD file will contain:
 - 1 OrganismTaxon object
 - 1 Checksum object
 
-Command Line 
+NCBI Taxonomy Data
+...................
+
+No setup is required before running ``bkbit gff2jsonld``. A taxonomy subset covering every
+organism with a GenBank common name ships inside the ``bkbit`` package, so organism names
+resolve offline for all supported species.
+
+If a GFF3 file references a taxon outside that subset, ``bkbit`` downloads the full NCBI
+taxonomy once and caches it in a per-user cache directory. To do that download up front
+instead of mid-run - for example when building a container image or running air-gapped -
+use the optional command:
+
+.. code-block:: bash
+
+    $ bkbit download-ncbi-taxonomy
+
+Set ``BKBIT_DATA_DIR`` to control where the cache is stored, or ``BKBIT_NO_DOWNLOAD`` to
+make an out-of-subset lookup raise an error instead of downloading.
+
+Command Line
 .............
 
 ``bkbit gff2jsonld``

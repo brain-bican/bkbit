@@ -41,12 +41,11 @@ import subprocess
 import gzip
 from tqdm import tqdm
 import click
-import pkg_resources
 from linkml_runtime.dumpers import json_dumper
 from rdflib import Graph
 from bkbit.models import genome_annotation as ga
 from bkbit.utils.setup_logger import setup_logger
-from bkbit.utils.load_json import load_json
+from bkbit.utils import ncbi_taxonomy_cache
 from bkbit.utils.generate_bkbit_id import generate_object_id
 from bkbit.utils.serialize_to_ttl import convert_jsonld_to_ttl
 
@@ -72,10 +71,6 @@ GENOME_ANNOTATION_DESCRIPTION_FORMAT = (
 )
 DEFAULT_FEATURE_FILTER = ("gene", "pseudogene", "ncRNA_gene")
 DEFAULT_HASH = ("MD5",)
-TAXON_DIR_PATH = "../utils/ncbi_taxonomy/"
-SCIENTIFIC_NAME_TO_TAXONID_PATH = pkg_resources.resource_filename(__name__, TAXON_DIR_PATH + "scientific_name_to_taxid.json")
-TAXON_SCIENTIFIC_NAME_PATH = pkg_resources.resource_filename(__name__, TAXON_DIR_PATH + "taxid_to_scientific_name.json")
-TAXON_COMMON_NAME_PATH = pkg_resources.resource_filename(__name__, TAXON_DIR_PATH + "taxid_to_common_name.json")
 INCOMPATABLE_EXTENSION = "The provided content URL is not supported. Please provide a valid URL with '.gff.gz' extension."
 class Gff3:
     """
@@ -134,18 +129,10 @@ class Gff3:
         serialize_to_jsonld(exclude_none=True, exclude_unset=False):
             Serializes the object and either writes it to the specified output file or prints it to the CLI.
     """
-    scientific_name_to_taxonid = None
-    taxon_scientific_name = None
-    taxon_common_name = None
-
-    # Load taxonomy data at class definition
-    try:
-        scientific_name_to_taxonid = load_json(SCIENTIFIC_NAME_TO_TAXONID_PATH)
-        taxon_scientific_name = load_json(TAXON_SCIENTIFIC_NAME_PATH)
-        taxon_common_name = load_json(TAXON_COMMON_NAME_PATH)
-    except FileNotFoundError as e:
-        #logging.critical("NCBI Taxonomy not downloaded. Run 'bkbit download-ncbi-taxonomy' first.")
-        raise RuntimeError("NCBI Taxonomy not downloaded. Run 'bkbit download-ncbi-taxonomy' first.") from e
+    # Taxonomy names are resolved lazily, one taxon at a time, by
+    # bkbit.utils.ncbi_taxonomy_cache. Nothing is loaded or downloaded until a
+    # lookup actually happens, so importing this module is always side-effect
+    # free.
 
     def __init__(
         self,
@@ -299,7 +286,7 @@ class Gff3:
                     )
                 
                 scientific_name = ensembl_match.group(3)
-                taxonid = self.scientific_name_to_taxonid.get(
+                taxonid = ncbi_taxonomy_cache.lookup_taxid(
                     scientific_name.replace("_", " ")
                 )
                 return {
@@ -377,8 +364,18 @@ class Gff3:
 
         Returns:
             ga.OrganismTaxon: The generated organism taxon object.
+
+        Raises:
+            ValueError: If the taxon ID is not present in the NCBI taxonomy.
         """
-        attributes = {"full_name": cls.taxon_scientific_name[taxon_id], "name": cls.taxon_common_name[taxon_id], "iri": PREFIX_MAP[TAXON_PREFIX] + taxon_id, "xref": [TAXON_PREFIX + taxon_id]}
+        scientific_name = ncbi_taxonomy_cache.lookup_scientific_name(taxon_id)
+        if scientific_name is None:
+            raise ValueError(
+                f"Taxon ID '{taxon_id}' was not found in the NCBI taxonomy."
+            )
+        # Not every taxon has a GenBank common name; fall back to the scientific name.
+        common_name = ncbi_taxonomy_cache.lookup_common_name(taxon_id) or scientific_name
+        attributes = {"full_name": scientific_name, "name": common_name, "iri": PREFIX_MAP[TAXON_PREFIX] + taxon_id, "xref": [TAXON_PREFIX + taxon_id]}
         attributes["id"] = generate_object_id(attributes)
         return ga.OrganismTaxon(**attributes)
 

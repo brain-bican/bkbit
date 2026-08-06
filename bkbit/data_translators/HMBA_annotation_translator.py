@@ -1,6 +1,5 @@
 import itertools
 import click
-import pkg_resources
 from bkbit.models import bke_taxonomy
 import json
 import hashlib

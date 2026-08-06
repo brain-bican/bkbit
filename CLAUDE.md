@@ -47,7 +47,7 @@ The package provides a CLI tool `bkbit` with multiple subcommands:
 - `bkbit schema2model` - Convert spreadsheets to LinkML YAML models
 - `bkbit yaml2cvs` - Convert YAML to CSV
 - `bkbit linkml-trimmer` - Trim LinkML models
-- `bkbit download-ncbi-taxonomy` - Download NCBI taxonomy data
+- `bkbit download-ncbi-taxonomy` - Optionally pre-download the full NCBI taxonomy (see below)
 
 ## Architecture
 
@@ -73,7 +73,9 @@ The package provides a CLI tool `bkbit` with multiple subcommands:
 - `add_dunderMethods_genomeAnnotation.py` - Adds __eq__, __ne__, __hash__ to GeneAnnotation
 
 **`bkbit/utils/`** - Shared utilities:
-- `get_ncbi_taxonomy.py` - NCBI taxonomy download
+- `ncbi_taxonomy_cache.py` - NCBI taxonomy name lookups (see NCBI Taxonomy Data below)
+- `ncbi_taxonomy_data/` - Bundled taxonomy subset + the script that rebuilds it
+- `get_ncbi_taxonomy.py` - Thin CLI wrapper for pre-fetching the full taxonomy
 - `nimp_api_endpoints.py` - Specimen Portal API endpoints
 - `setup_logger.py` - Logging configuration
 
@@ -82,5 +84,31 @@ The package provides a CLI tool `bkbit` with multiple subcommands:
 - **Schemasheets** - Spreadsheet to LinkML conversion
 - **Click** - CLI framework
 
+### NCBI Taxonomy Data
+
+`gff2jsonld` resolves organism names through `bkbit/utils/ncbi_taxonomy_cache.py`, which
+serves lookups from two layers and requires no setup after `pip install`:
+
+1. **Bundled subset** (`bkbit/utils/ncbi_taxonomy_data/taxonomy_subset.json.gz`, ~575KB) -
+   every taxon with a GenBank common name (~30k), which covers all BICAN organisms.
+   Offline, loads in milliseconds.
+2. **Full NCBI taxonomy** - downloaded on demand only if a lookup misses the subset, and
+   cached in a per-user cache directory (never in `site-packages`).
+
+Rules to preserve when touching this code:
+- **Never load taxonomy data at import time.** The previous version read the maps in the
+  `Gff3` class body, so a missing cache broke every `bkbit` subcommand, including `--help`.
+- **Never write runtime data into the installed package.** `site-packages` may be read-only
+  and is wiped on upgrade.
+
+To regenerate the bundled subset for a newer taxonomy dump:
+```bash
+bkbit download-ncbi-taxonomy
+python -m bkbit.utils.ncbi_taxonomy_data.build_subset   # commit the resulting .json.gz
+```
+
 ### Environment Variables
 - `jwt_token` - Specimen Portal Personal API Token (required for specimen2jsonld)
+- `BKBIT_DATA_DIR` - Overrides the cache directory for the downloaded full NCBI taxonomy
+- `BKBIT_NO_DOWNLOAD` - If set, a taxonomy lookup that misses the bundled subset raises
+  instead of downloading (useful in CI/air-gapped runs)
