@@ -1,7 +1,7 @@
 import re
-import pkg_resources
+from pathlib import Path
 # Read the file
-genome_annotation_model = pkg_resources.resource_filename(__name__, "../models/genome_annotation.py")
+genome_annotation_model = Path(__file__).parent.parent / "models" / "genome_annotation.py"
 
 #file_path = "bkbit/models/genome_annotation.py"
 with open(genome_annotation_model, "r") as file:

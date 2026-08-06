@@ -10,7 +10,7 @@ authors = [
 ]
 description = "A library for using brain-bican data models"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -21,8 +21,18 @@ dependencies = [
     "pandas",
     "click",
     "schemasheets",
+    "platformdirs",
+    "rdflib",
+    "requests",
+    "tqdm",
 ]
 dynamic = ["version"]
+
+[tool.setuptools.packages.find]
+include = ["bkbit*"]
+
+[tool.setuptools.package-data]
+"bkbit.utils.ncbi_taxonomy_data" = ["*.json.gz"]
 
 [project.scripts]
 bkbit = "bkbit.cli:cli"

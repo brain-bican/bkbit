@@ -9,6 +9,7 @@ Submodules
 
    bkbit.utils.get_ncbi_taxonomy
    bkbit.utils.load_json
+   bkbit.utils.ncbi_taxonomy_cache
    bkbit.utils.nimp_api_endpoints
    bkbit.utils.setup_logger
 
