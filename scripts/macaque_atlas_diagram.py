@@ -118,10 +118,21 @@ def _cache_path(cache_dir: Optional[Path], kind: str, key: str) -> Optional[Path
     return cache_dir / f"{kind}_{safe}.json"
 
 
+_CACHE_STATS = {"hit": 0, "miss": 0}
+_OFFLINE = False
+
+
 def _cached(cache_dir: Optional[Path], kind: str, key: str, fetch):
     p = _cache_path(cache_dir, kind, key)
     if p is not None and p.exists():
+        _CACHE_STATS["hit"] += 1
         return json.loads(p.read_text())
+    if _OFFLINE:
+        raise SystemExit(
+            f"--offline set but cache miss for {kind}={key!r}. Rerun without "
+            f"--offline to populate the cache first."
+        )
+    _CACHE_STATS["miss"] += 1
     payload = fetch()
     if p is not None:
         p.write_text(json.dumps(payload))
@@ -640,19 +651,36 @@ def main(argv: Optional[List[str]] = None) -> None:
                         "(default: tissue_structure_acronym).")
     p.add_argument("--out-dir", type=Path, default=Path("./out"))
     p.add_argument("--cache-dir", type=Path, default=Path("./_nimp_cache"),
-                   help="Cache NIMP responses on disk to speed up reruns")
-    p.add_argument("--no-cache", action="store_true", help="Disable disk cache")
+                   help="Cache NIMP responses on disk to speed up reruns "
+                        "(default: ./_nimp_cache).")
+    p.add_argument("--no-cache", action="store_true",
+                   help="Disable disk cache; always hit NIMP.")
+    p.add_argument("--offline", action="store_true",
+                   help="Serve everything from --cache-dir; error on any cache "
+                        "miss instead of calling NIMP. Assumes a prior online run "
+                        "populated the cache.")
     p.add_argument("--skip-png", action="store_true")
     args = p.parse_args(argv)
 
     jwt = os.environ.get("jwt_token")
-    if not jwt:
-        raise SystemExit("Set the `jwt_token` env var to your NIMP Personal API Token.")
+    if not jwt and not args.offline:
+        raise SystemExit("Set the `jwt_token` env var to your NIMP Personal API Token, "
+                         "or pass --offline to work from --cache-dir only.")
+    if args.offline and args.no_cache:
+        raise SystemExit("--offline is incompatible with --no-cache.")
 
+    global _OFFLINE
+    _OFFLINE = args.offline
     cache_dir = None if args.no_cache else args.cache_dir
+    if cache_dir is not None:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        existing = sum(1 for _ in cache_dir.glob("*.json"))
+        print(f"NIMP cache dir: {cache_dir}  ({existing} entries on disk, "
+              f"offline={args.offline})")
 
-    nodes, parents = build_graph(args.donor, jwt, cache_dir)
-    print(f"Fetched {len(nodes)} records under {args.donor}")
+    nodes, parents = build_graph(args.donor, jwt or "", cache_dir)
+    print(f"Fetched {len(nodes)} records under {args.donor}  "
+          f"(cache hit={_CACHE_STATS['hit']}, miss={_CACHE_STATS['miss']})")
 
     # Report categories we saw — makes it easy to spot 'Section' etc.
     cats = defaultdict(int)
