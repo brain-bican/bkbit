@@ -66,6 +66,14 @@ DEFAULT_DONOR = "DO-IJUP7054"
 DEFAULT_BCS_TAG = "HMBA_Macaque_Atlas_BN_BF"
 DEFAULT_SECTION_STRUCTURE = "basal nuclei (basal ganglia)"
 
+# NIMP raw-record field names. These are the "local_name_value" NIMP names
+# for the corresponding schema slots; they are the source of truth. Auto-
+# discovery below runs on top of these only as a sanity-check / fallback
+# when a field is genuinely missing on the record shape.
+DEFAULT_BCS_TAG_FIELD = "barcoded_cell_sample_tag_local_name"
+DEFAULT_TISSUE_STRUCTURE_FIELD = "structure"          # schema slot: tissue_sample_structure
+DEFAULT_TISSUE_ACRONYM_FIELD = "structure_acronym"    # not in the schema; guess, overrideable
+
 # Expected library-side structures per the task; used both to seed field
 # auto-discovery and as the fallback color-map keys.
 EXPECTED_LIBRARY_STRUCTURES = [
@@ -151,6 +159,26 @@ def _iter_scalar_fields(record: Dict) -> Iterable[Tuple[str, str]]:
             for item in v:
                 if isinstance(item, (str, int, float)):
                     yield k, str(item)
+
+
+def summarize_bcs_tag_values(nodes: Dict[str, Dict], bcs_tag_field: str) -> Dict[str, int]:
+    """Distinct values seen on ``bcs_tag_field`` across every BCS record,
+    with counts. Helps spot casing/formatting drift when a tag lookup misses.
+    """
+    counts: Dict[str, int] = defaultdict(int)
+    for node in nodes.values():
+        if node.get("category") != "Barcoded Cell Sample":
+            continue
+        record = node.get("record") or {}
+        value = record.get(bcs_tag_field)
+        if value is None:
+            continue
+        if isinstance(value, list):
+            for v in value:
+                counts[str(v)] += 1
+        else:
+            counts[str(value)] += 1
+    return dict(counts)
 
 
 def discover_fields(nodes: Dict[str, Dict], bcs_tag: str,
@@ -602,6 +630,13 @@ def main(argv: Optional[List[str]] = None) -> None:
     p.add_argument("--section-structure", default=DEFAULT_SECTION_STRUCTURE)
     p.add_argument("--section-category", default="Section",
                    help="NIMP category name for Sections (default: 'Section')")
+    p.add_argument("--bcs-tag-field", default=DEFAULT_BCS_TAG_FIELD,
+                   help=("NIMP record field on Barcoded Cell Sample holding the "
+                         "tag (default: barcoded_cell_sample_tag_local_name)."))
+    p.add_argument("--tissue-structure-field", default=DEFAULT_TISSUE_STRUCTURE_FIELD,
+                   help="NIMP record field on Tissue for structure (default: structure).")
+    p.add_argument("--tissue-acronym-field", default=DEFAULT_TISSUE_ACRONYM_FIELD,
+                   help="NIMP record field on Tissue for structure acronym (default: structure_acronym).")
     p.add_argument("--out-dir", type=Path, default=Path("./out"))
     p.add_argument("--cache-dir", type=Path, default=Path("./_nimp_cache"),
                    help="Cache NIMP responses on disk to speed up reruns")
@@ -627,26 +662,51 @@ def main(argv: Optional[List[str]] = None) -> None:
         print(f"  {c:30s} {n}")
 
     discovered = discover_fields(nodes, args.bcs_tag, args.section_structure)
-    print("Discovered NIMP fields:")
-    for k, v in discovered.items():
-        print(f"  {k:28s} -> {v}")
 
-    if "bcs_tag_field" not in discovered:
-        raise SystemExit(
-            f"Could not auto-discover which BCS field carries '{args.bcs_tag}'. "
-            "Inspect the printed categories above and file a note."
+    # Resolve each field: CLI/default first, auto-discovery only fills in when
+    # the CLI-selected field is genuinely absent from every record.
+    def _pick(cli_value: str, discovered_key: str, sample_category: str) -> str:
+        cli_hit = any(
+            cli_value in ((n.get("record") or {}).keys())
+            for n in nodes.values()
+            if n.get("category") == sample_category
         )
-    if "tissue_structure_field" not in discovered:
-        raise SystemExit(
-            f"Could not auto-discover which Tissue field carries "
-            f"'{args.section_structure}' or the expected library structures."
-        )
+        if cli_hit:
+            return cli_value
+        fallback = discovered.get(discovered_key)
+        if fallback:
+            print(f"[info] '{cli_value}' not present on any {sample_category} record; "
+                  f"auto-discovery falling back to '{fallback}'.")
+            return fallback
+        return cli_value
+
+    bcs_tag_field = _pick(args.bcs_tag_field, "bcs_tag_field", "Barcoded Cell Sample")
+    tissue_structure_field = _pick(args.tissue_structure_field, "tissue_structure_field", "Tissue")
+    tissue_acronym_field = _pick(args.tissue_acronym_field, "tissue_acronym_field", "Tissue")
+
+    print("Using NIMP fields:")
+    print(f"  bcs_tag_field            -> {bcs_tag_field}")
+    print(f"  tissue_structure_field   -> {tissue_structure_field}")
+    print(f"  tissue_acronym_field     -> {tissue_acronym_field}")
+    if discovered:
+        print("Auto-discovery report (value-matched):")
+        for k, v in discovered.items():
+            print(f"  {k:28s} -> {v}")
 
     kept_libs = filter_libraries_by_bcs_tag(
-        nodes, parents, args.bcs_tag, discovered["bcs_tag_field"])
+        nodes, parents, args.bcs_tag, bcs_tag_field)
     kept_secs = filter_sections_by_tissue_structure(
         nodes, parents, args.section_structure,
-        discovered["tissue_structure_field"], args.section_category)
+        tissue_structure_field, args.section_category)
+
+    if not kept_libs:
+        seen = summarize_bcs_tag_values(nodes, bcs_tag_field)
+        print(f"\n[warn] no libraries matched --bcs-tag={args.bcs_tag!r} on field "
+              f"{bcs_tag_field!r}. Distinct tag values on BCS records:")
+        for value, count in sorted(seen.items(), key=lambda kv: -kv[1])[:40]:
+            print(f"  n={count:4d}  {value!r}")
+        if not seen:
+            print("  (none — try --bcs-tag-field to point at a different NIMP field)")
     print(f"Kept {len(kept_libs)} libraries and {len(kept_secs)} sections")
     if not kept_libs and not kept_secs:
         raise SystemExit("Nothing to draw. Check --bcs-tag and --section-structure.")
@@ -659,8 +719,8 @@ def main(argv: Optional[List[str]] = None) -> None:
     for lib in kept_libs:
         structure, acronym = library_tissue_structure(
             lib, nodes, parents,
-            discovered.get("tissue_structure_field"),
-            discovered.get("tissue_acronym_field"),
+            tissue_structure_field,
+            tissue_acronym_field,
         )
         color = resolve_structure_color(structure, acronym, homba)
         library_colors[lib] = color
