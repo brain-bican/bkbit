@@ -161,34 +161,25 @@ def fetch_ancestors(nhash_id: str, jwt: str, cache_dir: Optional[Path]) -> Dict:
 # ---------------------------------------------------------------------------
 
 def _iter_scalar_fields(record: Dict) -> Iterable[Tuple[str, str]]:
-    """Yield (field_name, string_value) for every scalar or list-of-scalar
-    field on a NIMP record. Skips nested dicts."""
+    """Yield (field_name, string_token) for every field on a NIMP record, with
+    ``{"name": ..., "desc": ...}``-shaped values unwrapped to their name."""
     for k, v in record.items():
-        if isinstance(v, (str, int, float)):
-            yield k, str(v)
-        elif isinstance(v, list):
-            for item in v:
-                if isinstance(item, (str, int, float)):
-                    yield k, str(item)
+        for token in _flatten_field_value(v):
+            yield k, token
 
 
 def summarize_bcs_tag_values(nodes: Dict[str, Dict], bcs_tag_field: str) -> Dict[str, int]:
-    """Distinct values seen on ``bcs_tag_field`` across every BCS record,
-    with counts. Helps spot casing/formatting drift when a tag lookup misses.
+    """Distinct values seen on ``bcs_tag_field`` across every BCS record, with
+    counts. Values are flattened through ``_flatten_field_value`` so
+    dict-shaped tags print as their ``name`` rather than the wrapper dict.
     """
     counts: Dict[str, int] = defaultdict(int)
     for node in nodes.values():
         if node.get("category") != "Barcoded Cell Sample":
             continue
         record = node.get("record") or {}
-        value = record.get(bcs_tag_field)
-        if value is None:
-            continue
-        if isinstance(value, list):
-            for v in value:
-                counts[str(v)] += 1
-        else:
-            counts[str(value)] += 1
+        for token in _flatten_field_value(record.get(bcs_tag_field)):
+            counts[token] += 1
     return dict(counts)
 
 
@@ -455,29 +446,51 @@ def filter_sections_by_tissue_structure(nodes: Dict[str, Dict],
     return kept
 
 
+def _flatten_field_value(value) -> List[str]:
+    """Turn any NIMP field value into the list of comparable string tokens it
+    represents.
+
+    NIMP occasionally wraps a scalar as ``{"name": "...", "desc": "..."}`` (see
+    the barcoded_cell_sample_tag_local_name field). We treat the ``name`` /
+    ``value`` / ``id`` / ``local_name`` / ``label`` keys of such a dict as the
+    real value, and recurse into lists.
+    """
+    tokens: List[str] = []
+    if value is None:
+        return tokens
+    if isinstance(value, dict):
+        for key in ("name", "value", "id", "local_name", "label"):
+            if key in value:
+                tokens.extend(_flatten_field_value(value[key]))
+                return tokens
+        # Fall back to the whole stringified dict.
+        tokens.append(str(value))
+        return tokens
+    if isinstance(value, list):
+        for item in value:
+            tokens.extend(_flatten_field_value(item))
+        return tokens
+    tokens.append(str(value))
+    return tokens
+
+
 def _record_field_matches(node: Dict, field: Optional[str], target: str) -> bool:
     if not field:
         return False
     record = node.get("record") or {}
     value = record.get(field)
-    if value is None:
-        return False
     target_l = target.lower().strip()
-    if isinstance(value, list):
-        return any(str(v).lower().strip() == target_l for v in value)
-    return str(value).lower().strip() == target_l
+    return any(t.lower().strip() == target_l for t in _flatten_field_value(value))
 
 
 def _record_field_value(node: Dict, field: Optional[str]) -> Optional[str]:
     if not field:
         return None
     record = node.get("record") or {}
-    value = record.get(field)
-    if value is None:
+    tokens = _flatten_field_value(record.get(field))
+    if not tokens:
         return None
-    if isinstance(value, list):
-        return ", ".join(str(v) for v in value) if value else None
-    return str(value)
+    return ", ".join(tokens)
 
 
 def library_tissue_structure(library_nhash: str,
