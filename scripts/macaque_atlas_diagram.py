@@ -755,6 +755,45 @@ def main(argv: Optional[List[str]] = None) -> None:
         nodes, parents, args.section_structure,
         tissue_structure_field, args.section_category)
 
+    # Section-side diagnostics.
+    total_sections = sum(1 for n in nodes.values()
+                         if n.get("category") == args.section_category)
+    matching_tissues = [
+        n for n, node in nodes.items()
+        if node.get("category") == "Tissue"
+        and _record_field_matches(node, tissue_structure_field, args.section_structure)
+    ]
+    print(f"Section-side filter: category={args.section_category!r}, "
+          f"structure={args.section_structure!r} -> "
+          f"{total_sections} total sections, "
+          f"{len(matching_tissues)} matching tissues, "
+          f"kept {len(kept_secs)} sections")
+    if total_sections == 0:
+        cats = sorted({n.get("category", "?") for n in nodes.values()})
+        print(f"[warn] no records matched --section-category={args.section_category!r}. "
+              f"Categories seen: {cats}. Override with --section-category=<name>.")
+    elif not kept_secs:
+        # No sections kept: dump the distinct tissue structures reachable
+        # upstream from at least one section, so we can spot a value drift
+        # against --section-structure.
+        struct_counts: Dict[str, int] = defaultdict(int)
+        for n, node in nodes.items():
+            if node.get("category") != args.section_category:
+                continue
+            for a in upstream_closure({n}, parents):
+                anode = nodes.get(a) or {}
+                if anode.get("category") != "Tissue":
+                    continue
+                for token in _flatten_field_value((anode.get("record") or {}).get(tissue_structure_field)):
+                    struct_counts[token] += 1
+        print(f"[warn] no sections kept. Distinct upstream-tissue structures "
+              f"seen on field {tissue_structure_field!r}:")
+        for value, count in sorted(struct_counts.items(), key=lambda kv: -kv[1])[:40]:
+            print(f"  n={count:4d}  {value!r}")
+        if not struct_counts:
+            print("  (none — Sections have no upstream Tissue, or the "
+                  "--tissue-structure-field is empty on those tissues)")
+
     if not kept_libs:
         seen = summarize_bcs_tag_values(nodes, bcs_tag_field)
         print(f"\n[warn] no libraries matched --bcs-tag={args.bcs_tag!r} on field "
@@ -763,6 +802,7 @@ def main(argv: Optional[List[str]] = None) -> None:
             print(f"  n={count:4d}  {value!r}")
         if not seen:
             print("  (none — try --bcs-tag-field to point at a different NIMP field)")
+
     print(f"Kept {len(kept_libs)} libraries and {len(kept_secs)} sections")
     if not kept_libs and not kept_secs:
         raise SystemExit("Nothing to draw. Check --bcs-tag and --section-structure.")
