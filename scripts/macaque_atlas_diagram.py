@@ -336,38 +336,52 @@ def _parents_from_ancestors_payload(payload: Dict, nhash_id: str) -> List[str]:
 
 
 def build_graph(donor: str, jwt: str, cache_dir: Optional[Path]) -> Tuple[Dict[str, Dict], Dict[str, List[str]]]:
-    """Fetch descendants of the donor and every raw record.
+    """Fetch descendants of the donor, every raw record, and every parent edge.
 
     Returns (nodes, parents) where ``nodes[nhash] = record_dict`` and
     ``parents[nhash] = [parent_nhash, ...]``.
+
+    NIMP's ``descendants`` endpoint does not populate ``has_parent`` edges,
+    only the node list; ``get_ancestors`` does. We call ``get_ancestors``
+    for each descendant to recover its immediate parents. All calls go
+    through the on-disk cache.
     """
     print(f"Fetching descendants of {donor} ...")
     desc = fetch_descendants(donor, jwt, cache_dir)
     if "error" in desc:
         raise SystemExit(f"NIMP descendants error: {desc['error']}")
 
-    # descendants payload gives us has_parent edges directly for every node
-    # in the payload. Save an ancestors round-trip per node.
-    parents: Dict[str, List[str]] = {}
-    for nhash, info in (desc.get("data") or {}).items():
-        parents[nhash] = list(((info or {}).get("edges") or {}).get("has_parent") or [])
-
-    # Always include the donor itself.
-    nhash_ids = list(parents.keys())
-    if donor not in parents:
-        parents[donor] = []
+    nhash_ids = list((desc.get("data") or {}).keys())
+    if donor not in nhash_ids:
         nhash_ids.insert(0, donor)
 
     nodes: Dict[str, Dict] = {}
+    parents: Dict[str, List[str]] = {}
     for nhash in tqdm(nhash_ids, desc="Fetching NIMP records", unit="node"):
         try:
-            payload = fetch_data(nhash, jwt, cache_dir)
+            data_payload = fetch_data(nhash, jwt, cache_dir)
         except Exception as exc:  # noqa: BLE001
-            print(f"[warn] failed to fetch {nhash}: {exc}")
+            print(f"[warn] failed to fetch record for {nhash}: {exc}")
             continue
-        node = payload.get("data")
+        node = data_payload.get("data")
         if node:
             nodes[nhash] = node
+
+        # Parents: from get_ancestors(nhash)["data"][nhash]["edges"]["has_parent"].
+        # Donor has no parents, so skip the call for it.
+        if nhash == donor:
+            parents[nhash] = []
+            continue
+        try:
+            anc_payload = fetch_ancestors(nhash, jwt, cache_dir)
+        except Exception as exc:  # noqa: BLE001
+            print(f"[warn] failed to fetch ancestors for {nhash}: {exc}")
+            parents[nhash] = []
+            continue
+        anc_data = (anc_payload.get("data") or {}).get(nhash) or {}
+        edges = anc_data.get("edges") or {}
+        parents[nhash] = list(edges.get("has_parent") or [])
+
     return nodes, parents
 
 
