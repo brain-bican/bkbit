@@ -72,7 +72,7 @@ DEFAULT_SECTION_STRUCTURE = "basal nuclei (basal ganglia)"
 # when a field is genuinely missing on the record shape.
 DEFAULT_BCS_TAG_FIELD = "barcoded_cell_sample_tag_local_name"
 DEFAULT_TISSUE_STRUCTURE_FIELD = "structure"          # schema slot: tissue_sample_structure
-DEFAULT_TISSUE_ACRONYM_FIELD = "structure_acronym"    # not in the schema; guess, overrideable
+DEFAULT_TISSUE_ACRONYM_FIELD = "tissue_structure_acronym"
 
 # Expected library-side structures per the task; used both to seed field
 # auto-discovery and as the fallback color-map keys.
@@ -636,7 +636,8 @@ def main(argv: Optional[List[str]] = None) -> None:
     p.add_argument("--tissue-structure-field", default=DEFAULT_TISSUE_STRUCTURE_FIELD,
                    help="NIMP record field on Tissue for structure (default: structure).")
     p.add_argument("--tissue-acronym-field", default=DEFAULT_TISSUE_ACRONYM_FIELD,
-                   help="NIMP record field on Tissue for structure acronym (default: structure_acronym).")
+                   help="NIMP record field on Tissue for structure acronym "
+                        "(default: tissue_structure_acronym).")
     p.add_argument("--out-dir", type=Path, default=Path("./out"))
     p.add_argument("--cache-dir", type=Path, default=Path("./_nimp_cache"),
                    help="Cache NIMP responses on disk to speed up reruns")
