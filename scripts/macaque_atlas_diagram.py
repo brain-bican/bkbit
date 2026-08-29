@@ -816,6 +816,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
 # ---------------------------------------------------------------------------
 
 def main(argv: Optional[List[str]] = None) -> None:
+    global _OFFLINE, _LABEL_CAP
     p = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
     p.add_argument("--donor", default=DEFAULT_DONOR)
     p.add_argument("--bcs-tag", default=DEFAULT_BCS_TAG)
@@ -866,7 +867,6 @@ def main(argv: Optional[List[str]] = None) -> None:
     if args.offline and args.no_cache:
         raise SystemExit("--offline is incompatible with --no-cache.")
 
-    global _OFFLINE, _LABEL_CAP
     _OFFLINE = args.offline
     _LABEL_CAP = args.label_cap
     cache_dir = None if args.no_cache else args.cache_dir
