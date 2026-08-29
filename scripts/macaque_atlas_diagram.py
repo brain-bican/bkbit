@@ -85,6 +85,27 @@ EXPECTED_LIBRARY_STRUCTURES = [
     "globus pallidus",
 ]
 
+# Section-structure presets. The canonical "basal nuclei (basal ganglia)"
+# phrase doesn't appear on any record for DO-IJUP7054; the tissues carry
+# substructure names instead. The preset expands to the canonical basal-
+# ganglia parts (plus septal nuclei, which is basal forebrain territory but
+# is present in this donor's substructures).
+SECTION_STRUCTURE_PRESETS = {
+    "basal-nuclei": [
+        "caudate nucleus",
+        "head of caudate",
+        "body of caudate",
+        "tail of caudate",
+        "putamen",
+        "globus pallidus",
+        "external segment of globus pallidus",
+        "internal segment of globus pallidus",
+        "nucleus accumbens",
+        "septal nuclei",
+        "lateral septal complex",
+    ],
+}
+
 # The pipeline stage order we lay out left→right on the Sankey. Every
 # category the NIMP graph might carry is listed here so unknown categories
 # (like "Section") can slot in without a schema change.
@@ -677,6 +698,11 @@ def main(argv: Optional[List[str]] = None) -> None:
                         "Overrides --section-structure when set. Useful when "
                         "'basal nuclei (basal ganglia)' isn't literally on any "
                         "tissue but its substructures are.")
+    p.add_argument("--section-preset", choices=sorted(SECTION_STRUCTURE_PRESETS.keys()),
+                   help=("Named substructure set; equivalent to a canned "
+                         "--section-structure-in. Currently: basal-nuclei "
+                         "(caudate parts, putamen, globus pallidus segments, "
+                         "septal nuclei, nucleus accumbens)."))
     p.add_argument("--section-category", default="Section",
                    help="NIMP category name for Sections (default: 'Section')")
     p.add_argument("--bcs-tag-field", default=DEFAULT_BCS_TAG_FIELD,
@@ -766,6 +792,10 @@ def main(argv: Optional[List[str]] = None) -> None:
     if args.section_structure_in:
         section_targets = [s.strip() for s in args.section_structure_in.split(",") if s.strip()]
         print(f"[info] section filter set to structure IN {section_targets}")
+    elif args.section_preset:
+        section_targets = list(SECTION_STRUCTURE_PRESETS[args.section_preset])
+        print(f"[info] section filter using preset {args.section_preset!r}: "
+              f"{section_targets}")
     else:
         section_targets = [args.section_structure]
     kept_secs = filter_sections_by_tissue_structure(
