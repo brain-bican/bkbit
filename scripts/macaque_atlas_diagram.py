@@ -750,7 +750,10 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
     # the title band above.
     if stages_present:
         n_stages = max(len(stages_present) - 1, 1)
-        x_lo, x_hi = 0.015, 0.895
+        # Plot area starts at margin.l/width ≈ 0.100 with margin.l=220,
+        # width=2200. Give the column headers the same left offset so they
+        # line up with their Sankey columns.
+        x_lo, x_hi = 0.105, 0.985
         for i, (cat, count) in enumerate(stages_present):
             x = x_lo + (x_hi - x_lo) * (i / n_stages)
             annotations.append(dict(
@@ -761,23 +764,23 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
                 font=dict(size=11, color="#333"),
             ))
 
-    # Structure-color legend along the top-right.
+    # Structure-color legend down the LEFT margin, below the title band.
     if legend_entries:
-        y = 1.0
-        x = 0.99
+        x = 0.005
+        y = 0.90
         annotations.append(dict(
             text="<b>Library structure</b>",
             x=x, y=y, xref="paper", yref="paper",
-            xanchor="right", yanchor="bottom", showarrow=False,
+            xanchor="left", yanchor="bottom", showarrow=False,
             font=dict(size=12, color="#333"),
         ))
         for label, color in legend_entries:
-            y -= 0.028
+            y -= 0.032
             annotations.append(dict(
                 text=(f"<span style='color:{color}'>■</span> "
                       f"<span style='color:#222'>{label}</span>"),
                 x=x, y=y, xref="paper", yref="paper",
-                xanchor="right", yanchor="middle", showarrow=False,
+                xanchor="left", yanchor="middle", showarrow=False,
                 font=dict(size=11),
             ))
 
@@ -785,7 +788,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
         title=dict(
             text=(f"<b>Macaque atlas lineage · {donor}</b>"
                   f"<br><span style='font-size:12px;color:#555'>{subtitle}</span>"),
-            x=0.01, xanchor="left",
+            x=0.005, xanchor="left",
             y=0.985, yanchor="top",
             font=dict(family="Inter, system-ui, sans-serif", size=18, color="#111"),
         ),
@@ -793,9 +796,9 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
         font=dict(family="Inter, system-ui, sans-serif", size=11),
         paper_bgcolor="white",
         plot_bgcolor="white",
-        # Title occupies a reserved band at the top; column headers sit below
+        # Legend lives in the left margin now; column headers still sit
         # inside t=170 with y=1.005 (just above the Sankey area).
-        margin=dict(l=20, r=220, t=170, b=30),
+        margin=dict(l=220, r=30, t=170, b=30),
         height=height,
         width=width,
     )
