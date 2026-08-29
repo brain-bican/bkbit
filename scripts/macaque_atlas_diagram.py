@@ -835,9 +835,6 @@ def main(argv: Optional[List[str]] = None) -> None:
                          "--section-structure-in. Currently: basal-nuclei "
                          "(caudate parts, putamen, globus pallidus segments, "
                          "septal nuclei, nucleus accumbens)."))
-    p.add_argument("--no-sections", action="store_true",
-                   help="Skip the section subtree entirely and draw only the "
-                        "library lineage (donor -> ... -> library pool).")
     p.add_argument("--section-category", default="Section",
                    help="NIMP category name for Sections (default: 'Section')")
     p.add_argument("--bcs-tag-field", default=DEFAULT_BCS_TAG_FIELD,
@@ -929,88 +926,82 @@ def main(argv: Optional[List[str]] = None) -> None:
     kept_libs = filter_libraries_by_bcs_tag(
         nodes, parents, args.bcs_tag, bcs_tag_field)
 
-    if args.no_sections:
-        section_targets: List[str] = []
-        kept_secs: List[str] = []
-        print("[info] --no-sections set; skipping section subtree")
+    if args.section_structure_in:
+        section_targets = [s.strip() for s in args.section_structure_in.split(",") if s.strip()]
+        print(f"[info] section filter set to structure IN {section_targets}")
+    elif args.section_preset:
+        section_targets = list(SECTION_STRUCTURE_PRESETS[args.section_preset])
+        print(f"[info] section filter using preset {args.section_preset!r}: "
+              f"{section_targets}")
     else:
-        if args.section_structure_in:
-            section_targets = [s.strip() for s in args.section_structure_in.split(",") if s.strip()]
-            print(f"[info] section filter set to structure IN {section_targets}")
-        elif args.section_preset:
-            section_targets = list(SECTION_STRUCTURE_PRESETS[args.section_preset])
-            print(f"[info] section filter using preset {args.section_preset!r}: "
-                  f"{section_targets}")
+        section_targets = [args.section_structure]
+    kept_secs = filter_sections_by_tissue_structure(
+        nodes, parents, section_targets,
+        tissue_structure_field, args.section_category)
+
+    # Section-side diagnostics.
+    total_sections = sum(1 for n in nodes.values()
+                         if n.get("category") == args.section_category)
+    targets_l = {s.lower().strip() for s in section_targets}
+    matching_tissues = [
+        n for n, node in nodes.items()
+        if node.get("category") == "Tissue"
+        and any(
+            t.lower().strip() in targets_l
+            for t in _flatten_field_value((node.get("record") or {}).get(tissue_structure_field))
+        )
+    ]
+    print(f"Section-side filter: category={args.section_category!r}, "
+          f"structures={section_targets} -> "
+          f"{total_sections} total sections, "
+          f"{len(matching_tissues)} matching tissues, "
+          f"kept {len(kept_secs)} sections")
+    if total_sections == 0:
+        cats = sorted({n.get("category", "?") for n in nodes.values()})
+        print(f"[warn] no records matched --section-category={args.section_category!r}. "
+              f"Categories seen: {cats}. Override with --section-category=<name>.")
+    elif matching_tissues == []:
+        target_l = args.section_structure.lower().strip()
+        hits: Dict[Tuple[str, str], int] = defaultdict(int)
+        for node in nodes.values():
+            record = node.get("record") or {}
+            category = node.get("category", "?")
+            for field, tokens in ((k, _flatten_field_value(v)) for k, v in record.items()):
+                for t in tokens:
+                    if t.lower().strip() == target_l:
+                        hits[(category, field)] += 1
+        if hits:
+            print(f"[hint] value {args.section_structure!r} was found elsewhere:")
+            for (category, field), count in sorted(hits.items(), key=lambda kv: -kv[1]):
+                print(f"  n={count:4d}  {category} . {field}")
+            print("       -> re-run with --section-category and/or "
+                  "--tissue-structure-field pointing at the (category, field) "
+                  "above.")
         else:
-            section_targets = [args.section_structure]
-        kept_secs = filter_sections_by_tissue_structure(
-            nodes, parents, section_targets,
-            tissue_structure_field, args.section_category)
+            print(f"[hint] value {args.section_structure!r} was not found on ANY "
+                  "record. The task's phrase may be idiomatic for the "
+                  "basal-nuclei substructures. Try re-running with e.g. "
+                  "--section-structure=putamen (repeat per structure) or ask "
+                  "for --section-structure-in=<comma list>.")
 
-    # Section-side diagnostics (skipped entirely under --no-sections).
-    if not args.no_sections:
-        total_sections = sum(1 for n in nodes.values()
-                             if n.get("category") == args.section_category)
-        targets_l = {s.lower().strip() for s in section_targets}
-        matching_tissues = [
-            n for n, node in nodes.items()
-            if node.get("category") == "Tissue"
-            and any(
-                t.lower().strip() in targets_l
-                for t in _flatten_field_value((node.get("record") or {}).get(tissue_structure_field))
-            )
-        ]
-        print(f"Section-side filter: category={args.section_category!r}, "
-              f"structures={section_targets} -> "
-              f"{total_sections} total sections, "
-              f"{len(matching_tissues)} matching tissues, "
-              f"kept {len(kept_secs)} sections")
-        if total_sections == 0:
-            cats = sorted({n.get("category", "?") for n in nodes.values()})
-            print(f"[warn] no records matched --section-category={args.section_category!r}. "
-                  f"Categories seen: {cats}. Override with --section-category=<name>.")
-        elif matching_tissues == []:
-            target_l = args.section_structure.lower().strip()
-            hits: Dict[Tuple[str, str], int] = defaultdict(int)
-            for node in nodes.values():
-                record = node.get("record") or {}
-                category = node.get("category", "?")
-                for field, tokens in ((k, _flatten_field_value(v)) for k, v in record.items()):
-                    for t in tokens:
-                        if t.lower().strip() == target_l:
-                            hits[(category, field)] += 1
-            if hits:
-                print(f"[hint] value {args.section_structure!r} was found elsewhere:")
-                for (category, field), count in sorted(hits.items(), key=lambda kv: -kv[1]):
-                    print(f"  n={count:4d}  {category} . {field}")
-                print("       -> re-run with --section-category and/or "
-                      "--tissue-structure-field pointing at the (category, field) "
-                      "above.")
-            else:
-                print(f"[hint] value {args.section_structure!r} was not found on ANY "
-                      "record. The task's phrase may be idiomatic for the "
-                      "basal-nuclei substructures. Try re-running with e.g. "
-                      "--section-structure=putamen (repeat per structure) or ask "
-                      "for --section-structure-in=<comma list>.")
-
-        if not kept_secs and total_sections > 0:
-            struct_counts: Dict[str, int] = defaultdict(int)
-            for n, node in nodes.items():
-                if node.get("category") != args.section_category:
+    if not kept_secs and total_sections > 0:
+        struct_counts: Dict[str, int] = defaultdict(int)
+        for n, node in nodes.items():
+            if node.get("category") != args.section_category:
+                continue
+            for a in upstream_closure({n}, parents):
+                anode = nodes.get(a) or {}
+                if anode.get("category") != "Tissue":
                     continue
-                for a in upstream_closure({n}, parents):
-                    anode = nodes.get(a) or {}
-                    if anode.get("category") != "Tissue":
-                        continue
-                    for token in _flatten_field_value((anode.get("record") or {}).get(tissue_structure_field)):
-                        struct_counts[token] += 1
-            print(f"[warn] no sections kept. Distinct upstream-tissue structures "
-                  f"seen on field {tissue_structure_field!r}:")
-            for value, count in sorted(struct_counts.items(), key=lambda kv: -kv[1])[:40]:
-                print(f"  n={count:4d}  {value!r}")
-            if not struct_counts:
-                print("  (none — Sections have no upstream Tissue, or the "
-                      "--tissue-structure-field is empty on those tissues)")
+                for token in _flatten_field_value((anode.get("record") or {}).get(tissue_structure_field)):
+                    struct_counts[token] += 1
+        print(f"[warn] no sections kept. Distinct upstream-tissue structures "
+              f"seen on field {tissue_structure_field!r}:")
+        for value, count in sorted(struct_counts.items(), key=lambda kv: -kv[1])[:40]:
+            print(f"  n={count:4d}  {value!r}")
+        if not struct_counts:
+            print("  (none — Sections have no upstream Tissue, or the "
+                  "--tissue-structure-field is empty on those tissues)")
 
     if not kept_libs:
         seen = summarize_bcs_tag_values(nodes, bcs_tag_field)
