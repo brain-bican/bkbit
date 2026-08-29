@@ -124,7 +124,7 @@ STAGE_ORDER = [
     "Library Pool",
 ]
 
-HOMBA_URL = "https://alleninstitute.github.io/CCF-MAP/docs/HOMBA_ontology_v1.html"
+HOMBA_URL = "https://github.com/AllenInstitute/CCF-MAP/releases/latest/download/HOMBA.csv"
 
 # In columns with more than this many nodes, per-node labels are suppressed
 # (still shown on hover). Overridable via --label-cap.
@@ -270,61 +270,40 @@ FALLBACK_STRUCTURE_COLORS = {
 
 
 def fetch_homba_colors() -> Dict[str, str]:
-    """Best-effort scrape of anatomy → hex color from the HOMBA ontology page.
+    """Fetch the HOMBA ontology CSV and return {lower(name-or-acronym): #RRGGBB}.
 
-    Returns a dict keyed by lowercase structure name and acronym. Empty on
-    failure; callers should fall back to ``FALLBACK_STRUCTURE_COLORS``.
+    The Allen CCF-MAP release ships a canonical CSV with columns
+    HOMBA_name / HOMBA_abbreviation / r / g / b (0-255 ints), plus a DHBA
+    name and acronym per row. We index all four labels at the same hex
+    color so a lookup by either the structure name or its acronym hits.
+
+    Empty on failure; callers fall back to ``FALLBACK_STRUCTURE_COLORS``.
     """
+    import csv
+    import io
+
     try:
-        resp = requests.get(HOMBA_URL, timeout=15)
+        # requests follows the GitHub release-asset redirect chain transparently.
+        resp = requests.get(HOMBA_URL, timeout=30, allow_redirects=True)
         resp.raise_for_status()
     except Exception as exc:  # noqa: BLE001
-        print(f"[warn] could not fetch HOMBA ontology page: {exc}")
+        print(f"[warn] could not fetch HOMBA CSV ({HOMBA_URL}): {exc}")
         return {}
 
-    html = resp.text
     palette: Dict[str, str] = {}
-
-    # Try BeautifulSoup for a cleaner row walk if it's available.
-    try:
-        from bs4 import BeautifulSoup  # type: ignore
-
-        soup = BeautifulSoup(html, "html.parser")
-        for row in soup.find_all("tr"):
-            cells = row.find_all(["td", "th"])
-            hex_color: Optional[str] = None
-            texts: List[str] = []
-            for cell in cells:
-                style = cell.get("style", "") or ""
-                m = re.search(r"background(?:-color)?:\s*#([0-9A-Fa-f]{6})", style)
-                if m:
-                    hex_color = "#" + m.group(1).upper()
-                # Also handle plain-text hex codes in a cell.
-                cell_text = cell.get_text(" ", strip=True)
-                if hex_color is None:
-                    m2 = re.match(r"^#[0-9A-Fa-f]{6}$", cell_text)
-                    if m2:
-                        hex_color = cell_text.upper()
-                if cell_text:
-                    texts.append(cell_text)
-            if hex_color and texts:
-                for label in texts:
-                    key = label.lower().strip()
-                    if key and not key.startswith("#"):
-                        palette.setdefault(key, hex_color)
-    except ImportError:
-        # Fall back to a coarse regex over <tr>...</tr> blocks.
-        for row in re.findall(r"<tr[^>]*>(.*?)</tr>", html, flags=re.DOTALL | re.IGNORECASE):
-            m = re.search(r"background(?:-color)?:\s*#([0-9A-Fa-f]{6})", row)
-            if not m:
-                continue
-            hex_color = "#" + m.group(1).upper()
-            for td in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, flags=re.DOTALL | re.IGNORECASE):
-                text = re.sub(r"<[^>]+>", " ", td)
-                text = re.sub(r"\s+", " ", text).strip().lower()
-                if text and not text.startswith("#"):
-                    palette.setdefault(text, hex_color)
-
+    reader = csv.DictReader(io.StringIO(resp.text))
+    for row in reader:
+        try:
+            r = int(row.get("r") or 0)
+            g = int(row.get("g") or 0)
+            b = int(row.get("b") or 0)
+        except ValueError:
+            continue
+        hex_color = f"#{r:02X}{g:02X}{b:02X}"
+        for key_field in ("HOMBA_name", "HOMBA_abbreviation", "DHBA_name", "DHBA_acronym"):
+            label = (row.get(key_field) or "").strip().lower()
+            if label:
+                palette.setdefault(label, hex_color)
     return palette
 
 
