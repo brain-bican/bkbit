@@ -619,14 +619,20 @@ def build_sankey(kept_nodes: Set[str],
             # library branches carry their structure hue back up.
             link_colors.append(_rgba(node_color(child), 0.55))
 
+    # Track the busiest column so the caller can size the figure to fit.
+    col_counts: Dict[int, int] = defaultdict(int)
+    for n in ordered_nodes:
+        col_counts[stage_of.get(nodes[n].get("category"), 99)] += 1
+    max_column = max(col_counts.values()) if col_counts else 1
+
     return {
         "node": {
             "label": node_labels,
             "color": node_colors,
             "customdata": node_hover,
             "hovertemplate": "%{customdata}<extra></extra>",
-            "pad": 12,
-            "thickness": 16,
+            "pad": 6,
+            "thickness": 14,
             "line": {"color": "#3d3d3d", "width": 0.3},
         },
         "link": {
@@ -635,6 +641,9 @@ def build_sankey(kept_nodes: Set[str],
             "value": val,
             "color": link_colors,
         },
+        # Sidecar for the renderer, popped before Plotly sees the dict.
+        "_max_column": max_column,
+        "_n_nodes": len(ordered_nodes),
     }
 
 
@@ -646,7 +655,9 @@ def _rgba(hex_color: str, alpha: float) -> str:
     return f"rgba({r},{g},{b},{alpha:.2f})"
 
 
-def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool) -> None:
+def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
+                  legend_entries: Optional[List[Tuple[str, str]]] = None,
+                  n_libs: int = 0, n_secs: int = 0) -> None:
     try:
         import plotly.graph_objects as go
     except ImportError:
@@ -655,23 +666,58 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool) 
             "(and `pip install kaleido` if you want the static PNG)."
         )
 
-    fig = go.Figure(data=[go.Sankey(**sankey_data)])
+    # Auto-size: ~18px per node in the tallest column, floored at 900, capped
+    # at 6000 to keep the browser happy. Width scales with the number of stages.
+    max_col = sankey_data.pop("_max_column", 20)
+    n_nodes = sankey_data.pop("_n_nodes", 0)
+    height = max(1000, min(6000, 18 * max_col + 200))
+    width = 2200
+
+    fig = go.Figure(data=[go.Sankey(arrangement="snap", **sankey_data)])
+
+    subtitle = (f"{n_libs} libraries · {n_secs} sections · "
+                f"{n_nodes} lineage nodes · tallest column {max_col}")
+
+    annotations = [dict(
+        text=f"<span style='font-size:20px'><b>Macaque atlas lineage · {donor}</b></span>"
+             f"<br><span style='font-size:12px;color:#555'>{subtitle}</span>",
+        x=0.01, y=1.0, xref="paper", yref="paper",
+        xanchor="left", yanchor="bottom", showarrow=False, align="left",
+    )]
+
+    # Structure-color legend along the top-right.
+    if legend_entries:
+        y = 1.0
+        x = 0.99
+        annotations.append(dict(
+            text="<b>Library structure</b>",
+            x=x, y=y, xref="paper", yref="paper",
+            xanchor="right", yanchor="bottom", showarrow=False,
+            font=dict(size=12, color="#333"),
+        ))
+        for label, color in legend_entries:
+            y -= 0.028
+            annotations.append(dict(
+                text=(f"<span style='color:{color}'>■</span> "
+                      f"<span style='color:#222'>{label}</span>"),
+                x=x, y=y, xref="paper", yref="paper",
+                xanchor="right", yanchor="middle", showarrow=False,
+                font=dict(size=11),
+            ))
+
     fig.update_layout(
-        title=dict(
-            text=f"Macaque atlas lineage · {donor}",
-            x=0.02, xanchor="left", font=dict(size=18),
-        ),
+        annotations=annotations,
         font=dict(family="Inter, system-ui, sans-serif", size=11),
         paper_bgcolor="white",
         plot_bgcolor="white",
-        margin=dict(l=20, r=20, t=60, b=20),
-        height=900,
-        width=1600,
+        margin=dict(l=20, r=220, t=90, b=30),
+        height=height,
+        width=width,
     )
     out_dir.mkdir(parents=True, exist_ok=True)
     html_path = out_dir / f"{donor}_lineage.html"
     fig.write_html(str(html_path), include_plotlyjs="cdn")
-    print(f"Wrote {html_path}")
+    print(f"Wrote {html_path}  ({width}x{height})")
 
     if skip_png:
         return
@@ -922,7 +968,22 @@ def main(argv: Optional[List[str]] = None) -> None:
         kept_library_ancestors=kept_library_ancestors,
         kept_section_ancestors=kept_section_ancestors,
     )
-    render_sankey(sankey, args.donor, args.out_dir, args.skip_png)
+    # Build legend from what actually got rendered — one entry per distinct
+    # structure that colored at least one library, plus the sections entry.
+    legend_seen = {}
+    for lib in kept_libs:
+        c = library_colors.get(lib, "#9AA0A6")
+        structure, _ = library_tissue_structure(
+            lib, nodes, parents, tissue_structure_field, tissue_acronym_field)
+        key = structure or "unknown structure"
+        legend_seen.setdefault(key, c)
+    if kept_secs:
+        legend_seen["Sections (basal nuclei)"] = section_color
+    legend_entries = sorted(legend_seen.items(), key=lambda kv: kv[0])
+
+    render_sankey(sankey, args.donor, args.out_dir, args.skip_png,
+                  legend_entries=legend_entries,
+                  n_libs=len(kept_libs), n_secs=len(kept_secs))
 
 
 if __name__ == "__main__":
