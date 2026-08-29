@@ -936,8 +936,21 @@ def main(argv: Optional[List[str]] = None) -> None:
         section_targets = list(SECTION_STRUCTURE_PRESETS[args.section_preset])
         print(f"[info] section filter using preset {args.section_preset!r}: "
               f"{section_targets}")
-    else:
+    elif args.section_structure != DEFAULT_SECTION_STRUCTURE:
+        # User explicitly asked for a single structure other than the default
+        # (which doesn't exist on any record — see below).
         section_targets = [args.section_structure]
+    else:
+        # The task's literal 'basal nuclei (basal ganglia)' isn't on any
+        # Tissue record; fall back to the basal-nuclei substructure preset
+        # so a plain `python scripts/macaque_atlas_diagram.py` gets sections
+        # for this donor instead of silently returning zero. Override with
+        # --section-structure / --section-structure-in / --section-preset.
+        section_targets = list(SECTION_STRUCTURE_PRESETS["basal-nuclei"])
+        print(f"[info] no section flag given; defaulting to preset 'basal-nuclei' "
+              f"since the literal {DEFAULT_SECTION_STRUCTURE!r} isn't on any "
+              f"Tissue record. Override with --section-structure=<value>, "
+              f"--section-structure-in=<comma list>, or --section-preset.")
     kept_secs = filter_sections_by_tissue_structure(
         nodes, parents, section_targets,
         tissue_structure_field, args.section_category)
