@@ -126,6 +126,10 @@ STAGE_ORDER = [
 
 HOMBA_URL = "https://alleninstitute.github.io/CCF-MAP/docs/HOMBA_ontology_v1.html"
 
+# In columns with more than this many nodes, per-node labels are suppressed
+# (still shown on hover). Overridable via --label-cap.
+_LABEL_CAP = 12
+
 
 # ---------------------------------------------------------------------------
 # NIMP fetch with on-disk cache
@@ -625,6 +629,17 @@ def build_sankey(kept_nodes: Set[str],
     )
     idx_of = {n: i for i, n in enumerate(ordered_nodes)}
 
+    # Column density: suppress labels in columns above the cap so the
+    # per-node text doesn't stack into an unreadable blob. Full label
+    # stays in the tooltip.
+    label_cap = int(_LABEL_CAP)
+    col_counts_by_stage: Dict[int, int] = defaultdict(int)
+    for n in ordered_nodes:
+        col_counts_by_stage[stage_of.get(nodes[n].get("category"), 99)] += 1
+
+    def _short(label: str, limit: int = 22) -> str:
+        return label if len(label) <= limit else label[: limit - 1] + "…"
+
     node_labels = []
     node_colors = []
     node_hover = []
@@ -632,7 +647,9 @@ def build_sankey(kept_nodes: Set[str],
         node = nodes[n]
         category = node.get("category", "?")
         label = (node.get("record") or {}).get("name") or n
-        node_labels.append(f"{label}")
+        stage_idx = stage_of.get(category, 99)
+        display = "" if col_counts_by_stage[stage_idx] > label_cap else _short(label)
+        node_labels.append(display)
         node_colors.append(node_color(n))
         node_hover.append(f"<b>{label}</b><br>{category}<br>{n}")
 
@@ -648,11 +665,17 @@ def build_sankey(kept_nodes: Set[str],
             # library branches carry their structure hue back up.
             link_colors.append(_rgba(node_color(child), 0.55))
 
-    # Track the busiest column so the caller can size the figure to fit.
-    col_counts: Dict[int, int] = defaultdict(int)
-    for n in ordered_nodes:
-        col_counts[stage_of.get(nodes[n].get("category"), 99)] += 1
-    max_column = max(col_counts.values()) if col_counts else 1
+    # Track the busiest column so the caller can size the figure to fit,
+    # and remember the ordered list of stages present so the renderer can
+    # add column headers.
+    max_column = max(col_counts_by_stage.values()) if col_counts_by_stage else 1
+    stages_present: List[Tuple[str, int]] = []
+    for stage_idx in sorted(col_counts_by_stage.keys()):
+        # Find the human-readable category name for this stage index.
+        cat = next((c for c, i in stage_of.items() if i == stage_idx), None)
+        if cat is None:
+            continue
+        stages_present.append((cat, col_counts_by_stage[stage_idx]))
 
     return {
         "node": {
@@ -673,6 +696,8 @@ def build_sankey(kept_nodes: Set[str],
         # Sidecar for the renderer, popped before Plotly sees the dict.
         "_max_column": max_column,
         "_n_nodes": len(ordered_nodes),
+        "_stages_present": stages_present,
+        "_label_cap": label_cap,
     }
 
 
@@ -699,10 +724,20 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
     # at 6000 to keep the browser happy. Width scales with the number of stages.
     max_col = sankey_data.pop("_max_column", 20)
     n_nodes = sankey_data.pop("_n_nodes", 0)
-    height = max(1000, min(6000, 18 * max_col + 200))
+    stages_present: List[Tuple[str, int]] = sankey_data.pop("_stages_present", [])
+    label_cap = sankey_data.pop("_label_cap", _LABEL_CAP)
+    height = max(1000, min(6000, 18 * max_col + 260))
     width = 2200
 
-    fig = go.Figure(data=[go.Sankey(arrangement="snap", **sankey_data)])
+    # Bigger pad + smaller node font gives label text room to breathe.
+    sankey_data["node"]["pad"] = 18
+    sankey_data["node"]["thickness"] = 16
+
+    fig = go.Figure(data=[go.Sankey(
+        arrangement="snap",
+        textfont=dict(family="Inter, system-ui, sans-serif", size=10, color="#222"),
+        **sankey_data,
+    )])
 
     subtitle = (f"{n_libs} libraries · {n_secs} sections · "
                 f"{n_nodes} lineage nodes · tallest column {max_col}")
@@ -713,6 +748,24 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
         x=0.01, y=1.0, xref="paper", yref="paper",
         xanchor="left", yanchor="bottom", showarrow=False, align="left",
     )]
+
+    # Column headers with per-stage counts, so a column whose per-node labels
+    # were suppressed by --label-cap still tells the reader what it is.
+    if stages_present:
+        n_stages = max(len(stages_present) - 1, 1)
+        # The Sankey plot area sits inside our left/right margins; convert stage
+        # index to a paper-space x by fitting into [0.02, 0.90].
+        x_lo, x_hi = 0.015, 0.895
+        for i, (cat, count) in enumerate(stages_present):
+            x = x_lo + (x_hi - x_lo) * (i / n_stages)
+            suppressed = " (IDs on hover)" if count > label_cap else ""
+            annotations.append(dict(
+                text=f"<b>{cat}</b><br><span style='color:#777;font-size:10px'>"
+                     f"n={count}{suppressed}</span>",
+                x=x, y=1.005, xref="paper", yref="paper",
+                xanchor="center", yanchor="bottom", showarrow=False,
+                font=dict(size=11, color="#333"),
+            ))
 
     # Structure-color legend along the top-right.
     if legend_entries:
@@ -739,7 +792,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
         font=dict(family="Inter, system-ui, sans-serif", size=11),
         paper_bgcolor="white",
         plot_bgcolor="white",
-        margin=dict(l=20, r=220, t=90, b=30),
+        margin=dict(l=20, r=220, t=120, b=30),
         height=height,
         width=width,
     )
@@ -799,6 +852,11 @@ def main(argv: Optional[List[str]] = None) -> None:
                         "miss instead of calling NIMP. Assumes a prior online run "
                         "populated the cache.")
     p.add_argument("--skip-png", action="store_true")
+    p.add_argument("--label-cap", type=int, default=_LABEL_CAP,
+                   help="In columns with more than this many nodes, per-node "
+                        f"labels are suppressed and the full ID stays on hover "
+                        f"(default: {_LABEL_CAP}). Set to a big number to force "
+                        "labels on every node.")
     args = p.parse_args(argv)
 
     jwt = os.environ.get("jwt_token")
@@ -808,8 +866,9 @@ def main(argv: Optional[List[str]] = None) -> None:
     if args.offline and args.no_cache:
         raise SystemExit("--offline is incompatible with --no-cache.")
 
-    global _OFFLINE
+    global _OFFLINE, _LABEL_CAP
     _OFFLINE = args.offline
+    _LABEL_CAP = args.label_cap
     cache_dir = None if args.no_cache else args.cache_dir
     if cache_dir is not None:
         cache_dir.mkdir(parents=True, exist_ok=True)
