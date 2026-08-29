@@ -419,6 +419,28 @@ def upstream_closure(seed: Set[str], parents: Dict[str, List[str]]) -> Set[str]:
     return keep
 
 
+def build_children_map(parents: Dict[str, List[str]]) -> Dict[str, List[str]]:
+    """Invert parents: children[parent] = [child, child, ...]."""
+    children: Dict[str, List[str]] = defaultdict(list)
+    for child, ps in parents.items():
+        for p in ps:
+            children[p].append(child)
+    return children
+
+
+def downstream_closure(seed: Set[str], children: Dict[str, List[str]]) -> Set[str]:
+    """All descendants (inclusive of the seeds themselves)."""
+    keep: Set[str] = set()
+    stack = list(seed)
+    while stack:
+        n = stack.pop()
+        if n in keep:
+            continue
+        keep.add(n)
+        stack.extend(children.get(n, []))
+    return keep
+
+
 def find_upstream_of_category(start: str, category: str,
                               nodes: Dict[str, Dict],
                               parents: Dict[str, List[str]]) -> List[str]:
@@ -559,7 +581,9 @@ def build_sankey(kept_nodes: Set[str],
                  section_color: str,
                  section_category: str,
                  kept_library_ancestors: Dict[str, Set[str]],
-                 kept_section_ancestors: Dict[str, Set[str]]) -> Dict:
+                 kept_section_ancestors: Dict[str, Set[str]],
+                 kept_library_descendants: Optional[Dict[str, Set[str]]] = None,
+                 ) -> Dict:
     """Build the Plotly Sankey ``data`` dict.
 
     Each node's color follows the same rule as its ribbons: nodes reachable
@@ -574,6 +598,11 @@ def build_sankey(kept_nodes: Set[str],
         color = library_colors.get(lib, "#9AA0A6")
         for a in ancestors:
             lib_color_of.setdefault(a, color)
+    if kept_library_descendants:
+        for lib, descendants in kept_library_descendants.items():
+            color = library_colors.get(lib, "#9AA0A6")
+            for d in descendants:
+                lib_color_of.setdefault(d, color)
     for sec, ancestors in kept_section_ancestors.items():
         for a in ancestors:
             sec_color_of.setdefault(a, section_color)
@@ -952,13 +981,31 @@ def main(argv: Optional[List[str]] = None) -> None:
 
     section_color = "#4C6EF5"  # single color per task
 
+    children = build_children_map(parents)
+
+    # Libraries: upstream chain to Donor + downstream to Library Aliquot /
+    # Library Pool. Sections: upstream chain only (nothing biologically
+    # downstream of a Section in this schema).
     kept_library_ancestors = {lib: upstream_closure({lib}, parents) for lib in kept_libs}
+    kept_library_descendants = {lib: downstream_closure({lib}, children) for lib in kept_libs}
     kept_section_ancestors = {sec: upstream_closure({sec}, parents) for sec in kept_secs}
+
     kept_nodes: Set[str] = set()
     for s in kept_library_ancestors.values():
         kept_nodes |= s
+    for s in kept_library_descendants.values():
+        kept_nodes |= s
     for s in kept_section_ancestors.values():
         kept_nodes |= s
+
+    # Report downstream reach so we can see whether we actually hit LibraryPool.
+    downstream_cat_counts: Dict[str, int] = defaultdict(int)
+    for s in kept_library_descendants.values():
+        for n in s:
+            downstream_cat_counts[(nodes.get(n) or {}).get("category", "?")] += 1
+    print("Downstream of kept libraries:")
+    for cat in ("Library", "Library Aliquot", "Library Pool"):
+        print(f"  {cat:20s} {downstream_cat_counts.get(cat, 0)}")
 
     sankey = build_sankey(
         kept_nodes, nodes, parents,
@@ -967,6 +1014,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         section_category=args.section_category,
         kept_library_ancestors=kept_library_ancestors,
         kept_section_ancestors=kept_section_ancestors,
+        kept_library_descendants=kept_library_descendants,
     )
     # Build legend from what actually got rendered — one entry per distinct
     # structure that colored at least one library, plus the sections entry.
