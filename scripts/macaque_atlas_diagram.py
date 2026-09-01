@@ -91,6 +91,10 @@ EXPECTED_LIBRARY_STRUCTURES = [
 # ganglia parts (plus septal nuclei, which is basal forebrain territory but
 # is present in this donor's substructures).
 SECTION_STRUCTURE_PRESETS = {
+    # Hand-listed short-name variants NIMP records use for the basal-nuclei
+    # substructures. Runtime code merges this with the full HOMBA-descendant
+    # set (~86 more) so the filter catches every basal-nuclei-related name
+    # variant, whichever spelling NIMP happens to use for a given tissue.
     "basal-nuclei": [
         "caudate nucleus",
         "head of caudate",
@@ -106,15 +110,68 @@ SECTION_STRUCTURE_PRESETS = {
     ],
 }
 
+
+def expand_preset_with_homba(base_targets: List[str],
+                             homba_url: str = None) -> List[str]:
+    """Expand a preset to include every HOMBA descendant of 'basal nuclei
+    (basal ganglia)'. Names come from HOMBA_name / DHBA_name so NIMP short-
+    forms and HOMBA long-forms both hit. Returns the merged list; on any
+    HOMBA fetch failure, returns ``base_targets`` unchanged.
+    """
+    import csv
+    import io
+
+    if homba_url is None:
+        homba_url = HOMBA_URL
+    try:
+        resp = requests.get(homba_url, timeout=30, allow_redirects=True)
+        resp.raise_for_status()
+    except Exception as exc:  # noqa: BLE001
+        print(f"[warn] HOMBA fetch failed for preset expansion: {exc}")
+        return list(base_targets)
+
+    rows = list(csv.DictReader(io.StringIO(resp.text)))
+    by_id = {r["HOMBA_id"]: r for r in rows}
+    children: Dict[str, List[str]] = defaultdict(list)
+    for r in rows:
+        p = (r.get("parent_identifier") or "").strip()
+        children[p].append(r["HOMBA_id"])
+
+    root = None
+    for r in rows:
+        if (r.get("HOMBA_name") or "").strip().lower() == "basal nuclei (basal ganglia)":
+            root = r["HOMBA_id"]
+            break
+    if not root:
+        return list(base_targets)
+
+    stack = [root]
+    seen: Set[str] = set()
+    while stack:
+        n = stack.pop()
+        if n in seen:
+            continue
+        seen.add(n)
+        stack.extend(children.get(n, []))
+
+    expanded = set(s.lower().strip() for s in base_targets)
+    for hid in seen:
+        row = by_id.get(hid, {})
+        for field in ("HOMBA_name", "DHBA_name"):
+            val = (row.get(field) or "").strip().lower()
+            if val:
+                expanded.add(val)
+    return sorted(expanded)
+
 # The pipeline stage order we lay out left→right on the Sankey. Every
 # category the NIMP graph might carry is listed here so unknown categories
 # (like "Section") can slot in without a schema change.
 STAGE_ORDER = [
     "Donor",
     "Slab",
+    "Specimen Dissected ROI",   # ROI now sits between Slab and Tissue per spec
     "Tissue",
-    "Section",              # rendered immediately after Tissue per feedback
-    "Specimen Dissected ROI",
+    "Section",
     "Dissociated Cell Sample",
     "Enriched Cell Sample",
     "Barcoded Cell Sample",
@@ -612,9 +669,19 @@ def build_sankey(kept_nodes: Set[str],
             return 0   # keep shared spine at the top with libraries
         return 1 if in_sec else 0
 
+    # Within each column: (a) library lane first, section lane after,
+    # (b) same-color nodes clustered together so their ribbons bundle
+    # into straight-ish paths through the middle columns instead of
+    # weaving. node_color(n) is a hex string so sorting on it is
+    # stable and reproducible.
     ordered_nodes = sorted(
         kept_nodes,
-        key=lambda n: (stage_of.get(nodes[n].get("category"), 99), _lane(n), n),
+        key=lambda n: (
+            stage_of.get(nodes[n].get("category"), 99),
+            _lane(n),
+            node_color(n),
+            n,
+        ),
     )
     idx_of = {n: i for i, n in enumerate(ordered_nodes)}
 
@@ -897,7 +964,14 @@ def main(argv: Optional[List[str]] = None) -> None:
                    help=("Named substructure set; equivalent to a canned "
                          "--section-structure-in. Currently: basal-nuclei "
                          "(caudate parts, putamen, globus pallidus segments, "
-                         "septal nuclei, nucleus accumbens)."))
+                         "septal nuclei, nucleus accumbens). Auto-expanded "
+                         "at runtime with every HOMBA descendant of 'basal "
+                         "nuclei (basal ganglia)'."))
+    p.add_argument("--sections-all", action="store_true",
+                   help="Keep EVERY section under the donor, regardless of "
+                        "its upstream tissue structure. Use when the donor's "
+                        "sampling protocol is basal-ganglia by design (as with "
+                        "DO-IJUP7054 - 97 total sections).")
     p.add_argument("--section-category", default="Section",
                    help="NIMP category name for Sections (default: 'Section')")
     p.add_argument("--bcs-tag-field", default=DEFAULT_BCS_TAG_FIELD,
@@ -989,31 +1063,32 @@ def main(argv: Optional[List[str]] = None) -> None:
     kept_libs = filter_libraries_by_bcs_tag(
         nodes, parents, args.bcs_tag, bcs_tag_field)
 
-    if args.section_structure_in:
-        section_targets = [s.strip() for s in args.section_structure_in.split(",") if s.strip()]
-        print(f"[info] section filter set to structure IN {section_targets}")
-    elif args.section_preset:
-        section_targets = list(SECTION_STRUCTURE_PRESETS[args.section_preset])
-        print(f"[info] section filter using preset {args.section_preset!r}: "
-              f"{section_targets}")
-    elif args.section_structure != DEFAULT_SECTION_STRUCTURE:
-        # User explicitly asked for a single structure other than the default
-        # (which doesn't exist on any record — see below).
-        section_targets = [args.section_structure]
+    if args.sections_all:
+        kept_secs = [n for n, node in nodes.items()
+                     if node.get("category") == args.section_category]
+        section_targets = ["<all sections>"]
+        print(f"[info] --sections-all set; keeping all "
+              f"{len(kept_secs)} sections under {args.donor}")
     else:
-        # The task's literal 'basal nuclei (basal ganglia)' isn't on any
-        # Tissue record; fall back to the basal-nuclei substructure preset
-        # so a plain `python scripts/macaque_atlas_diagram.py` gets sections
-        # for this donor instead of silently returning zero. Override with
-        # --section-structure / --section-structure-in / --section-preset.
-        section_targets = list(SECTION_STRUCTURE_PRESETS["basal-nuclei"])
-        print(f"[info] no section flag given; defaulting to preset 'basal-nuclei' "
-              f"since the literal {DEFAULT_SECTION_STRUCTURE!r} isn't on any "
-              f"Tissue record. Override with --section-structure=<value>, "
-              f"--section-structure-in=<comma list>, or --section-preset.")
-    kept_secs = filter_sections_by_tissue_structure(
-        nodes, parents, section_targets,
-        tissue_structure_field, args.section_category)
+        if args.section_structure_in:
+            section_targets = [s.strip() for s in args.section_structure_in.split(",") if s.strip()]
+            print(f"[info] section filter set to structure IN {section_targets}")
+        elif args.section_preset:
+            base = list(SECTION_STRUCTURE_PRESETS[args.section_preset])
+            section_targets = expand_preset_with_homba(base)
+            print(f"[info] section filter using preset {args.section_preset!r} "
+                  f"expanded via HOMBA: {len(section_targets)} target structures")
+        elif args.section_structure != DEFAULT_SECTION_STRUCTURE:
+            section_targets = [args.section_structure]
+        else:
+            base = list(SECTION_STRUCTURE_PRESETS["basal-nuclei"])
+            section_targets = expand_preset_with_homba(base)
+            print(f"[info] no section flag given; defaulting to preset "
+                  f"'basal-nuclei' expanded via HOMBA "
+                  f"({len(section_targets)} target structures).")
+        kept_secs = filter_sections_by_tissue_structure(
+            nodes, parents, section_targets,
+            tissue_structure_field, args.section_category)
 
     # Section-side diagnostics.
     total_sections = sum(1 for n in nodes.values()
