@@ -762,8 +762,8 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
         **sankey_data,
     )])
 
-    subtitle = (f"{n_libs} libraries · {n_secs} sections · "
-                f"{n_nodes} lineage nodes · tallest column {max_col}")
+    subtitle = (f"{n_libs} libraries | {n_secs} sections | "
+                f"{n_nodes} lineage nodes | tallest column {max_col}")
 
     # Title / subtitle are placed via update_layout.title so they get their
     # own reserved band above the plot and never overlap column headers.
@@ -820,7 +820,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
 
     fig.update_layout(
         title=dict(
-            text=(f"<b>Macaque atlas lineage · {donor}</b>"
+            text=(f"<b>Macaque atlas lineage - {donor}</b>"
                   f"<br><span style='font-size:12px;color:#555'>{subtitle}</span>"),
             x=0.005, xanchor="left",
             y=0.985, yanchor="top",
