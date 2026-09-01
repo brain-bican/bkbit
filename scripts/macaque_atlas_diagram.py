@@ -804,6 +804,10 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
             font=dict(size=12, color="#333"),
         ))
         # Layout as: label1  label2  label3  ... wrapped across two rows if long.
+        # The label text itself is rendered in the structure color — no
+        # separate swatch glyph, so no non-ASCII characters end up in the
+        # SVG (an email preview that decodes as Latin-1 was rendering
+        # U+25A0 as 'â–'). All labels are lowercased for uniform casing.
         entries_per_row = 6
         for i, (label, color) in enumerate(legend_entries):
             row = i // entries_per_row
@@ -811,8 +815,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
             x = 0.08 + col * 0.15
             y = -0.025 - row * 0.02
             annotations.append(dict(
-                text=(f"<span style='color:{color}'>■</span> "
-                      f"<span style='color:#222'>{label}</span>"),
+                text=f"<b><span style='color:{color}'>{label.lower()}</span></b>",
                 x=x, y=y, xref="paper", yref="paper",
                 xanchor="left", yanchor="top", showarrow=False,
                 font=dict(size=11),
