@@ -121,7 +121,6 @@ STAGE_ORDER = [
     "Amplified cDNA",
     "Library",
     "Library Aliquot",
-    "Library Pool",
 ]
 
 HOMBA_URL = "https://github.com/AllenInstitute/CCF-MAP/releases/latest/download/HOMBA.csv"
@@ -602,11 +601,34 @@ def build_sankey(kept_nodes: Set[str],
         return "#CFCFCF"
 
     stage_of = {cat: i for i, cat in enumerate(STAGE_ORDER)}
+
+    # Per-column vertical ordering: library nodes first (sort key 0), section
+    # nodes below (sort key 1) so the section track sits under the library
+    # flow — "section comes after library" in reading order.
+    def _lane(n: str) -> int:
+        in_lib = n in lib_color_of
+        in_sec = n in sec_color_of
+        if in_lib and in_sec:
+            return 0   # keep shared spine at the top with libraries
+        return 1 if in_sec else 0
+
     ordered_nodes = sorted(
         kept_nodes,
-        key=lambda n: (stage_of.get(nodes[n].get("category"), 99), n),
+        key=lambda n: (stage_of.get(nodes[n].get("category"), 99), _lane(n), n),
     )
     idx_of = {n: i for i, n in enumerate(ordered_nodes)}
+
+    # Deterministic x per stage so column-header annotations can share the
+    # same formula and land dead-center on each column.
+    stages_used = sorted({stage_of.get(nodes[n].get("category"), 99) for n in ordered_nodes})
+    stage_x: Dict[int, float] = {}
+    if stages_used:
+        n_stages = max(len(stages_used) - 1, 1)
+        # Plotly clamps node x to (0, 1) exclusive; use a tiny inset.
+        for i, s in enumerate(stages_used):
+            stage_x[s] = 0.02 + (0.96 * i / n_stages)
+    node_x = [stage_x.get(stage_of.get(nodes[n].get("category"), 99), 0.5)
+              for n in ordered_nodes]
 
     # Column density: suppress labels in columns above the cap so the
     # per-node text doesn't stack into an unreadable blob. Full label
@@ -662,6 +684,8 @@ def build_sankey(kept_nodes: Set[str],
             "color": node_colors,
             "customdata": node_hover,
             "hovertemplate": "%{customdata}<extra></extra>",
+            "x": node_x,
+            "y": [0.5] * len(node_x),  # let Plotly resolve y within each column
             "pad": 6,
             "thickness": 14,
             "line": {"color": "#3d3d3d", "width": 0.3},
@@ -677,6 +701,7 @@ def build_sankey(kept_nodes: Set[str],
         "_n_nodes": len(ordered_nodes),
         "_stages_present": stages_present,
         "_label_cap": label_cap,
+        "_stage_x": stage_x,
     }
 
 
@@ -705,6 +730,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
     n_nodes = sankey_data.pop("_n_nodes", 0)
     stages_present: List[Tuple[str, int]] = sankey_data.pop("_stages_present", [])
     label_cap = sankey_data.pop("_label_cap", _LABEL_CAP)
+    stage_x_map: Dict[int, float] = sankey_data.pop("_stage_x", {})
     height = max(1000, min(6000, 18 * max_col + 260))
     width = 2200
 
@@ -727,21 +753,27 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
 
     # Column headers with per-stage counts. Kept short so they don't crowd
     # the title band above.
-    if stages_present:
-        n_stages = max(len(stages_present) - 1, 1)
-        # Plot area starts at margin.l/width ≈ 0.100 with margin.l=220,
-        # width=2200. Give the column headers the same left offset so they
-        # line up with their Sankey columns.
-        x_lo, x_hi = 0.105, 0.985
-        for i, (cat, count) in enumerate(stages_present):
-            x = x_lo + (x_hi - x_lo) * (i / n_stages)
-            annotations.append(dict(
-                text=f"<b>{cat}</b><br><span style='color:#777;font-size:10px'>"
-                     f"n={count}</span>",
-                x=x, y=1.005, xref="paper", yref="paper",
-                xanchor="center", yanchor="bottom", showarrow=False,
-                font=dict(size=11, color="#333"),
-            ))
+    # Column headers use the exact same per-stage x we assigned to each node,
+    # so they land dead-center on their column. Sankey node.x is in [0,1] of
+    # the plot area; we map it into paper coordinates using the layout
+    # margins (l=220, r=30, width=2200).
+    stage_of = {cat: i for i, cat in enumerate(STAGE_ORDER)}
+    plot_left = 220 / 2200
+    plot_right = 1 - (30 / 2200)
+    plot_span = plot_right - plot_left
+    for cat, count in stages_present:
+        sx = stage_x_map.get(stage_of.get(cat, 99))
+        if sx is None:
+            continue
+        # sx is inset by 0.02 into the plot area; convert to paper x.
+        x_paper = plot_left + sx * plot_span
+        annotations.append(dict(
+            text=f"<b>{cat}</b><br><span style='color:#777;font-size:10px'>"
+                 f"n={count}</span>",
+            x=x_paper, y=1.005, xref="paper", yref="paper",
+            xanchor="center", yanchor="bottom", showarrow=False,
+            font=dict(size=11, color="#333"),
+        ))
 
     # Structure-color legend down the LEFT margin, below the title band.
     if legend_entries:
@@ -785,6 +817,14 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
     html_path = out_dir / f"{donor}_lineage.html"
     fig.write_html(str(html_path), include_plotlyjs="cdn")
     print(f"Wrote {html_path}  ({width}x{height})")
+
+    # Static outputs: SVG (vector — always emit) and optionally PNG.
+    try:
+        svg_path = out_dir / f"{donor}_lineage.svg"
+        fig.write_image(str(svg_path), format="svg")
+        print(f"Wrote {svg_path}")
+    except Exception as exc:  # noqa: BLE001
+        print(f"[warn] could not write SVG (install `kaleido`): {exc}")
 
     if skip_png:
         return
@@ -1034,28 +1074,36 @@ def main(argv: Optional[List[str]] = None) -> None:
 
     children = build_children_map(parents)
 
-    # Libraries: upstream chain to Donor + downstream to Library Aliquot /
-    # Library Pool. Sections: upstream chain only (nothing biologically
-    # downstream of a Section in this schema).
+    # Libraries: upstream chain to Donor + downstream to Library Aliquot.
+    # Sections: upstream chain only (nothing biologically downstream of a
+    # Section in this schema). Library Pool is intentionally excluded per
+    # spec — the diagram ends at Library Aliquot.
     kept_library_ancestors = {lib: upstream_closure({lib}, parents) for lib in kept_libs}
     kept_library_descendants = {lib: downstream_closure({lib}, children) for lib in kept_libs}
     kept_section_ancestors = {sec: upstream_closure({sec}, parents) for sec in kept_secs}
 
+    excluded_cats = {"Library Pool"}
     kept_nodes: Set[str] = set()
     for s in kept_library_ancestors.values():
-        kept_nodes |= s
+        kept_nodes |= {n for n in s if (nodes.get(n) or {}).get("category") not in excluded_cats}
     for s in kept_library_descendants.values():
-        kept_nodes |= s
+        kept_nodes |= {n for n in s if (nodes.get(n) or {}).get("category") not in excluded_cats}
     for s in kept_section_ancestors.values():
-        kept_nodes |= s
+        kept_nodes |= {n for n in s if (nodes.get(n) or {}).get("category") not in excluded_cats}
+    # Trim the per-library descendant sets too so build_sankey doesn't try
+    # to color a Library Pool node we've already dropped from kept_nodes.
+    for lib, desc in kept_library_descendants.items():
+        kept_library_descendants[lib] = {
+            n for n in desc if (nodes.get(n) or {}).get("category") not in excluded_cats
+        }
 
-    # Report downstream reach so we can see whether we actually hit LibraryPool.
+    # Report downstream reach so we can see whether we hit Library Aliquot.
     downstream_cat_counts: Dict[str, int] = defaultdict(int)
     for s in kept_library_descendants.values():
         for n in s:
             downstream_cat_counts[(nodes.get(n) or {}).get("category", "?")] += 1
     print("Downstream of kept libraries:")
-    for cat in ("Library", "Library Aliquot", "Library Pool"):
+    for cat in ("Library", "Library Aliquot"):
         print(f"  {cat:20s} {downstream_cat_counts.get(cat, 0)}")
 
     sankey = build_sankey(
