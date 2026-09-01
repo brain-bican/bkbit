@@ -1,0 +1,236 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bkbit.data_translators.anatomical_structure_translator module &mdash; bkbit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bkbit.data_translators.file_manifest_translator module" href="bkbit.data_translators.file_manifest_translator.html" />
+    <link rel="prev" title="bkbit.data_translators package" href="bkbit.data_translators.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            bkbit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">DATA TRANSLATORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="specimen_file_manifest.html">Specimen Digital File Manifest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_specimen_library_aliquot.html">Specimen Library Aliquot List</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specimen_metadata.html">Specimen Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genome_annotation.html">Annotated Genome Data</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL CONVERTERS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="spreadsheet_converter.html">Spreadsheet to LinkML Schema</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL EDITORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="linkml_trimmer.html">LinkML Schema Trimmer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">REFERENCE</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">bkbit</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="bkbit.html">bkbit package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="bkbit.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="bkbit.data_translators.html">bkbit.data_translators package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.model_converters.html">bkbit.model_converters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.model_editors.html">bkbit.model_editors package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.models.html">bkbit.models package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.utils.html">bkbit.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.html#module-bkbit">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">bkbit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">bkbit</a></li>
+          <li class="breadcrumb-item"><a href="bkbit.html">bkbit package</a></li>
+          <li class="breadcrumb-item"><a href="bkbit.data_translators.html">bkbit.data_translators package</a></li>
+      <li class="breadcrumb-item active">bkbit.data_translators.anatomical_structure_translator module</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/brain-bican/bkbit/blob/main/docs/bkbit.data_translators.anatomical_structure_translator.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-bkbit.data_translators.anatomical_structure_translator">
+<span id="bkbit-data-translators-anatomical-structure-translator-module"></span><h1>bkbit.data_translators.anatomical_structure_translator module<a class="headerlink" href="#module-bkbit.data_translators.anatomical_structure_translator" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.anatomical_structure_translator.</span></span><span class="sig-name descname"><span class="pre">AnS</span></span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.assign_func_header">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">assign_func_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.assign_func_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.assign_func_header" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.generate_anatomical_annotation_set">
+<span class="sig-name descname"><span class="pre">generate_anatomical_annotation_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">revision_of</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anatomical_space_label</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.generate_anatomical_annotation_set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.generate_anatomical_annotation_set" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.generate_anatomical_space">
+<span class="sig-name descname"><span class="pre">generate_anatomical_space</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_dataset_label</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.generate_anatomical_space"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.generate_anatomical_space" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.generate_image_dataset">
+<span class="sig-name descname"><span class="pre">generate_image_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">revision_of</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_direction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_direction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_direction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.generate_image_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.generate_image_dataset" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_annotation">
+<span class="sig-name descname"><span class="pre">generate_parcellation_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">internal_identifier</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anatomical_annotation_set_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">voxel_count</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.generate_parcellation_annotation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_annotation" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_annotation_term_map">
+<span class="sig-name descname"><span class="pre">generate_parcellation_annotation_term_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">internal_identifier</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anatomical_annotation_set_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_term_identifier</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_term_set_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_terminology_label</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.generate_parcellation_annotation_term_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_annotation_term_map" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_atlas">
+<span class="sig-name descname"><span class="pre">generate_parcellation_atlas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specialization_of</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">revision_of</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anatomical_space_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anatomical_annotation_set_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_terminology_label</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.generate_parcellation_atlas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_atlas" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_color_assignment">
+<span class="sig-name descname"><span class="pre">generate_parcellation_color_assignment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parcellation_color_scheme_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_term_identifier</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_terminology_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_hex_triplet</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.generate_parcellation_color_assignment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_color_assignment" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_color_scheme">
+<span class="sig-name descname"><span class="pre">generate_parcellation_color_scheme</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">revision_of</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_terminology_label</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.generate_parcellation_color_scheme"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_color_scheme" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_term">
+<span class="sig-name descname"><span class="pre">generate_parcellation_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symbol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_term_set_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_terminology_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_term_identifier</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_term_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_parent_term_set_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_parent_term_identifier</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.generate_parcellation_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_term" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_term_set">
+<span class="sig-name descname"><span class="pre">generate_parcellation_term_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_terminology_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_term_set_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parcellation_parent_term_set_label</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.generate_parcellation_term_set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_term_set" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_terminology">
+<span class="sig-name descname"><span class="pre">generate_parcellation_terminology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">revision_of</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.generate_parcellation_terminology"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.generate_parcellation_terminology" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.provide_data">
+<span class="sig-name descname"><span class="pre">provide_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dir_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.provide_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.provide_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.read_data">
+<span class="sig-name descname"><span class="pre">read_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.read_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.read_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.anatomical_structure_translator.AnS.serialize_to_jsonld">
+<span class="sig-name descname"><span class="pre">serialize_to_jsonld</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_none</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_unset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/anatomical_structure_translator.html#AnS.serialize_to_jsonld"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.anatomical_structure_translator.AnS.serialize_to_jsonld" title="Link to this definition"></a></dt>
+<dd><p>Serialize the object and write it to the specified output file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>output_file</strong> (<em>str</em>) – The path of the output file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="bkbit.data_translators.html" class="btn btn-neutral float-left" title="bkbit.data_translators package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="bkbit.data_translators.file_manifest_translator.html" class="btn btn-neutral float-right" title="bkbit.data_translators.file_manifest_translator module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, BICAN.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
