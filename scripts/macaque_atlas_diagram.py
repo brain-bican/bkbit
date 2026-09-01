@@ -827,7 +827,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
                 line=dict(color=color, width=0),
             ))
             annotations.append(dict(
-                text=f"<span style='color:#111'>{label}</span>",
+                text=f"<span style='color:#111'>{label.lower()}</span>",
                 x=x_swatch + swatch_w + 0.006,
                 y=y_top - swatch_h / 2,
                 xref="paper", yref="paper",
