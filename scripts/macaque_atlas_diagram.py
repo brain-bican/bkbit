@@ -630,13 +630,28 @@ def build_sankey(kept_nodes: Set[str],
     node_x = [stage_x.get(stage_of.get(nodes[n].get("category"), 99), 0.5)
               for n in ordered_nodes]
 
-    # Column density: suppress labels in columns above the cap so the
-    # per-node text doesn't stack into an unreadable blob. Full label
-    # stays in the tooltip.
+    # Column density: used later for legend sizing, and to compute an
+    # explicit per-node y (see below).
     label_cap = int(_LABEL_CAP)
     col_counts_by_stage: Dict[int, int] = defaultdict(int)
     for n in ordered_nodes:
         col_counts_by_stage[stage_of.get(nodes[n].get("category"), 99)] += 1
+
+    # Explicit y per node: fill each column top-to-bottom so a small column
+    # (Donor=1) sits at the top while a big column (Section=53) spans the
+    # full vertical range. Without this Plotly centers each column, which
+    # leaves a big empty band above Donor and pushes Section past the
+    # bottom of the plot area.
+    col_seen: Dict[int, int] = defaultdict(int)
+    node_y: List[float] = []
+    for n in ordered_nodes:
+        stage_idx = stage_of.get(nodes[n].get("category"), 99)
+        total = col_counts_by_stage[stage_idx]
+        pos = col_seen[stage_idx]
+        col_seen[stage_idx] += 1
+        # Offset by 0.5 so single-node columns sit at y=0.5 (center),
+        # multi-node columns spread evenly across (near-)full height.
+        node_y.append((pos + 0.5) / total if total > 0 else 0.5)
 
     def _short(label: str, limit: int = 22) -> str:
         return label if len(label) <= limit else label[: limit - 1] + "…"
@@ -686,7 +701,7 @@ def build_sankey(kept_nodes: Set[str],
             "customdata": node_hover,
             "hovertemplate": "%{customdata}<extra></extra>",
             "x": node_x,
-            "y": [0.5] * len(node_x),  # let Plotly resolve y within each column
+            "y": node_y,
             "pad": 6,
             "thickness": 14,
             "line": {"color": "#3d3d3d", "width": 0.3},
@@ -732,9 +747,9 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
     stages_present: List[Tuple[str, int]] = sankey_data.pop("_stages_present", [])
     label_cap = sankey_data.pop("_label_cap", _LABEL_CAP)
     stage_x_map: Dict[int, float] = sankey_data.pop("_stage_x", {})
-    # 24px per node in the tallest column, plus generous top+bottom padding
-    # so the last row isn't clipped when the browser height rounds down.
-    height = max(1100, min(7000, 24 * max_col + 320))
+    # 28px per node in the tallest column, plus generous top+bottom padding
+    # (headers ~120, legend row ~140) so nothing gets clipped.
+    height = max(1200, min(8000, 28 * max_col + 320))
     width = 2200
 
     # Bigger pad + smaller node font gives label text room to breathe.
@@ -742,7 +757,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
     sankey_data["node"]["thickness"] = 16
 
     fig = go.Figure(data=[go.Sankey(
-        arrangement="snap",
+        arrangement="fixed",
         textfont=dict(family="Inter, system-ui, sans-serif", size=10, color="#222"),
         **sankey_data,
     )])
@@ -759,9 +774,9 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
     # Column headers use the exact same per-stage x we assigned to each node,
     # so they land dead-center on their column. Sankey node.x is in [0,1] of
     # the plot area; we map it into paper coordinates using the layout
-    # margins (l=220, r=30, width=2200).
+    # margins (l=30, r=30, width=2200).
     stage_of = {cat: i for i, cat in enumerate(STAGE_ORDER)}
-    plot_left = 220 / 2200
+    plot_left = 30 / 2200
     plot_right = 1 - (30 / 2200)
     plot_span = plot_right - plot_left
     for cat, count in stages_present:
@@ -778,23 +793,28 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
             font=dict(size=11, color="#333"),
         ))
 
-    # Structure-color legend down the LEFT margin, below the title band.
+    # Structure-color legend along the bottom in a horizontal row, so the
+    # Sankey area sits directly under the header instead of sharing space
+    # with a vertical left-side legend.
     if legend_entries:
-        x = 0.005
-        y = 0.90
         annotations.append(dict(
-            text="<b>Library structure</b>",
-            x=x, y=y, xref="paper", yref="paper",
-            xanchor="left", yanchor="bottom", showarrow=False,
+            text="<b>Library structure:</b>",
+            x=0.005, y=-0.02, xref="paper", yref="paper",
+            xanchor="left", yanchor="top", showarrow=False,
             font=dict(size=12, color="#333"),
         ))
-        for label, color in legend_entries:
-            y -= 0.032
+        # Layout as: label1  label2  label3  ... wrapped across two rows if long.
+        entries_per_row = 6
+        for i, (label, color) in enumerate(legend_entries):
+            row = i // entries_per_row
+            col = i % entries_per_row
+            x = 0.08 + col * 0.15
+            y = -0.025 - row * 0.02
             annotations.append(dict(
                 text=(f"<span style='color:{color}'>■</span> "
                       f"<span style='color:#222'>{label}</span>"),
                 x=x, y=y, xref="paper", yref="paper",
-                xanchor="left", yanchor="middle", showarrow=False,
+                xanchor="left", yanchor="top", showarrow=False,
                 font=dict(size=11),
             ))
 
@@ -810,9 +830,9 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
         font=dict(family="Inter, system-ui, sans-serif", size=11),
         paper_bgcolor="white",
         plot_bgcolor="white",
-        # Legend lives in the left margin now; column headers still sit
-        # inside t=170 with y=1.005 (just above the Sankey area).
-        margin=dict(l=220, r=30, t=170, b=60),
+        # Diagram sits directly under the header; legend lives in the
+        # reserved bottom margin.
+        margin=dict(l=30, r=30, t=120, b=140),
         height=height,
         width=width,
     )
