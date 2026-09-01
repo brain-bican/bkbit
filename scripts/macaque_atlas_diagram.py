@@ -763,7 +763,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
     )])
 
     subtitle = (f"{n_libs} libraries | {n_secs} sections | "
-                f"{n_nodes} lineage nodes | tallest column {max_col}")
+                f"{n_nodes} lineage nodes")
 
     # Title / subtitle are placed via update_layout.title so they get their
     # own reserved band above the plot and never overlap column headers.
