@@ -42,6 +42,7 @@ HOMBA scrape). All are optional — the script degrades gracefully.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import os
 import re
@@ -162,6 +163,40 @@ def expand_preset_with_homba(base_targets: List[str],
             if val:
                 expanded.add(val)
     return sorted(expanded)
+
+# Sections CSV export layout. Each entry is (header, category,
+# candidate_fields). category="Section" reads from the section record
+# itself; other categories are resolved by walking the section's upstream
+# chain and taking the nearest ancestor of that category. candidate_fields
+# is checked in order — the first field present on the record wins.
+# candidate_fields=None means emit the NHash ID of that ancestor.
+SECTION_CSV_COLUMNS: List[Tuple[str, str, Optional[List[str]]]] = [
+    ("Section Ordinal",         "Section", ["section_ordinal", "ordinal"]),
+    ("Section Thickness",       "Section", ["section_thickness", "thickness"]),
+    ("Section Barcode",         "Section", ["section_barcode", "barcode"]),
+    ("Plane of Section",        "Section", ["plane_of_section", "section_plane", "plane"]),
+    ("Section Usage",           "Section", ["section_usage", "usage"]),
+    ("Section NHash ID",        "Section", None),
+    ("Section Project",         "Section", ["section_project_local_name", "project", "project_local_name"]),
+    ("Section Lab",             "Section", ["section_lab_local_name", "lab", "lab_local_name"]),
+    ("NHash Donor ID",          "Donor",   None),
+    ("Sex at Birth",            "Donor",   ["sex_at_birth", "sex", "biological_sex"]),
+    ("Donor Species",           "Donor",   ["donor_species", "species", "species_local_name"]),
+    ("NHash Slab ID",           "Slab",    None),
+    ("Slab Project",            "Slab",    ["slab_project_local_name", "project", "project_local_name"]),
+    ("ROI NHash ID",            "Specimen Dissected ROI", None),
+    ("ROI Type",                "Specimen Dissected ROI", ["roi_type", "type", "specimen_dissected_roi_type"]),
+    ("Tissue NHash ID",         "Tissue",  None),
+    ("Species That the Tissue Belongs To",   "Tissue",  ["species", "species_local_name", "tissue_species"]),
+    ("Tissue Sample Structure",              "Tissue",  ["structure"]),
+    ("Brain Subdivision the Tissue Belongs To", "Tissue", ["brain_subdivision", "subdivision"]),
+    ("Brain Hemisphere the Tissue Belongs To",  "Tissue", ["hemisphere", "brain_hemisphere"]),
+    ("Tissue Sample Type",      "Tissue",  ["tissue_sample_type", "sample_type", "type"]),
+    ("Tissue Structure Acronym","Tissue",  ["tissue_structure_acronym"]),
+    ("Tissue Project",          "Tissue",  ["tissue_project_local_name", "project", "project_local_name"]),
+    ("Tissue Lab",              "Tissue",  ["tissue_lab_local_name", "lab", "lab_local_name"]),
+]
+
 
 # The pipeline stage order we lay out left→right on the Sankey. Every
 # category the NIMP graph might carry is listed here so unknown categories
@@ -796,6 +831,58 @@ def _rgba(hex_color: str, alpha: float) -> str:
     return f"rgba({r},{g},{b},{alpha:.2f})"
 
 
+def write_sections_csv(nodes: Dict[str, Dict],
+                       parents: Dict[str, List[str]],
+                       kept_secs: List[str],
+                       path: Path) -> int:
+    """Emit one row per Section with fields from its upstream chain.
+
+    Returns the number of rows written (excludes the header).
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow([h for h, _, _ in SECTION_CSV_COLUMNS])
+        for sec in kept_secs:
+            # Take the NEAREST upstream ancestor of each category. BFS from
+            # the section produces upstream nodes in ancestor-distance order,
+            # so the first hit for a category wins.
+            nearest: Dict[str, str] = {}
+            seen: Set[str] = set()
+            stack = [sec]
+            while stack:
+                n = stack.pop(0)
+                if n in seen:
+                    continue
+                seen.add(n)
+                cat = (nodes.get(n) or {}).get("category")
+                if cat and cat not in nearest:
+                    nearest[cat] = n
+                stack.extend(parents.get(n, []))
+            nearest["Section"] = sec
+
+            row: List[str] = []
+            for header, category, candidate_fields in SECTION_CSV_COLUMNS:
+                node_id = nearest.get(category)
+                if not node_id:
+                    row.append("")
+                    continue
+                if candidate_fields is None:
+                    row.append(node_id)
+                    continue
+                node = nodes.get(node_id) or {}
+                record = node.get("record") or {}
+                value = ""
+                for cand in candidate_fields:
+                    if cand in record and record[cand] is not None:
+                        tokens = _flatten_field_value(record[cand])
+                        value = ", ".join(tokens)
+                        break
+                row.append(value)
+            w.writerow(row)
+    return len(kept_secs)
+
+
 def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
                   legend_entries: Optional[List[Tuple[str, str]]] = None,
                   n_libs: int = 0, n_secs: int = 0) -> None:
@@ -993,6 +1080,11 @@ def main(argv: Optional[List[str]] = None) -> None:
                         "miss instead of calling NIMP. Assumes a prior online run "
                         "populated the cache.")
     p.add_argument("--skip-png", action="store_true")
+    p.add_argument("--csv", action="store_true", default=True,
+                   help="Write out/<donor>_sections.csv alongside the diagram "
+                        "(default: on).")
+    p.add_argument("--no-csv", dest="csv", action="store_false",
+                   help="Skip the sections CSV export.")
     p.add_argument("--label-cap", type=int, default=_LABEL_CAP,
                    help="In columns with more than this many nodes, per-node "
                         f"labels are suppressed and the full ID stays on hover "
@@ -1247,6 +1339,11 @@ def main(argv: Optional[List[str]] = None) -> None:
     render_sankey(sankey, args.donor, args.out_dir, args.skip_png,
                   legend_entries=legend_entries,
                   n_libs=len(kept_libs), n_secs=len(kept_secs))
+
+    if args.csv:
+        csv_path = args.out_dir / f"{args.donor}_sections.csv"
+        n_written = write_sections_csv(nodes, parents, kept_secs, csv_path)
+        print(f"Wrote {csv_path} ({n_written} sections)")
 
 
 if __name__ == "__main__":
