@@ -3,6 +3,9 @@ _build
 build/
 *.egg-info/
 
+# setuptools_scm writes this on install/build; not source-controlled.
+bkbit/_version.py
+
 # Legacy in-package taxonomy cache written by bkbit < this release; the cache
 # now lives in a per-user cache dir (see bkbit/utils/ncbi_taxonomy_cache.py).
 bkbit/utils/ncbi_taxonomy/
