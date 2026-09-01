@@ -1148,7 +1148,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         key = structure or "unknown structure"
         legend_seen.setdefault(key, c)
     if kept_secs:
-        legend_seen["Sections (basal nuclei)"] = section_color
+        legend_seen["basal ganglia"] = section_color
     legend_entries = sorted(legend_seen.items(), key=lambda kv: kv[0])
 
     render_sankey(sankey, args.donor, args.out_dir, args.skip_png,
