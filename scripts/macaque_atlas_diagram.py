@@ -796,6 +796,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
     # Structure-color legend along the bottom in a horizontal row, so the
     # Sankey area sits directly under the header instead of sharing space
     # with a vertical left-side legend.
+    legend_shapes: List[dict] = []
     if legend_entries:
         annotations.append(dict(
             text="<b>Library structure:</b>",
@@ -803,21 +804,34 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
             xanchor="left", yanchor="top", showarrow=False,
             font=dict(size=12, color="#333"),
         ))
-        # Layout as: label1  label2  label3  ... wrapped across two rows if long.
-        # The label text itself is rendered in the structure color — no
-        # separate swatch glyph, so no non-ASCII characters end up in the
-        # SVG (an email preview that decodes as Latin-1 was rendering
-        # U+25A0 as 'â–'). All labels are lowercased for uniform casing.
+        # Layout as: [swatch] label   [swatch] label ...  wrapped every 6.
+        # Swatches are drawn as native SVG <rect> via Plotly shapes rather
+        # than using the U+25A0 glyph, so an email preview that mis-decodes
+        # UTF-8 as Latin-1 still renders them correctly (the ■ character
+        # was becoming 'â–' in some clients). Labels stay in plain black
+        # and are lowercased for uniform casing.
         entries_per_row = 6
         for i, (label, color) in enumerate(legend_entries):
             row = i // entries_per_row
             col = i % entries_per_row
-            x = 0.08 + col * 0.15
-            y = -0.025 - row * 0.02
+            x_swatch = 0.08 + col * 0.15
+            y_top = -0.023 - row * 0.02
+            swatch_w = 0.012
+            swatch_h = 0.018
+            legend_shapes.append(dict(
+                type="rect",
+                xref="paper", yref="paper",
+                x0=x_swatch, x1=x_swatch + swatch_w,
+                y0=y_top - swatch_h, y1=y_top,
+                fillcolor=color,
+                line=dict(color=color, width=0),
+            ))
             annotations.append(dict(
-                text=f"<b><span style='color:{color}'>{label.lower()}</span></b>",
-                x=x, y=y, xref="paper", yref="paper",
-                xanchor="left", yanchor="top", showarrow=False,
+                text=f"<span style='color:#111'>{label.lower()}</span>",
+                x=x_swatch + swatch_w + 0.006,
+                y=y_top - swatch_h / 2,
+                xref="paper", yref="paper",
+                xanchor="left", yanchor="middle", showarrow=False,
                 font=dict(size=11),
             ))
 
@@ -830,6 +844,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
             font=dict(family="Inter, system-ui, sans-serif", size=18, color="#111"),
         ),
         annotations=annotations,
+        shapes=legend_shapes,
         font=dict(family="Inter, system-ui, sans-serif", size=11),
         paper_bgcolor="white",
         plot_bgcolor="white",
