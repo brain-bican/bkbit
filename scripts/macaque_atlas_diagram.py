@@ -112,8 +112,8 @@ SECTION_STRUCTURE_PRESETS = {
 STAGE_ORDER = [
     "Donor",
     "Slab",
-    "Section",              # inferred category, see --section-structure
     "Tissue",
+    "Section",              # rendered immediately after Tissue per feedback
     "Specimen Dissected ROI",
     "Dissociated Cell Sample",
     "Enriched Cell Sample",
