@@ -584,7 +584,7 @@ class Gff3:
         biotype = self._get_attribute(attributes, "biotype", curr_line_num)
 
         attributes = {"source_id": stable_id, "symbol": name, "name": name, "description": description, "molecular_type": biotype, "referenced_in": self.genome_annotation.id, "in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "xref": [ENSEMBL_GENE_ID_PREFIX + stable_id]}
-        #! add a try/catch incase the hash returns an error and log it
+        #! add a try/catch in case the hash returns an error and log it
         attributes["id"] = generate_object_id(attributes)
         gene_annotation = ga.GeneAnnotation(**attributes)
 
@@ -656,7 +656,7 @@ class Gff3:
             )
 
         attributes = {"source_id": stable_id, "symbol": name, "name": name, "description": description, "molecular_type": biotype, "referenced_in": self.genome_annotation.id, "in_taxon": [self.organism_taxon.id], "in_taxon_label": self.organism_taxon.full_name, "synonym": synonyms, "xref": [NCBI_GENE_ID_PREFIX + stable_id]}
-        #! add a try/catch incase the hash returns an error and log it
+        #! add a try/catch in case the hash returns an error and log it
         attributes["id"] = generate_object_id(attributes)
         gene_annotation = ga.GeneAnnotation(**attributes)
 

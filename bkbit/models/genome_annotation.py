@@ -63,7 +63,7 @@ class LinkMLMeta(RootModel):
 
 linkml_meta = LinkMLMeta({'default_prefix': 'bican',
      'default_range': 'string',
-     'description': 'The Genome Annotation Schema is designed to respresent all '
+     'description': 'The Genome Annotation Schema is designed to represent all '
                     'the genes from a given genome annotation.',
      'id': 'https://identifiers.org/brain-bican/genome-annotation-schema',
      'imports': ['linkml:types', 'bican_biolink', 'bican_core'],

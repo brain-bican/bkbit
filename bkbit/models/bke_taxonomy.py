@@ -12216,7 +12216,7 @@ class ParcellationAtlas(VersionedNamedThing):
 
 class CellTypeTaxonomyCreationProcess(ProvActivity, Procedure):
     """
-    The process of organizing cells or clusters into a systematic classification of cell types and their heirarchical relationships and groupings.
+    The process of organizing cells or clusters into a systematic classification of cell types and their hierarchical relationships and groupings.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/brain-bican/bke-taxonomy',
          'mixins': ['ProvActivity'],
@@ -12628,7 +12628,7 @@ class CellTypeTaxonomyCreationProcess(ProvActivity, Procedure):
 
 class CellTypeTaxonomy(ProvEntity, NamedThing):
     """
-    A cell type taxonomy is a systematic classification of cell types and their heirarchical relationships and groupings. A taxonomy may include concepts such as heirarchical taxonomic levels or (potentially overlapping) neighborhoods.
+    A cell type taxonomy is a systematic classification of cell types and their hierarchical relationships and groupings. A taxonomy may include concepts such as hierarchical taxonomic levels or (potentially overlapping) neighborhoods.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/brain-bican/bke-taxonomy',
          'mixins': ['ProvEntity'],
@@ -13149,7 +13149,7 @@ class CellTypeSet(ProvEntity, NamedThing):
                         'has_parent': {'description': 'When the cell type set '
                                                       'represents a taxonomic level, '
                                                       'the parent is the next higher '
-                                                      'level in the heirarchy.',
+                                                      'level in the hierarchy.',
                                        'name': 'has_parent',
                                        'range': 'CellTypeSet'},
                         'id': {'description': '( database GUID)',
@@ -13181,7 +13181,7 @@ class CellTypeSet(ProvEntity, NamedThing):
                                  'name': 'xref'}}})
 
     part_of_taxonomy: Optional[str] = Field(default=None, description="""The cell types taxonomy for which the cell type set is part of.""", json_schema_extra = { "linkml_meta": {'alias': 'part_of_taxonomy', 'domain_of': ['CellTypeSet', 'CellTypeTaxon']} })
-    has_parent: Optional[str] = Field(default=None, description="""When the cell type set represents a taxonomic level, the parent is the next higher level in the heirarchy.""", json_schema_extra = { "linkml_meta": {'alias': 'has_parent', 'domain_of': ['CellTypeSet', 'CellTypeTaxon']} })
+    has_parent: Optional[str] = Field(default=None, description="""When the cell type set represents a taxonomic level, the parent is the next higher level in the hierarchy.""", json_schema_extra = { "linkml_meta": {'alias': 'has_parent', 'domain_of': ['CellTypeSet', 'CellTypeTaxon']} })
     has_abbreviation: Optional[List[str]] = Field(default=None, description="""One of many abbreviation that are part of the cell type set name.""", json_schema_extra = { "linkml_meta": {'alias': 'has_abbreviation', 'domain_of': ['CellTypeSet', 'CellTypeTaxon']} })
     id: str = Field(default=..., description="""( database GUID)""", json_schema_extra = { "linkml_meta": {'alias': 'id',
          'definition_uri': 'https://w3id.org/biolink/vocab/id',
@@ -13618,7 +13618,7 @@ class CellTypeSet(ProvEntity, NamedThing):
 
 class CellTypeTaxon(ProvEntity, NamedThing):
     """
-    A cell type taxon is a node in a taxonomy. Taxons represents a unit of cell type classification and is defined by a set of clusters. Taxons may be organized into a heirarchy and levels. Taxons at higher levels represents broader cell type classes and partitioned into more specific types at lower levels. Additionally, taxons may be organized into neighborhoods or related groups.
+    A cell type taxon is a node in a taxonomy. Taxons represents a unit of cell type classification and is defined by a set of clusters. Taxons may be organized into a hierarchy and levels. Taxons at higher levels represents broader cell type classes and partitioned into more specific types at lower levels. Additionally, taxons may be organized into neighborhoods or related groups.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/brain-bican/bke-taxonomy',
          'mixins': ['ProvEntity'],
@@ -15005,7 +15005,7 @@ class Cluster(ProvEntity, NamedThing):
          'mixins': ['ProvEntity'],
          'slot_usage': {'accession_id': {'description': 'A provider assigned accession '
                                                         'identifier for the cluster '
-                                                        'which is unique amongs all '
+                                                        'which is unique among all '
                                                         'clusters in cluster set.',
                                          'examples': [{'value': 'CS20230722_1019'}],
                                          'name': 'accession_id',
@@ -15055,7 +15055,7 @@ class Cluster(ProvEntity, NamedThing):
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
-    accession_id: Optional[str] = Field(default=None, description="""A provider assigned accession identifier for the cluster which is unique amongs all clusters in cluster set.""", json_schema_extra = { "linkml_meta": {'alias': 'accession_id',
+    accession_id: Optional[str] = Field(default=None, description="""A provider assigned accession identifier for the cluster which is unique among all clusters in cluster set.""", json_schema_extra = { "linkml_meta": {'alias': 'accession_id',
          'domain_of': ['CellTypeTaxonomy',
                        'CellTypeSet',
                        'CellTypeTaxon',
@@ -16297,7 +16297,7 @@ class ObservationMatrix(ProvEntity, NamedThing):
 
 class ObservationRow(ProvEntity, NamedThing):
     """
-    One specific row of the observation matrix representing a set of measurements preformed on a sample over a set of variables or features.
+    One specific row of the observation matrix representing a set of measurements performed on a sample over a set of variables or features.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/brain-bican/bke-taxonomy',
          'mixins': ['ProvEntity'],
