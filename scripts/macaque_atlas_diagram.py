@@ -827,7 +827,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
                 line=dict(color=color, width=0),
             ))
             annotations.append(dict(
-                text=f"<span style='color:#111'>{label.lower()}</span>",
+                text=f"<span style='color:#111'>{label}</span>",
                 x=x_swatch + swatch_w + 0.006,
                 y=y_top - swatch_h / 2,
                 xref="paper", yref="paper",
@@ -1166,7 +1166,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         key = structure or "unknown structure"
         legend_seen.setdefault(key, c)
     if kept_secs:
-        legend_seen["basal ganglia"] = section_color
+        legend_seen["Basal Nuclei"] = section_color
     legend_entries = sorted(legend_seen.items(), key=lambda kv: kv[0])
 
     render_sankey(sankey, args.donor, args.out_dir, args.skip_png,
