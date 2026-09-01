@@ -641,6 +641,9 @@ def build_sankey(kept_nodes: Set[str],
     def _short(label: str, limit: int = 22) -> str:
         return label if len(label) <= limit else label[: limit - 1] + "…"
 
+    # All per-node labels are suppressed in the rendered chart per feedback;
+    # column headers carry the category + count and full IDs stay in the
+    # hover tooltip. label_cap is retained for the label-cap hint text.
     node_labels = []
     node_colors = []
     node_hover = []
@@ -648,9 +651,7 @@ def build_sankey(kept_nodes: Set[str],
         node = nodes[n]
         category = node.get("category", "?")
         label = (node.get("record") or {}).get("name") or n
-        stage_idx = stage_of.get(category, 99)
-        display = "" if col_counts_by_stage[stage_idx] > label_cap else _short(label)
-        node_labels.append(display)
+        node_labels.append("")
         node_colors.append(node_color(n))
         node_hover.append(f"<b>{label}</b><br>{category}<br>{n}")
 
@@ -731,7 +732,9 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
     stages_present: List[Tuple[str, int]] = sankey_data.pop("_stages_present", [])
     label_cap = sankey_data.pop("_label_cap", _LABEL_CAP)
     stage_x_map: Dict[int, float] = sankey_data.pop("_stage_x", {})
-    height = max(1000, min(6000, 18 * max_col + 260))
+    # 24px per node in the tallest column, plus generous top+bottom padding
+    # so the last row isn't clipped when the browser height rounds down.
+    height = max(1100, min(7000, 24 * max_col + 320))
     width = 2200
 
     # Bigger pad + smaller node font gives label text room to breathe.
@@ -809,7 +812,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
         plot_bgcolor="white",
         # Legend lives in the left margin now; column headers still sit
         # inside t=170 with y=1.005 (just above the Sankey area).
-        margin=dict(l=220, r=30, t=170, b=30),
+        margin=dict(l=220, r=30, t=170, b=60),
         height=height,
         width=width,
     )
