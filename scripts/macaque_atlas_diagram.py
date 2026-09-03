@@ -230,16 +230,114 @@ _SUPPLEMENT_PARENT_OF = {
 }
 
 
+def _read_section_ids(path: Path) -> Tuple[List[str], List[Dict[str, str]]]:
+    """Return (section_ids, rows) from the CSV. Each row is a dict keyed on
+    the CSV's actual header names. Section IDs come from the 'Section NHash
+    ID' column (case- and whitespace-insensitive match)."""
+    with open(path, newline="") as f:
+        reader = csv.DictReader(f)
+        headers = {h.strip().lower(): h for h in (reader.fieldnames or [])}
+        section_col = None
+        for cand in ("section nhash id", "section nhash", "section_nhash_id",
+                     "section id", "nhash section id"):
+            if cand in headers:
+                section_col = headers[cand]
+                break
+        if section_col is None:
+            raise SystemExit(
+                f"No 'Section NHash ID' column found in {path}. "
+                f"Headers were: {list(reader.fieldnames or [])}"
+            )
+        section_ids: List[str] = []
+        rows: List[Dict[str, str]] = []
+        for row in reader:
+            nh = (row.get(section_col) or "").strip()
+            if not nh:
+                continue
+            section_ids.append(nh)
+            rows.append({k: (v or "").strip() for k, v in row.items()})
+    return section_ids, rows
+
+
+def fetch_section_from_nimp(section_ids: List[str],
+                            jwt: str,
+                            cache_dir: Optional[Path],
+                            nodes: Dict[str, Dict],
+                            parents: Dict[str, List[str]]) -> Tuple[int, int]:
+    """For each Section NHash ID, query NIMP for its record + ancestors + any
+    descendants, and merge into the graph. Returns (nodes_added, edges_added).
+    """
+    nodes_before = len(nodes)
+    edges_added = 0
+
+    for section_id in tqdm(section_ids, desc="section NIMP queries", unit="sec"):
+        # Record for the section itself.
+        try:
+            data_payload = fetch_data(section_id, jwt, cache_dir)
+            node = data_payload.get("data")
+            if node and section_id not in nodes:
+                nodes[section_id] = node
+        except Exception as exc:  # noqa: BLE001
+            print(f"[warn] fetch_data failed for section {section_id}: {exc}")
+            continue
+
+        # Ancestors: gives Donor -> Slab -> ROI -> Tissue -> Section chain
+        # plus their has_parent edges. Merge each ancestor as a node + edge.
+        try:
+            anc_payload = fetch_ancestors(section_id, jwt, cache_dir)
+        except Exception as exc:  # noqa: BLE001
+            print(f"[warn] fetch_ancestors failed for section {section_id}: {exc}")
+            anc_payload = {"data": {}}
+        for a_id, a_info in (anc_payload.get("data") or {}).items():
+            if a_id not in nodes:
+                try:
+                    p = fetch_data(a_id, jwt, cache_dir)
+                    if p.get("data"):
+                        nodes[a_id] = p["data"]
+                except Exception as exc:  # noqa: BLE001
+                    print(f"[warn] fetch_data failed for ancestor {a_id}: {exc}")
+                    continue
+            ps = parents.setdefault(a_id, [])
+            for parent_id in ((a_info.get("edges") or {}).get("has_parent") or []):
+                if parent_id not in ps:
+                    ps.append(parent_id)
+                    edges_added += 1
+
+        # Descendants: usually empty for sections, but check in case NIMP
+        # models spatial downstream we'd otherwise miss.
+        try:
+            desc_payload = fetch_descendants(section_id, jwt, cache_dir)
+        except Exception as exc:  # noqa: BLE001
+            desc_payload = {"data": {}}
+        for d_id in (desc_payload.get("data") or {}).keys():
+            if d_id in nodes:
+                continue
+            try:
+                p = fetch_data(d_id, jwt, cache_dir)
+                if p.get("data"):
+                    nodes[d_id] = p["data"]
+            except Exception as exc:  # noqa: BLE001
+                print(f"[warn] fetch_data failed for descendant {d_id}: {exc}")
+
+    return len(nodes) - nodes_before, edges_added
+
+
 def load_supplement_csv(path: Path,
                         nodes: Dict[str, Dict],
-                        parents: Dict[str, List[str]]) -> Tuple[int, int, int]:
+                        parents: Dict[str, List[str]],
+                        jwt: Optional[str] = None,
+                        cache_dir: Optional[Path] = None) -> Tuple[int, int, int]:
     """Merge a manager-provided sections spreadsheet into the NIMP graph.
 
-    For each row, ensures a node exists for every NHash ID column
-    (Section / Tissue / ROI / Slab / Donor), populates that node's
-    ``record`` with the row's fields, and wires Section -> Tissue ->
-    ROI -> Slab -> Donor parent edges. Existing NIMP fields are NOT
-    overwritten; supplement fields only fill blanks.
+    Preferred flow when ``jwt`` is supplied: pull each row's Section NHash
+    from the sheet, then query NIMP for the section's own record, ancestors,
+    and (usually empty) descendants and merge those into the graph. The
+    remaining CSV columns still fill in blank fields on those nodes as a
+    last-resort fallback.
+
+    Legacy flow when ``jwt`` is None (kept so unit tests without a token
+    still work): treat the CSV as authoritative — create stub nodes from
+    the row's other NHash columns and only fill blank fields.
 
     Returns (rows_read, nodes_added, fields_filled).
     """
@@ -257,8 +355,19 @@ def load_supplement_csv(path: Path,
         else:
             header_to_target[header] = (category, candidates[0])
 
+    # Preferred flow: pull section IDs from the CSV, query NIMP for their
+    # records + ancestors, and merge into the graph. The CSV then only
+    # fills fields NIMP still didn't provide.
+    section_ids, csv_rows = _read_section_ids(path)
+    nimp_added = 0
+    if jwt:
+        nimp_added, edges = fetch_section_from_nimp(
+            section_ids, jwt, cache_dir, nodes, parents)
+        print(f"  -> NIMP filled {nimp_added} new nodes and {edges} parent "
+              f"edges from {len(section_ids)} Section NHash IDs")
+
     rows_read = 0
-    nodes_added = 0
+    nodes_added = nimp_added
     fields_filled = 0
     with open(path, newline="") as f:
         reader = csv.DictReader(f)
@@ -1234,11 +1343,12 @@ def main(argv: Optional[List[str]] = None) -> None:
           f"(cache hit={_CACHE_STATS['hit']}, miss={_CACHE_STATS['miss']})")
 
     if args.supplement_csv:
+        print(f"Supplement CSV: {args.supplement_csv}")
         rows, added, filled = load_supplement_csv(
-            args.supplement_csv, nodes, parents)
-        print(f"Supplement CSV: read {rows} rows, added {added} new nodes, "
-              f"filled {filled} previously-blank fields (path: "
-              f"{args.supplement_csv})")
+            args.supplement_csv, nodes, parents,
+            jwt=jwt, cache_dir=cache_dir)
+        print(f"  -> read {rows} rows, {added} nodes now in graph, "
+              f"filled {filled} previously-blank CSV fields")
 
     # Report categories we saw — makes it easy to spot 'Section' etc.
     cats = defaultdict(int)
