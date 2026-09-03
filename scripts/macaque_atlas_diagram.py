@@ -217,6 +217,120 @@ STAGE_ORDER = [
 
 HOMBA_URL = "https://github.com/AllenInstitute/CCF-MAP/releases/latest/download/HOMBA.csv"
 
+
+# Parent-of relationships used to wire supplement rows into the NIMP graph.
+# Each row lays out a Donor -> Slab -> ROI -> Tissue -> Section chain, so a
+# child in the left column has a parent in the right column.
+_SUPPLEMENT_PARENT_OF = {
+    "Section": "Tissue",
+    "Tissue": "Specimen Dissected ROI",
+    "Specimen Dissected ROI": "Slab",
+    "Slab": "Donor",
+    "Donor": None,
+}
+
+
+def load_supplement_csv(path: Path,
+                        nodes: Dict[str, Dict],
+                        parents: Dict[str, List[str]]) -> Tuple[int, int, int]:
+    """Merge a manager-provided sections spreadsheet into the NIMP graph.
+
+    For each row, ensures a node exists for every NHash ID column
+    (Section / Tissue / ROI / Slab / Donor), populates that node's
+    ``record`` with the row's fields, and wires Section -> Tissue ->
+    ROI -> Slab -> Donor parent edges. Existing NIMP fields are NOT
+    overwritten; supplement fields only fill blanks.
+
+    Returns (rows_read, nodes_added, fields_filled).
+    """
+    if not path.exists():
+        raise SystemExit(f"--supplement-csv not found: {path}")
+
+    # Reverse SECTION_CSV_COLUMNS: each (category, canonical_field) gets a
+    # list of the column headers that populate it, in NIMP-first candidate
+    # order (which also serves as write order — first candidate wins).
+    header_to_target: Dict[str, Tuple[str, str]] = {}
+    for header, category, candidates in SECTION_CSV_COLUMNS:
+        if candidates is None:
+            # None => the NHash ID column for that category.
+            header_to_target[header] = (category, "__id__")
+        else:
+            header_to_target[header] = (category, candidates[0])
+
+    rows_read = 0
+    nodes_added = 0
+    fields_filled = 0
+    with open(path, newline="") as f:
+        reader = csv.DictReader(f)
+        headers = {h.strip(): h for h in (reader.fieldnames or [])}
+        # Map from our canonical column header to whatever the CSV actually
+        # uses (case- and whitespace-insensitive).
+        def _match(h_want: str) -> Optional[str]:
+            for h in headers:
+                if h.strip().lower() == h_want.strip().lower():
+                    return headers[h]
+            return None
+
+        # ID column headers per category — used to find each category's nhash.
+        id_col_of_cat: Dict[str, str] = {}
+        for header, category, candidates in SECTION_CSV_COLUMNS:
+            if candidates is None:
+                actual = _match(header)
+                if actual:
+                    id_col_of_cat[category] = actual
+
+        for row in reader:
+            rows_read += 1
+            # Resolve each category's nhash id from the row.
+            cat_nhash: Dict[str, str] = {}
+            for category, id_col in id_col_of_cat.items():
+                nh = (row.get(id_col) or "").strip()
+                if nh:
+                    cat_nhash[category] = nh
+
+            # Create stub nodes for any nhash not already in NIMP.
+            for category, nh in cat_nhash.items():
+                if nh not in nodes:
+                    nodes[nh] = {"category": category, "record": {}}
+                    nodes_added += 1
+                elif not nodes[nh].get("category"):
+                    nodes[nh]["category"] = category
+
+            # Populate record fields (NIMP wins on conflict).
+            for header_want, (category, target_field) in header_to_target.items():
+                if target_field == "__id__":
+                    continue
+                actual_header = _match(header_want)
+                if actual_header is None:
+                    continue
+                value = (row.get(actual_header) or "").strip()
+                if not value:
+                    continue
+                nh = cat_nhash.get(category)
+                if not nh:
+                    continue
+                record = nodes[nh].setdefault("record", {})
+                if record.get(target_field) in (None, "", []):
+                    record[target_field] = value
+                    fields_filled += 1
+
+            # Wire parent edges: child_cat -> parent_cat per _SUPPLEMENT_PARENT_OF.
+            for child_cat, parent_cat in _SUPPLEMENT_PARENT_OF.items():
+                if parent_cat is None:
+                    continue
+                child_nh = cat_nhash.get(child_cat)
+                parent_nh = cat_nhash.get(parent_cat)
+                if not (child_nh and parent_nh):
+                    continue
+                ps = parents.setdefault(child_nh, [])
+                if parent_nh not in ps:
+                    ps.append(parent_nh)
+            # Donor gets an empty parent list so upstream walks terminate.
+            if "Donor" in cat_nhash:
+                parents.setdefault(cat_nhash["Donor"], [])
+
+    return rows_read, nodes_added, fields_filled
+
 # In columns with more than this many nodes, per-node labels are suppressed
 # (still shown on hover). Overridable via --label-cap.
 _LABEL_CAP = 12
@@ -1085,6 +1199,13 @@ def main(argv: Optional[List[str]] = None) -> None:
                         "(default: on).")
     p.add_argument("--no-csv", dest="csv", action="store_false",
                    help="Skip the sections CSV export.")
+    p.add_argument("--supplement-csv", type=Path,
+                   help="Path to the manager's sections spreadsheet (CSV). Rows "
+                        "are merged into the NIMP graph before filtering: new "
+                        "nhash IDs become nodes; existing NIMP fields are kept "
+                        "on conflict and only blank fields are filled from the "
+                        "sheet; parent edges Section->Tissue->ROI->Slab->Donor "
+                        "are added.")
     p.add_argument("--label-cap", type=int, default=_LABEL_CAP,
                    help="In columns with more than this many nodes, per-node "
                         f"labels are suppressed and the full ID stays on hover "
@@ -1111,6 +1232,13 @@ def main(argv: Optional[List[str]] = None) -> None:
     nodes, parents = build_graph(args.donor, jwt or "", cache_dir)
     print(f"Fetched {len(nodes)} records under {args.donor}  "
           f"(cache hit={_CACHE_STATS['hit']}, miss={_CACHE_STATS['miss']})")
+
+    if args.supplement_csv:
+        rows, added, filled = load_supplement_csv(
+            args.supplement_csv, nodes, parents)
+        print(f"Supplement CSV: read {rows} rows, added {added} new nodes, "
+              f"filled {filled} previously-blank fields (path: "
+              f"{args.supplement_csv})")
 
     # Report categories we saw — makes it easy to spot 'Section' etc.
     cats = defaultdict(int)
