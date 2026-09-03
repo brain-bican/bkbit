@@ -952,8 +952,9 @@ def build_sankey(kept_nodes: Set[str],
         # Plotly clamps node x to (0, 1) exclusive; use a tiny inset.
         for i, s in enumerate(stages_used):
             stage_x[s] = 0.02 + (0.96 * i / n_stages)
-    node_x = [stage_x.get(stage_of.get(nodes[n].get("category"), 99), 0.5)
-              for n in ordered_nodes]
+    # node_x is computed after the barycenter reorder below, since the
+    # reorder may reshuffle ordered_nodes and the two arrays must stay in
+    # lock-step.
 
     # Column density: used later for legend sizing, and to compute an
     # explicit per-node y (see below).
@@ -962,21 +963,85 @@ def build_sankey(kept_nodes: Set[str],
     for n in ordered_nodes:
         col_counts_by_stage[stage_of.get(nodes[n].get("category"), 99)] += 1
 
-    # Explicit y per node: fill each column top-to-bottom so a small column
-    # (Donor=1) sits at the top while a big column (Section=53) spans the
-    # full vertical range. Without this Plotly centers each column, which
-    # leaves a big empty band above Donor and pushes Section past the
-    # bottom of the plot area.
-    col_seen: Dict[int, int] = defaultdict(int)
+    # Explicit y per node, with a barycenter pass to straighten ribbons.
+    # Without ordering by parent y, adjacent columns fan out in essentially
+    # random order and Plotly's arrangement="fixed" then has to route
+    # through every crossing — which is what makes the paths wind.
+    #
+    # Algorithm (Sugiyama-style, single sweep each direction):
+    #   1. Group nodes by column (stage index).
+    #   2. Seed the leftmost column's order from the existing sort key
+    #      (lane, color, nhash).
+    #   3. Sweep left -> right: sort each column by mean(parent y) with the
+    #      existing key as a stable tiebreaker.
+    #   4. Sweep right -> left: sort each column by mean(child y) to fix any
+    #      residual crossings on the return path.
+    #   5. Emit y = (rank + 0.5) / column_size.
+    stage_of_node = lambda n: stage_of.get(nodes[n].get("category"), 99)
+    columns: Dict[int, List[str]] = defaultdict(list)
+    for n in ordered_nodes:
+        columns[stage_of_node(n)].append(n)
+    original_rank = {n: i for i, n in enumerate(ordered_nodes)}
+    children_map = build_children_map(parents)
+
+    def _mean_y(ids: List[str], rank_of: Dict[str, int],
+                 col_size: Dict[str, int]) -> float:
+        if not ids:
+            return 0.5
+        vals = []
+        for i in ids:
+            if i in rank_of:
+                cs = col_size.get(i, 1) or 1
+                vals.append((rank_of[i] + 0.5) / cs)
+        return sum(vals) / len(vals) if vals else 0.5
+
+    stage_indices = sorted(columns.keys())
+
+    # Initial ranks per column, seeded from the outer sort key.
+    ranks: Dict[str, int] = {}
+    col_size: Dict[str, int] = {}
+    for s in stage_indices:
+        for r, n in enumerate(columns[s]):
+            ranks[n] = r
+            col_size[n] = len(columns[s])
+
+    def _resort(col_ids: List[str], neighbor: str) -> List[str]:
+        """Return col_ids sorted by mean neighbor y (parents or children)."""
+        def key(n):
+            if neighbor == "parent":
+                neigh = parents.get(n) or []
+            else:
+                neigh = children_map.get(n) or []
+            return (_mean_y(neigh, ranks, col_size), original_rank[n])
+        return sorted(col_ids, key=key)
+
+    # Left -> right sweep by parent barycenter.
+    for s in stage_indices[1:]:
+        columns[s] = _resort(columns[s], "parent")
+        for r, n in enumerate(columns[s]):
+            ranks[n] = r
+            col_size[n] = len(columns[s])
+
+    # Right -> left sweep by child barycenter to smooth the return path.
+    for s in reversed(stage_indices[:-1]):
+        columns[s] = _resort(columns[s], "child")
+        for r, n in enumerate(columns[s]):
+            ranks[n] = r
+            col_size[n] = len(columns[s])
+
+    # Rebuild ordered_nodes / idx_of to match the new column orders.
+    ordered_nodes = [n for s in stage_indices for n in columns[s]]
+    idx_of = {n: i for i, n in enumerate(ordered_nodes)}
+
     node_y: List[float] = []
     for n in ordered_nodes:
-        stage_idx = stage_of.get(nodes[n].get("category"), 99)
-        total = col_counts_by_stage[stage_idx]
-        pos = col_seen[stage_idx]
-        col_seen[stage_idx] += 1
-        # Offset by 0.5 so single-node columns sit at y=0.5 (center),
-        # multi-node columns spread evenly across (near-)full height.
+        total = col_size[n]
+        pos = ranks[n]
         node_y.append((pos + 0.5) / total if total > 0 else 0.5)
+
+    # node_x aligned to the post-reorder ordered_nodes.
+    node_x = [stage_x.get(stage_of.get(nodes[n].get("category"), 99), 0.5)
+              for n in ordered_nodes]
 
     def _short(label: str, limit: int = 22) -> str:
         return label if len(label) <= limit else label[: limit - 1] + "…"
