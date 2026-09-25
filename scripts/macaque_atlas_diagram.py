@@ -1193,7 +1193,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
     # budget means every ribbon renders thicker even under high column
     # density. Ceiling bumped to keep 97+ section runs unclipped.
     height = max(1200, min(9000, 36 * max_col + 320))
-    width = 2200
+    width = 3000
 
     # Font sizes scale with canvas height so a 4000px SVG doesn't render
     # every text label as a pinprick when viewed fit-to-width.
@@ -1226,19 +1226,31 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
     # Column headers use the exact same per-stage x we assigned to each node,
     # so they land dead-center on their column. Sankey node.x is in [0,1] of
     # the plot area; we map it into paper coordinates using the layout
-    # margins (l=30, r=30, width=2200).
+    # margins (l=30, r=30, width -> current canvas width).
     stage_of = {cat: i for i, cat in enumerate(STAGE_ORDER)}
-    plot_left = 30 / 2200
-    plot_right = 1 - (30 / 2200)
+    plot_left = 30 / width
+    plot_right = 1 - (30 / width)
     plot_span = plot_right - plot_left
+
+    # Short display labels for the column headers so they don't collide at
+    # column spacing. Category names in nodes/records stay unchanged.
+    HEADER_DISPLAY = {
+        "Specimen Dissected ROI": "ROI",
+        "Dissociated Cell Sample": "Dissociated<br>Cell Sample",
+        "Enriched Cell Sample": "Enriched<br>Cell Sample",
+        "Barcoded Cell Sample": "Barcoded<br>Cell Sample",
+        "Amplified cDNA": "Amplified<br>cDNA",
+        "Library Aliquot": "Library<br>Aliquot",
+    }
     for cat, count in stages_present:
         sx = stage_x_map.get(stage_of.get(cat, 99))
         if sx is None:
             continue
         # sx is inset by 0.02 into the plot area; convert to paper x.
         x_paper = plot_left + sx * plot_span
+        display = HEADER_DISPLAY.get(cat, cat)
         annotations.append(dict(
-            text=f"<b>{cat}</b><br><span style='color:#777;"
+            text=f"<b>{display}</b><br><span style='color:#777;"
                  f"font-size:{max(12, int(header_size * 0.7))}px'>"
                  f"n={count}</span>",
             x=x_paper, y=1.005, xref="paper", yref="paper",
