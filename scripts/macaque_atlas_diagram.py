@@ -1101,11 +1101,6 @@ def build_sankey(kept_nodes: Set[str],
             "target": tgt,
             "value": val,
             "color": link_colors,
-            # Each ribbon body is a filled polygon; adding a stroke here
-            # emits an editable SVG <path stroke> for every ribbon (so the
-            # manager can tweak line width in a vector editor) AND makes
-            # the ribbons read thicker in the raw render.
-            "line": {"color": "#3a3a3a", "width": 1.2},
         },
         # Sidecar for the renderer, popped before Plotly sees the dict.
         "_max_column": max_column,
@@ -1200,6 +1195,13 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
     height = max(1200, min(9000, 36 * max_col + 320))
     width = 2200
 
+    # Font sizes scale with canvas height so a 4000px SVG doesn't render
+    # every text label as a pinprick when viewed fit-to-width.
+    title_size = max(28, min(56, int(height / 80)))
+    subtitle_size = max(16, int(title_size * 0.55))
+    header_size = max(18, int(title_size * 0.6))
+    body_size = max(14, int(title_size * 0.5))
+
     # Smaller pad steals less space between nodes so each ribbon gets a
     # bigger share of column height. Combined with the link stroke this
     # makes the ribbons read thicker.
@@ -1236,11 +1238,12 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
         # sx is inset by 0.02 into the plot area; convert to paper x.
         x_paper = plot_left + sx * plot_span
         annotations.append(dict(
-            text=f"<b>{cat}</b><br><span style='color:#777;font-size:10px'>"
+            text=f"<b>{cat}</b><br><span style='color:#777;"
+                 f"font-size:{max(12, int(header_size * 0.7))}px'>"
                  f"n={count}</span>",
             x=x_paper, y=1.005, xref="paper", yref="paper",
             xanchor="center", yanchor="bottom", showarrow=False,
-            font=dict(size=11, color="#333"),
+            font=dict(size=header_size, color="#333"),
         ))
 
     # Structure-color legend along the bottom in a horizontal row, so the
@@ -1252,7 +1255,7 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
             text="<b>Library structure:</b>",
             x=0.005, y=-0.02, xref="paper", yref="paper",
             xanchor="left", yanchor="top", showarrow=False,
-            font=dict(size=12, color="#333"),
+            font=dict(size=body_size, color="#333"),
         ))
         # Layout as: [swatch] label   [swatch] label ...  wrapped every 6.
         # Swatches are drawn as native SVG <rect> via Plotly shapes rather
@@ -1282,16 +1285,18 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
                 y=y_top - swatch_h / 2,
                 xref="paper", yref="paper",
                 xanchor="left", yanchor="middle", showarrow=False,
-                font=dict(size=11),
+                font=dict(size=body_size),
             ))
 
     fig.update_layout(
         title=dict(
             text=(f"<b>Macaque atlas lineage - {donor}</b>"
-                  f"<br><span style='font-size:12px;color:#555'>{subtitle}</span>"),
+                  f"<br><span style='font-size:{subtitle_size}px;color:#555'>"
+                  f"{subtitle}</span>"),
             x=0.005, xanchor="left",
             y=0.985, yanchor="top",
-            font=dict(family="Inter, system-ui, sans-serif", size=18, color="#111"),
+            font=dict(family="Inter, system-ui, sans-serif",
+                      size=title_size, color="#111"),
         ),
         annotations=annotations,
         shapes=legend_shapes,
@@ -1299,8 +1304,9 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
         paper_bgcolor="white",
         plot_bgcolor="white",
         # Diagram sits directly under the header; legend lives in the
-        # reserved bottom margin.
-        margin=dict(l=30, r=30, t=120, b=140),
+        # reserved bottom margin. Top margin scales with title_size so a
+        # bigger header doesn't crash into the column-header row.
+        margin=dict(l=30, r=30, t=max(150, title_size * 4 + 30), b=140),
         height=height,
         width=width,
     )
