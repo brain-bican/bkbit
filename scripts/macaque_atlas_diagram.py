@@ -1101,6 +1101,11 @@ def build_sankey(kept_nodes: Set[str],
             "target": tgt,
             "value": val,
             "color": link_colors,
+            # Each ribbon body is a filled polygon; adding a stroke here
+            # emits an editable SVG <path stroke> for every ribbon (so the
+            # manager can tweak line width in a vector editor) AND makes
+            # the ribbons read thicker in the raw render.
+            "line": {"color": "#3a3a3a", "width": 1.2},
         },
         # Sidecar for the renderer, popped before Plotly sees the dict.
         "_max_column": max_column,
@@ -1189,13 +1194,16 @@ def render_sankey(sankey_data: Dict, donor: str, out_dir: Path, skip_png: bool,
     stages_present: List[Tuple[str, int]] = sankey_data.pop("_stages_present", [])
     label_cap = sankey_data.pop("_label_cap", _LABEL_CAP)
     stage_x_map: Dict[int, float] = sankey_data.pop("_stage_x", {})
-    # 28px per node in the tallest column, plus generous top+bottom padding
-    # (headers ~120, legend row ~140) so nothing gets clipped.
-    height = max(1200, min(8000, 28 * max_col + 320))
+    # 36px per node in the tallest column (up from 28) — extra vertical
+    # budget means every ribbon renders thicker even under high column
+    # density. Ceiling bumped to keep 97+ section runs unclipped.
+    height = max(1200, min(9000, 36 * max_col + 320))
     width = 2200
 
-    # Bigger pad + smaller node font gives label text room to breathe.
-    sankey_data["node"]["pad"] = 18
+    # Smaller pad steals less space between nodes so each ribbon gets a
+    # bigger share of column height. Combined with the link stroke this
+    # makes the ribbons read thicker.
+    sankey_data["node"]["pad"] = 4
     sankey_data["node"]["thickness"] = 16
 
     fig = go.Figure(data=[go.Sankey(
