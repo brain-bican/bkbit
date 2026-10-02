@@ -65,5 +65,5 @@ write_to = "bkbit/_version.py"
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
 skip = '.git*'
 check-hidden = true
-# ignore-regex = ''
+ignore-regex = 'KEGG\.BRITE|https://bioregistry\.io/kegg\.brite' # codespell:ignore
 ignore-words-list = 'ans'
