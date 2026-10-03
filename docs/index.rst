@@ -21,6 +21,7 @@ This package contains tools to use the BICAN Knowledgebase Data Models.
    list_specimen_library_aliquot
    specimen_metadata
    genome_annotation
+   ait_taxonomy
 
 .. toctree::
    :maxdepth: 1

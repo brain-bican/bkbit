@@ -44,6 +44,7 @@ The package provides a CLI tool `bkbit` with multiple subcommands:
 - `bkbit specimen2jsonld` - Generate BICAN objects from Specimen Portal data
 - `bkbit gff2jsonld` - Generate genome annotation objects from GFF3 files
 - `bkbit taxonomy2jsonld` - Generate taxonomy objects from HMBA annotations
+- `bkbit ait2jsonld` - Generate cell_taxonomy objects from a taxonomy in AIT (h5ad) format
 - `bkbit schema2model` - Convert spreadsheets to LinkML YAML models
 - `bkbit yaml2cvs` - Convert YAML to CSV
 - `bkbit linkml-trimmer` - Trim LinkML models
@@ -57,11 +58,15 @@ The package provides a CLI tool `bkbit` with multiple subcommands:
 - `library_generation.py` - Library generation workflow models
 - `genome_annotation.py` - Genome annotation models
 - `anatomical_structure.py` - Anatomical structure models
+- `cell_taxonomy.py` - Cell type taxonomy models (target of ait2jsonld)
 
 **`bkbit/data_translators/`** - Convert external data sources to BICAN model instances:
 - `library_generation_translator.py` - Specimen Portal to BICAN objects (specimen2jsonld)
 - `genome_annotation_translator.py` - GFF3 files to genome annotation objects (gff2jsonld)
 - `HMBA_annotation_translator.py` - HMBA taxonomy annotations (taxonomy2jsonld)
+- `ait_taxonomy_translator.py` - AIT h5ad taxonomies to cell_taxonomy objects (ait2jsonld). Reads
+  only metadata (`uns`, selected `obs` columns), never `X`/`raw.X`, so it also works on
+  multi-GB files and on http(s)/s3 URLs (needs the `remote` extra, i.e. `fsspec[http]`)
 - `specimen_metadata_translator.py` - Specimen metadata handling
 
 **`bkbit/model_converters/`** - Tools for converting between formats:

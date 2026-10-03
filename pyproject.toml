@@ -25,6 +25,8 @@ dependencies = [
     "rdflib",
     "requests",
     "tqdm",
+    "anndata",
+    "h5py",
 ]
 dynamic = ["version"]
 
@@ -45,6 +47,10 @@ dev = [
 test = [
     "pytest",
 ]
+# Read AIT h5ad files directly from http(s)/s3 URLs
+remote = [
+    "fsspec[http]",
+]
 docs = [
     "mkdocs-material"
 ]
@@ -53,6 +59,7 @@ all = [
     "bkbit[dev]",
     "bkbit[docs]",
     "bkbit[test]",
+    "bkbit[remote]",
 ]
 
 [project.urls]
