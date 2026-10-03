@@ -1,0 +1,196 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Specimen Library Aliquot List &mdash; bkbit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Specimen Metadata" href="specimen_metadata.html" />
+    <link rel="prev" title="Specimen Digital File Manifest" href="specimen_file_manifest.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            bkbit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">DATA TRANSLATORS</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="specimen_file_manifest.html">Specimen Digital File Manifest</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Specimen Library Aliquot List</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#retrieve-specimen-metadata-from-brain-knowledge-platform">Retrieve Specimen Metadata from Brain Knowledge Platform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#command-line">Command Line</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#bkbit-list-library-aliquot"><code class="docutils literal notranslate"><span class="pre">bkbit</span> <span class="pre">list-library-aliquot</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#example-1-save-list-of-library-aliquots-to-file">Example 1: Save list of library aliquots to file</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="specimen_metadata.html">Specimen Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genome_annotation.html">Annotated Genome Data</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL CONVERTERS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="spreadsheet_converter.html">Spreadsheet to LinkML Schema</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL EDITORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="linkml_trimmer.html">LinkML Schema Trimmer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">REFERENCE</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">bkbit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">bkbit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Specimen Library Aliquot List</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/brain-bican/bkbit/blob/main/docs/list_specimen_library_aliquot.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="specimen-library-aliquot-list">
+<span id="list-specimen-library-aliquot"></span><h1>Specimen Library Aliquot List<a class="headerlink" href="#specimen-library-aliquot-list" title="Link to this heading"></a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>Generates a list of Library Aliquot NHash IDs from an overall specimen list retrieved from the Brain Knowledge Platform.</p>
+</section>
+<section id="retrieve-specimen-metadata-from-brain-knowledge-platform">
+<h2>Retrieve Specimen Metadata from Brain Knowledge Platform<a class="headerlink" href="#retrieve-specimen-metadata-from-brain-knowledge-platform" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Step 1: Go to <a class="reference external" href="https://knowledge.brain-map.org/">Brain Knowledge Platform</a></p></li>
+<li><p>Step 2: Navigate to ‘Data/Projects’ tab on the top right menu</p></li>
+<li><p>Step 3: Filter by ‘Specimen Type’ specifically “Library Aliquot”</p></li>
+<li><p>Step 4: Click on specific project i.e. “BICAN Rapid Release Inventory: Single cell transcriptomics and epigenomics”</p></li>
+<li><p>Step 5: Click on ‘BROWSE SPECIMENS’ button</p></li>
+<li><p>Step 6: Click on download icon (arrow pointing down) on top menu bar and select ‘Metadata’</p></li>
+</ul>
+<p>The input file manifest must be in CSV format.</p>
+<p>Required columns:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Specimen ID</p></li>
+</ul>
+</div></blockquote>
+<p>Optional columns:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Project ID</p></li>
+<li><p>Library ALiquot NHash ID</p></li>
+<li><p>Subject NHash ID</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="command-line">
+<h2>Command Line<a class="headerlink" href="#command-line" title="Link to this heading"></a></h2>
+<section id="bkbit-list-library-aliquot">
+<h3><code class="docutils literal notranslate"><span class="pre">bkbit</span> <span class="pre">list-library-aliquot</span></code><a class="headerlink" href="#bkbit-list-library-aliquot" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>bkbit<span class="w"> </span>list-library-aliquot<span class="w"> </span>SPECIMEN_METADATA_CSV
+</pre></div>
+</div>
+<p><strong>Arguments</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">SPECIMEN_METADATA_CSV</span></code></dt><dd><p>Required argument</p>
+</dd>
+</dl>
+</div></blockquote>
+</section>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<section id="example-1-save-list-of-library-aliquots-to-file">
+<h3>Example 1: Save list of library aliquots to file<a class="headerlink" href="#example-1-save-list-of-library-aliquots-to-file" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run list-library-aliquot command</span>
+$<span class="w"> </span>bkbit<span class="w"> </span>list-library-aliquot<span class="w"> </span>SpecimenMetadata.csv<span class="w"> </span>&gt;<span class="w"> </span>library_aliquot_list.txt
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="specimen_file_manifest.html" class="btn btn-neutral float-left" title="Specimen Digital File Manifest" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="specimen_metadata.html" class="btn btn-neutral float-right" title="Specimen Metadata" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, BICAN.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

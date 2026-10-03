@@ -1,0 +1,7 @@
+bkbit.utils.ncbi\_taxonomy\_data.build\_subset module
+=====================================================
+
+.. automodule:: bkbit.utils.ncbi_taxonomy_data.build_subset
+   :members:
+   :undoc-members:
+   :show-inheritance:

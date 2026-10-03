@@ -1,0 +1,7 @@
+bkbit.utils.generate\_bkbit\_id module
+======================================
+
+.. automodule:: bkbit.utils.generate_bkbit_id
+   :members:
+   :undoc-members:
+   :show-inheritance:

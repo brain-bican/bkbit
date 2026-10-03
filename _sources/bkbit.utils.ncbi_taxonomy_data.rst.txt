@@ -1,0 +1,18 @@
+bkbit.utils.ncbi\_taxonomy\_data package
+========================================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   bkbit.utils.ncbi_taxonomy_data.build_subset
+
+Module contents
+---------------
+
+.. automodule:: bkbit.utils.ncbi_taxonomy_data
+   :members:
+   :undoc-members:
+   :show-inheritance:

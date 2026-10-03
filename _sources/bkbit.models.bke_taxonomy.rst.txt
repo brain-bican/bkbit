@@ -1,0 +1,7 @@
+bkbit.models.bke\_taxonomy module
+=================================
+
+.. automodule:: bkbit.models.bke_taxonomy
+   :members:
+   :undoc-members:
+   :show-inheritance:

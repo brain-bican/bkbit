@@ -1,0 +1,7 @@
+bkbit.models.cell\_taxonomy module
+==================================
+
+.. automodule:: bkbit.models.cell_taxonomy
+   :members:
+   :undoc-members:
+   :show-inheritance:
