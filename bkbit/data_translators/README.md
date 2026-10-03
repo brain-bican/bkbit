@@ -203,3 +203,97 @@ pip install bkbit
 
 gen-geneannotation -a 'GCF_003339765.1' 'https://ftp.ensembl.org/pub/release-104/gff3/macaca_mulatta/Macaca_mulatta.Mmul_10.104.gff3.gz' > output.jsonld
 ```
+
+# ait_taxonomy_parser.py
+
+## Overview
+`ait_taxonomy_parser` reads **Allen Institute Taxonomy (AIT)** files distributed in
+`.h5ad` ([AnnData](https://anndata.readthedocs.io)) format — for example the BICAN /
+HMBA basal-ganglia taxonomies produced with the
+[`scrattch`](https://alleninstitute.github.io/scrattch/) toolkit — and extracts the
+cell-type taxonomy into plain Python objects (pandas DataFrames) or a CSV.
+
+It reads **only** the small taxonomy/metadata groups and never loads the expression
+matrix, so it works on multi-GB files and can read them directly from an
+`https://` / `s3://` URL without downloading the whole file.
+
+## How the parser works
+
+An `.h5ad` file is really an **HDF5 container** — a tree of "groups" (folders):
+
+```
+X, layers, raw     ← cell × gene expression matrices (this is ~all of the file size)
+obs                ← per-cell table (can be millions of rows)
+var                ← per-gene table
+uns                ← unstructured metadata  ← the taxonomy lives here
+obsm, obsp, ...    ← embeddings, graphs
+```
+
+The taxonomy is a tiny fraction of the file, so the parser opens the container and
+reaches into only the small groups — it never touches `X`.
+
+1. **Open the file (local or remote).** For a URL, `h5py` + `fsspec` read just the
+   HDF5 internal index and then fetch **only the specific byte ranges** for the
+   groups actually accessed, using HTTP range requests. That is why a 100+ GB file
+   can be "read" in seconds without downloading it — the bytes making up `X` are
+   never requested. Files are opened read-only; the parser never modifies them.
+
+2. **Read the taxonomy definition from `uns`.**
+   - `uns/hierarchy` is a small dict of level → position
+     (e.g. `Neighborhood:0, Class:1, Subclass:2, Group:3, cluster_id:4`), sorted to
+     give the level order from root to leaf.
+   - `uns/cluster_info` is the taxonomy table: one row per leaf cluster with its
+     full ancestor path plus per-level accessions, colors, and CL ontology IDs.
+
+   Decoding is done with anndata's `read_elem`, which honors each group's
+   `encoding-type` attribute — e.g. reconstructing categorical columns (stored as
+   `categories` + integer `codes` in HDF5) back into real string values.
+
+3. **Read the rest of `uns`, plus `obs`/`var`.** `obs` is optional (`load_obs`)
+   because it is the one large metadata group; taxonomy work skips it by default.
+
+4. **Build in-memory views** (no further file access): ordered `levels`, the
+   `cluster_info` DataFrame, a `.edges()` view of parent→child tree edges, a
+   `.summary()` printout, and `.to_csv()` to persist the taxonomy table.
+
+## Dependencies
+`anndata`, `h5py`, and (for remote URLs) `fsspec` + `aiohttp`.
+
+## Command Line
+```python
+python -m bkbit.data_translators.ait_taxonomy_parser PATH_OR_URL [OPTIONS]
+```
+
+#### Options
+<span style="color: red;">--no-obs</span> <br>
+&emsp;Skip the large per-cell `obs` table; read only the taxonomy definition
+(`uns` + `cluster_info`). Recommended when reading remote files. <br>
+
+<span style="color: red;">--out CSV</span> <br>
+&emsp;Write the leaf-cluster taxonomy table (`cluster_info`) to this CSV path. <br>
+
+## Examples
+#### Example 1: Summarize a taxonomy from a remote URL (no download)
+```python
+python -m bkbit.data_translators.ait_taxonomy_parser \
+  'https://.../Marmoset_HMBA_basalganglia_AIT_pre-print.h5ad' --no-obs
+```
+
+#### Example 2: Export the taxonomy table to CSV
+```python
+python -m bkbit.data_translators.ait_taxonomy_parser \
+  'https://.../Human_HMBA_basalganglia_AIT_pre-print.h5ad' \
+  --no-obs --out Human_taxonomy.csv
+```
+
+#### Example 3: Use as a library
+```python
+from bkbit.data_translators.ait_taxonomy_parser import AITTaxonomy
+
+tax = AITTaxonomy.from_file(path_or_url, load_obs=False)
+print(tax.summary())
+tax.levels            # ['Neighborhood', 'Class', 'Subclass', 'Group', 'cluster_id']
+tax.cluster_info      # pandas DataFrame, one row per leaf cluster
+tax.edges()           # list of (parent_level, parent, child_level, child) tree edges
+tax.to_csv('taxonomy.csv')
+```
