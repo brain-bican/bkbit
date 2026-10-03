@@ -67,6 +67,8 @@ The package provides a CLI tool `bkbit` with multiple subcommands:
 - `ait_taxonomy_translator.py` - AIT h5ad taxonomies to cell_taxonomy objects (ait2jsonld). Reads
   only metadata (`uns`, selected `obs` columns), never `X`/`raw.X`, so it also works on
   multi-GB files and on http(s)/s3 URLs (needs the `remote` extra, i.e. `fsspec[http]`)
+  Taxon colors and abbreviation tokens have no cell_taxonomy slot, so they are emitted
+  as `bke_taxonomy` objects (DisplayColor, Abbreviation) in the same JSON-LD graph.
 - `specimen_metadata_translator.py` - Specimen metadata handling
 
 **`bkbit/model_converters/`** - Tools for converting between formats:

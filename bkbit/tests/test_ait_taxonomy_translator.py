@@ -43,11 +43,45 @@ CLUSTERS = {
         "CL:0000000",
     ),
 }
+# cluster_id -> columns expressed with the bke_taxonomy model, and columns without a
+# level suffix that describe the finest level (Subclass here)
+BKE_COLUMNS = {
+    "c1": {
+        "color_hex_class": "#ff0000",
+        "color_hex_subclass": "#00ff00",
+        "tokens_class": "Glut",
+        "tokens_subclass": "L2/3|IT",
+        "curated_markers": "CUX2, LAMP5",
+        "literature_name_short": "IT-23",
+        "literature_name_long": "Layer 2/3 intratelencephalic",
+    },
+    "c2": {
+        "color_hex_class": "#ff0000",
+        "color_hex_subclass": "#00ff00",
+        "tokens_class": "Glut",
+        "tokens_subclass": "L2/3|IT",
+        "curated_markers": "CUX2, LAMP5",
+        "literature_name_short": "IT-23",
+        "literature_name_long": "Layer 2/3 intratelencephalic",
+    },
+    "c3": {
+        "color_hex_class": "#ff0000",
+        "color_hex_subclass": "not a color",
+        "tokens_class": "Glut",
+        "tokens_subclass": "L5|ET",
+    },
+    "c4": {
+        "color_hex_class": "#0000ff",
+        "color_hex_subclass": "#00ffff",
+        "tokens_class": "GABA",
+        "tokens_subclass": "Pvalb",
+    },
+}
 # cells per cluster
 CELLS = ["c1"] * 3 + ["c2"] * 2 + ["c3"] * 4 + ["c4"] * 1
 
 
-def make_ait(path, filter_value=False, extra_uns=None):
+def make_ait(path, filter_value=False, extra_uns=None, organism="NCBITaxon:9606"):
     columns = [
         "Class",
         "Subclass",
@@ -58,7 +92,9 @@ def make_ait(path, filter_value=False, extra_uns=None):
         "CL:ID_class",
         "CL:ID_subclass",
     ]
-    rows = [dict(zip(columns, CLUSTERS[c]), cluster_id=c) for c in CELLS]
+    rows = [
+        dict(zip(columns, CLUSTERS[c]), **BKE_COLUMNS[c], cluster_id=c) for c in CELLS
+    ]
     obs = pd.DataFrame(rows, index=[f"cell{i}" for i in range(len(CELLS))])
     for column in obs.columns:
         if obs[column].dtype == object:
@@ -67,6 +103,7 @@ def make_ait(path, filter_value=False, extra_uns=None):
     obs["assay"] = "10x multiome"
     obs["suspension_type"] = "nucleus"
     obs["is_primary_data"] = "True"
+    obs["organism_ontology_term_id"] = organism
 
     n_genes = 3
     adata = ad.AnnData(
@@ -214,6 +251,9 @@ def test_obs_fallback_without_cluster_info(tmp_path):
     taxa = {t["name"]: t for t in by_category(graph, "CellTypeTaxon")}
     assert taxa["Pvalb"]["accession_id"] == "CS_SUBCL_3"
     assert taxa["Pvalb"]["number_of_cells"] == 1
+    assert taxa["L2/3 IT"]["curated_markers_to_primates"] == ["CUX2", "LAMP5"]
+    assert len(by_category(graph, "DisplayColor")) == 4
+    assert taxa["Pvalb"]["has_abbreviation"]
 
 
 def test_cli(ait_file, tmp_path):
@@ -223,6 +263,88 @@ def test_cli(ait_file, tmp_path):
     )
     assert result.exit_code == 0, result.output
     data = json.loads(output_file.read_text())
-    assert data["@context"].endswith("cell_taxonomy.context.jsonld")
+    assert data["@context"][-1].endswith("cell_taxonomy.context.jsonld")
+    assert data["@context"][0].endswith("bke_taxonomy.context.jsonld")
     (taxonomy,) = by_category(data["@graph"], "CellTypeTaxonomy")
     assert taxonomy["accession_id"] == "CCN0001"
+
+
+def test_bke_taxonomy_data(ait_file):
+    graph = AITTaxonomy(ait_file).parse().to_jsonld()["@graph"]
+    taxa = {t["name"]: t for t in by_category(graph, "CellTypeTaxon")}
+    taxonomy_id = by_category(graph, "CellTypeTaxonomy")[0]["id"]
+
+    (palette,) = by_category(graph, "ColorPalette")
+    assert palette["is_palette_for"] == taxonomy_id
+    colors = {c["is_color_for_taxon"]: c for c in by_category(graph, "DisplayColor")}
+    assert colors[taxa["Glut"]["id"]]["color_hex_triplet"] == "#ff0000"
+    assert colors[taxa["L2/3 IT"]["id"]]["color_hex_triplet"] == "#00ff00"
+    assert colors[taxa["Glut"]["id"]]["part_of_palette"] == palette["id"]
+    # invalid hex value is skipped
+    assert taxa["L5 ET"]["id"] not in colors
+    assert len(colors) == 4
+
+    abbreviations = {a["id"]: a for a in by_category(graph, "Abbreviation")}
+    assert {a["term"] for a in abbreviations.values()} == {
+        "Glut",
+        "GABA",
+        "L2/3",
+        "IT",
+        "L5",
+        "ET",
+        "Pvalb",
+    }
+    terms = [abbreviations[i]["term"] for i in taxa["L2/3 IT"]["has_abbreviation"]]
+    assert terms == ["L2/3", "IT"]
+    # shared tokens are a single Abbreviation object
+    assert taxa["Glut"]["has_abbreviation"] == [
+        a for a, v in abbreviations.items() if v["term"] == "Glut"
+    ]
+
+    # columns without a level suffix describe the finest level (Subclass)
+    assert taxa["L2/3 IT"]["curated_markers_to_primates"] == ["CUX2", "LAMP5"]
+    assert taxa["L2/3 IT"]["synonym"] == ["IT-23"]
+    assert taxa["L2/3 IT"]["full_name"] == "Layer 2/3 intratelencephalic"
+    assert "curated_markers_to_primates" not in taxa["Glut"]
+    assert "synonym" not in taxa["Pvalb"]
+
+
+def test_mouse_markers(tmp_path):
+    ait_file = make_ait(tmp_path / "mouse.h5ad", organism="NCBITaxon:10090")
+    graph = AITTaxonomy(ait_file).parse().to_jsonld()["@graph"]
+    taxa = {t["name"]: t for t in by_category(graph, "CellTypeTaxon")}
+    assert taxa["L2/3 IT"]["curated_markers_to_mouse"] == ["CUX2", "LAMP5"]
+    assert "curated_markers_to_primates" not in taxa["L2/3 IT"]
+
+
+def test_abbreviation_file(ait_file, tmp_path):
+    abbreviation_file = tmp_path / "abbreviations.csv"
+    pd.DataFrame(
+        [
+            {
+                "token": "IT",
+                "meaning": "intratelencephalic",
+                "type": "cell_type",
+                "primary_identifier": "CL:4023008",
+                "secondary_identifier": "",
+            },
+            {
+                "token": "Pvalb",
+                "meaning": "parvalbumin",
+                "type": "gene",
+                "primary_identifier": "NCBIGene:5816",
+                "secondary_identifier": "",
+            },
+        ]
+    ).to_csv(abbreviation_file, index=False)
+    graph = (
+        AITTaxonomy(ait_file, abbreviation_file=abbreviation_file)
+        .parse()
+        .to_jsonld()["@graph"]
+    )
+    abbreviations = {a["term"]: a for a in by_category(graph, "Abbreviation")}
+    assert abbreviations["IT"]["meaning"] == "intratelencephalic"
+    assert abbreviations["IT"]["entity_type"] == "cell_type"
+    assert abbreviations["IT"]["denotes_cell_type"] == ["CL:4023008"]
+    assert abbreviations["Pvalb"]["denotes_gene_annotation"] == ["NCBIGene:5816"]
+    assert "meaning" not in abbreviations["ET"]

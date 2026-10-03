@@ -34,6 +34,26 @@ Embedding objects      one per ``obsm['X_*']`` entry
 Cell objects           one per cell in ``obs`` (only with ``--include_cells``)
 =====================  ==============================================================
 
+Taxon data the ``cell_taxonomy`` model has no slot for is expressed with the
+``bke_taxonomy`` model, and the output then lists both models' JSON-LD contexts:
+
+- ``color_hex_<level>`` -> a DisplayColor per taxon (``is_color_for_taxon``), all in one
+  ColorPalette for the taxonomy
+- ``tokens_<level>`` (e.g. ``STRd|D2 Matrix MSN``) -> an Abbreviation per token; the
+  taxon lists them in ``has_abbreviation``
+
+AIT files store only the abbreviation tokens. To add their meaning and the entities they
+denote, pass ``--abbreviation_file`` with a CSV in the format used by ``taxonomy2jsonld``
+(columns ``token``, ``meaning``, ``type`` = ``cell_type``/``gene``/``anatomical``,
+``primary_identifier``, ``secondary_identifier``).
+
+Columns without a level suffix describe the finest annotation level (``Group`` in HMBA):
+
+- ``curated_markers`` -> ``curated_markers_to_primates`` (``curated_markers_to_mouse`` for
+  mouse taxonomies, i.e. ``organism_ontology_term_id`` is ``NCBITaxon:10090``)
+- ``literature_name_short`` -> ``synonym``
+- ``literature_name_long`` -> ``full_name``
+
 Each CellTypeTaxon links to its parent taxon at the next broader level (``has_parent``)
 and records the number of cells it contains. Its accession ID, display order and CL term
 are read from per-level columns that follow the HMBA naming convention:
@@ -70,6 +90,9 @@ Options
 
     ``-a, --taxonomy_accession <accession>``
         Accession ID to assign to the taxonomy (AIT files do not store one).
+
+    ``-b, --abbreviation_file <csv>``
+        Meaning (and denoted entities) of the abbreviation tokens.
 
     ``--include_cells``
         Also generate a Cell object for every cell. Taxonomies routinely hold millions of

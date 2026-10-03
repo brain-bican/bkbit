@@ -23,6 +23,20 @@ distinct values of each level         CellTypeTaxon (has_parent -> broader taxon
 ``obs`` rows (optional)               Cell
 ====================================  ===========================================
 
+Taxon data that the cell_taxonomy model has no slot for is expressed with the
+``bke_taxonomy`` model (the JSON-LD output then uses both models' contexts):
+
+====================================  ===========================================
+AIT column                            bke_taxonomy class / slot
+====================================  ===========================================
+``color_hex_<level>``                 DisplayColor in one ColorPalette
+``tokens_<level>`` ("STR|D1|MSN")     Abbreviation + CellTypeTaxon.has_abbreviation
+====================================  ===========================================
+
+Columns without a level suffix describe the finest annotation level (e.g. Group):
+``curated_markers`` -> CellTypeTaxon.curated_markers_to_primates (or ``_to_mouse``),
+``literature_name_short`` -> synonym, ``literature_name_long`` -> full_name.
+
 Per-level taxon attributes are read from columns that follow the HMBA naming
 convention, ``<prefix>_<level in lower case>`` (e.g. ``accession_subclass``,
 ``display_order_subclass``, ``CL:ID_subclass``). See ``LEVEL_ATTRIBUTE_COLUMNS``.
@@ -42,6 +56,7 @@ import click
 import numpy as np
 import pandas as pd
 
+from bkbit.models import bke_taxonomy as bt
 from bkbit.models import cell_taxonomy as ct
 from bkbit.utils.generate_bkbit_id import generate_object_id
 from bkbit.utils.serialize_to_ttl import convert_jsonld_to_ttl
@@ -49,6 +64,7 @@ from bkbit.utils.serialize_to_ttl import convert_jsonld_to_ttl
 logger = logging.getLogger(__name__)
 
 CELL_TAXONOMY_CONTEXT = "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/cell_taxonomy.context.jsonld"
+BKE_TAXONOMY_CONTEXT = "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/bke_taxonomy.context.jsonld"
 
 # AIT requires `cluster_id` in obs and as the finest level of uns['hierarchy'].
 CLUSTER_LEVEL = "cluster_id"
@@ -65,6 +81,23 @@ LEVEL_ATTRIBUTE_COLUMNS = {
         "{level}_cell_type_ontology_term_id",
     ],
 }
+
+# Per-level columns expressed with the bke_taxonomy model (same template rules).
+LEVEL_BKE_COLUMNS = {
+    "color_hex_triplet": ["color_hex_{level}", "{level}_color_hex"],
+    "tokens": ["tokens_{level}", "{level}_tokens"],
+}
+
+# CellTypeTaxon slot -> column without a level suffix; it describes the finest
+# annotation level. curated_markers is resolved to the _to_primates/_to_mouse slot.
+FINEST_LEVEL_COLUMNS = {
+    "curated_markers": "curated_markers",
+    "synonym": "literature_name_short",
+    "full_name": "literature_name_long",
+}
+
+MOUSE_TAXON = "NCBITaxon:10090"
+TOKEN_SEPARATOR = "|"
 
 # Cell slot -> obs column. part_of_cluster and cluster_id are set separately.
 CELL_OBS_COLUMNS = {
@@ -97,6 +130,7 @@ UNS_KEYS = (
 )
 
 CL_TERM_PATTERN = re.compile(r"^CL:\d{7}$")
+HEX_COLOR_PATTERN = re.compile(r"^#[0-9a-fA-F]{6}$")
 URL_PATTERN = re.compile(r"^(https?|s3|ftp)://", re.IGNORECASE)
 
 
@@ -195,6 +229,10 @@ class AITTaxonomy:
             ExpressionMatrix.has_variable. Off by default to keep the output small.
         taxonomy_accession (str, optional): Accession ID for the taxonomy
             (e.g. "CCN20250428"); AIT files do not store one.
+        abbreviation_file (str, optional): CSV giving the meaning of abbreviation
+            tokens, in the format used by ``taxonomy2jsonld`` (columns ``token``,
+            ``meaning``, ``type`` and optionally ``primary_identifier`` and
+            ``secondary_identifier``). AIT files store only the tokens themselves.
     """
 
     def __init__(
@@ -204,12 +242,16 @@ class AITTaxonomy:
         include_cells=False,
         include_variables=False,
         taxonomy_accession=None,
+        abbreviation_file=None,
     ):
         self.h5ad_path = str(h5ad_path)
         self.requested_mode = mode
         self.include_cells = include_cells
         self.include_variables = include_variables
         self.taxonomy_accession = taxonomy_accession
+        self.abbreviation_meanings = (
+            self._read_abbreviation_file(abbreviation_file) if abbreviation_file else {}
+        )
 
         self.uns = {}
         self.mode = None
@@ -222,6 +264,11 @@ class AITTaxonomy:
         self.expression_matrices = []
         self.embeddings = []
         self.cells = []
+        # bke_taxonomy objects and slots
+        self.color_palette = None
+        self.display_colors = []
+        self.abbreviations = {}  # token -> Abbreviation
+        self.taxon_bke_slots = {}  # CellTypeTaxon id -> {bke_taxonomy slot: value}
 
     # ------------------------------------------------------------------ reading
 
@@ -344,7 +391,13 @@ class AITTaxonomy:
             columns += [
                 c
                 for level in self.levels
-                for c in self._attribute_columns(level, available).values()
+                for templates in (LEVEL_ATTRIBUTE_COLUMNS, LEVEL_BKE_COLUMNS)
+                for c in self._attribute_columns(level, available, templates).values()
+            ]
+            columns += [
+                c
+                for c in [*FINEST_LEVEL_COLUMNS.values(), "organism_ontology_term_id"]
+                if c in available
             ]
             table = pd.DataFrame(
                 {c: self._read_obs_column(h5, c) for c in dict.fromkeys(columns)}
@@ -354,10 +407,10 @@ class AITTaxonomy:
         return table.drop_duplicates(subset=CLUSTER_LEVEL).reset_index(drop=True)
 
     @staticmethod
-    def _attribute_columns(level, columns):
-        """Map CellTypeTaxon slot -> column name present in `columns` for `level`."""
+    def _attribute_columns(level, columns, column_templates=LEVEL_ATTRIBUTE_COLUMNS):
+        """Map slot -> column name present in `columns` for `level`."""
         found = {}
-        for slot, templates in LEVEL_ATTRIBUTE_COLUMNS.items():
+        for slot, templates in column_templates.items():
             for template in templates:
                 column = template.format(level=level.lower())
                 if column in columns:
@@ -433,6 +486,11 @@ class AITTaxonomy:
             name=f"{title} clusters" if title else CLUSTER_LEVEL,
         )
         self.taxonomy.was_derived_from = [self.cluster_set.id]
+        self.color_palette = bt.ColorPalette(
+            id=self._object_id("ColorPalette"),
+            name=f"{title} color palette" if title else "color palette",
+            is_palette_for=self.taxonomy.id,
+        )
 
     def _generate_cell_type_sets(self):
         hierarchy = {
@@ -460,10 +518,20 @@ class AITTaxonomy:
             )
 
         sizes = cluster_table[CLUSTER_LEVEL].map(cluster_sizes).fillna(0).astype(int)
+        marker_slot = self._curated_marker_slot(cluster_table)
         invalid_cl_terms = set()
         parent_level = None
         for level in self.levels:
             attribute_columns = self._attribute_columns(level, columns)
+            if level == self.levels[-1]:
+                attribute_columns.update(
+                    {
+                        slot: column
+                        for slot, column in FINEST_LEVEL_COLUMNS.items()
+                        if column in columns
+                    }
+                )
+            bke_columns = self._attribute_columns(level, columns, LEVEL_BKE_COLUMNS)
             parents = self._parent_names(cluster_table, level, parent_level)
             for name, rows in cluster_table.groupby(level, sort=False, observed=True):
                 if _is_missing(name):
@@ -485,6 +553,11 @@ class AITTaxonomy:
                         if not CL_TERM_PATTERN.match(value):
                             invalid_cl_terms.add(value)
                             continue
+                    elif slot == "curated_markers":
+                        slot = marker_slot
+                        value = [m.strip() for m in str(value).split(",") if m.strip()]
+                    elif slot == "synonym":
+                        value = [str(value)]
                     else:
                         value = str(value)
                     attributes[slot] = value
@@ -496,13 +569,110 @@ class AITTaxonomy:
                 attributes["id"] = self._object_id(
                     "CellTypeTaxon", level=level, name=name
                 )
-                self.cell_type_taxa[(level, name)] = ct.CellTypeTaxon(**attributes)
+                taxon = ct.CellTypeTaxon(**attributes)
+                self.cell_type_taxa[(level, name)] = taxon
+                self._generate_bke_taxon_data(taxon, level, rows, bke_columns)
             parent_level = level
         if invalid_cl_terms:
             logger.warning(
                 "Skipped cell type ontology term(s) that are not CL IDs: %s",
                 sorted(invalid_cl_terms),
             )
+
+    @staticmethod
+    def _curated_marker_slot(cluster_table):
+        """curated_markers_to_mouse for mouse taxonomies, else _to_primates."""
+        organisms = set()
+        if "organism_ontology_term_id" in cluster_table.columns:
+            organisms = {
+                str(o).strip()
+                for o in cluster_table["organism_ontology_term_id"].dropna().unique()
+            }
+        if organisms == {MOUSE_TAXON}:
+            return "curated_markers_to_mouse"
+        return "curated_markers_to_primates"
+
+    def _generate_bke_taxon_data(self, taxon, level, rows, bke_columns):
+        """Generate the bke_taxonomy DisplayColor/Abbreviation objects of a taxon."""
+        if "color_hex_triplet" in bke_columns:
+            column = bke_columns["color_hex_triplet"]
+            color = self._single_value(rows[column], level, taxon.name, column)
+            if not _is_missing(color):
+                color = str(color).strip()
+                if HEX_COLOR_PATTERN.match(color):
+                    self.display_colors.append(
+                        bt.DisplayColor(
+                            id=self._object_id("DisplayColor", taxon=taxon.id),
+                            color_hex_triplet=color,
+                            is_color_for_taxon=taxon.id,
+                            part_of_palette=self.color_palette.id,
+                        )
+                    )
+                else:
+                    logger.warning(
+                        "%s '%s' has an invalid hex color '%s'; skipped.",
+                        level,
+                        taxon.name,
+                        color,
+                    )
+        if "tokens" in bke_columns:
+            column = bke_columns["tokens"]
+            tokens = self._single_value(rows[column], level, taxon.name, column)
+            if not _is_missing(tokens):
+                abbreviation_ids = [
+                    self._abbreviation(token.strip()).id
+                    for token in str(tokens).split(TOKEN_SEPARATOR)
+                    if token.strip()
+                ]
+                if abbreviation_ids:
+                    self.taxon_bke_slots[taxon.id] = {
+                        "has_abbreviation": list(dict.fromkeys(abbreviation_ids))
+                    }
+
+    def _abbreviation(self, token):
+        """Return the Abbreviation for `token`, creating it on first use."""
+        if token in self.abbreviations:
+            return self.abbreviations[token]
+        attributes = {"term": token}
+        known = self.abbreviation_meanings.get(token)
+        if known:
+            attributes.update(known)
+        attributes["id"] = generate_object_id({"class": "Abbreviation", **attributes})
+        self.abbreviations[token] = bt.Abbreviation(**attributes)
+        return self.abbreviations[token]
+
+    @staticmethod
+    def _read_abbreviation_file(path):
+        """Read token -> Abbreviation attributes from a taxonomy2jsonld-style CSV."""
+        denotes_slot = {
+            bt.AbbreviationEntityType.cell_type.value: "denotes_cell_type",
+            bt.AbbreviationEntityType.gene.value: "denotes_gene_annotation",
+            bt.AbbreviationEntityType.anatomical.value: "denotes_parcellation_term",
+        }
+        meanings = {}
+        for row in pd.read_csv(path, dtype=str).fillna("").to_dict("records"):
+            token = row.get("token", "").strip()
+            if not token:
+                continue
+            attributes = {}
+            if row.get("meaning", "").strip():
+                attributes["meaning"] = row["meaning"].strip()
+            entity_type = row.get("type", "").strip()
+            if entity_type in denotes_slot:
+                attributes["entity_type"] = entity_type
+                identifiers = [
+                    row[c].strip()
+                    for c in ("primary_identifier", "secondary_identifier")
+                    if row.get(c, "").strip()
+                ]
+                if identifiers:
+                    attributes[denotes_slot[entity_type]] = identifiers
+            elif entity_type:
+                logger.warning(
+                    "Unknown abbreviation type '%s' for token '%s'.", entity_type, token
+                )
+            meanings[token] = attributes
+        return meanings
 
     @staticmethod
     def _parent_names(cluster_table, level, parent_level):
@@ -664,23 +834,44 @@ class AITTaxonomy:
     # ------------------------------------------------------------ serializing
 
     def all_objects(self):
-        """All generated objects, taxonomy first."""
+        """All generated objects (cell_taxonomy and bke_taxonomy), taxonomy first."""
         objects = [self.taxonomy, self.cluster_set]
         objects += list(self.cell_type_sets.values())
         objects += list(self.cell_type_taxa.values())
         objects += list(self.clusters.values())
         objects += self.expression_matrices
         objects += self.embeddings
+        if self.display_colors:
+            objects += [self.color_palette, *self.display_colors]
+        objects += list(self.abbreviations.values())
         objects += self.cells
         return [o for o in objects if o is not None]
 
+    def _to_node(self, obj):
+        node = obj.model_dump(mode="json", exclude_none=True)
+        bke_slots = self.taxon_bke_slots.get(node["id"])
+        if bke_slots:
+            # Slots the cell_taxonomy CellTypeTaxon lacks are validated against the
+            # bke_taxonomy CellTypeTaxon and merged into the same node.
+            node.update(
+                bt.CellTypeTaxon(id=node["id"], **bke_slots).model_dump(
+                    mode="json", exclude_none=True, exclude={"id", "category"}
+                )
+            )
+        return node
+
     def to_jsonld(self):
         """Return the generated objects as a JSON-LD document (dict)."""
+        graph = [self._to_node(o) for o in self.all_objects()]
+        uses_bke = bool(self.display_colors or self.abbreviations)
         return {
-            "@context": CELL_TAXONOMY_CONTEXT,
-            "@graph": [
-                o.model_dump(mode="json", exclude_none=True) for o in self.all_objects()
-            ],
+            # cell_taxonomy comes last so its term definitions take precedence.
+            "@context": (
+                [BKE_TAXONOMY_CONTEXT, CELL_TAXONOMY_CONTEXT]
+                if uses_bke
+                else CELL_TAXONOMY_CONTEXT
+            ),
+            "@graph": graph,
         }
 
     def serialize_to_jsonld(self, output_file=None, output_format="jsonld"):
@@ -736,6 +927,14 @@ class AITTaxonomy:
     help="Accession ID to assign to the taxonomy (e.g. CCN20250428).",
 )
 @click.option(
+    "--abbreviation_file",
+    "-b",
+    type=click.Path(exists=True),
+    default=None,
+    help="CSV with the meaning of abbreviation tokens "
+    "(columns: token, meaning, type, primary_identifier, secondary_identifier).",
+)
+@click.option(
     "--include_cells",
     is_flag=True,
     help="Also generate a Cell object for every cell in obs (can be very large).",
@@ -751,6 +950,7 @@ def ait2jsonld(
     output_format,
     mode,
     taxonomy_accession,
+    abbreviation_file,
     include_cells,
     include_variables,
 ):
@@ -766,6 +966,7 @@ def ait2jsonld(
         include_cells=include_cells,
         include_variables=include_variables,
         taxonomy_accession=taxonomy_accession,
+        abbreviation_file=abbreviation_file,
     ).parse()
     output = taxonomy.serialize_to_jsonld(output_file, output_format)
     if output is not None:
