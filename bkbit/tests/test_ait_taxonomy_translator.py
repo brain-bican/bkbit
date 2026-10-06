@@ -134,3 +134,39 @@ def test_module_imports_without_h5py(monkeypatch):
     finally:
         monkeypatch.undo()
         importlib.reload(mod)
+
+
+class TestSplitValues:
+    """How a packed cell becomes a multivalued slot is declared in the model,
+    via the ait_separator annotation -- never guessed from the data."""
+
+    def test_splits_on_the_declared_separator(self):
+        assert t.split_values("a|b|c", "|") == ["a", "b", "c"]
+        assert t.split_values("PDGFRA, DCN", ",") == ["PDGFRA", "DCN"]
+
+    def test_no_separator_means_one_value(self):
+        # Guessing a delimiter would invent entities: "PDGFRA, DCN" must stay
+        # a single value unless the model says otherwise.
+        assert t.split_values("PDGFRA, DCN", "") == ["PDGFRA, DCN"]
+        assert t.split_values("a|b", None) == ["a|b"]
+
+    def test_strips_and_drops_empties(self):
+        assert t.split_values(" a | | b ", "|") == ["a", "b"]
+
+    def test_drops_stringified_nulls(self):
+        # cluster_info columns arrive as strings, so a missing value shows up
+        # as the text "nan"/"None" rather than as None.
+        assert t.split_values("nan", "|") == []
+        assert t.split_values("a|None|b", "|") == ["a", "b"]
+
+    def test_handles_none_and_non_str(self):
+        assert t.split_values(None, "|") == []
+        assert t.split_values(123, "|") == ["123"]
+
+
+@needs_current_model
+def test_separator_is_read_from_annotations():
+    """load_locations() must surface ait_separator next to the location, so a
+    sheet edit changes splitting with no code change."""
+    locs = t.load_locations()
+    assert all("sep" in v for v in locs.values())

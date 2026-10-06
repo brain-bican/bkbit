@@ -132,6 +132,13 @@ Rules to preserve when touching this code:
 - **It therefore depends on that model being current.** The annotations were
   added 2026-10-01; against an older `cell_taxonomy.py` nothing resolves, so
   `load_locations()` raises instead of silently emitting an empty graph.
+- **Splitting a packed cell is declared, not guessed.** A multivalued slot
+  whose value arrives as one string (`"PDGFRA, DCN"`, `"a|b"`) gets an
+  `ait_separator` annotation saying how to split it; `split_values()` honours
+  it and treats the cell as a single value when none is declared. Guessing a
+  delimiter would silently invent or merge entities. Where the code still
+  falls back to a historical delimiter it records a deviation in the run
+  report rather than passing it off as model-driven.
 - **ids come from `generate_object_id`,** like every other translator. The
   class name is deliberately not hashed -- see
   `bkbit/tests/test_ait_taxonomy_translator.py`.

@@ -135,6 +135,21 @@ def _model_classes():
             yield name, obj
 
 
+DROP_VALUES = ("", "nan", "None")
+
+
+def split_values(value, sep):
+    """Split one stored cell into the values of a multivalued slot.
+
+    ``sep`` comes from the model's ``ait_separator`` annotation. With no
+    separator declared the cell is a single value -- guessing a delimiter
+    would silently invent or merge entities.
+    """
+    text = "" if value is None else str(value)
+    parts = text.split(sep) if sep else [text]
+    return [x for x in (p.strip() for p in parts) if x and x not in DROP_VALUES]
+
+
 def _admits_list(annotation) -> bool:
     """True if a field's type allows a list, looking through Optional/Union."""
     if typing.get_origin(annotation) in (list, set):
@@ -181,6 +196,11 @@ def load_locations() -> dict:
                     loc=get("ait_location"),
                     source=get("source"),
                     note=get("note"),
+                    # How to split one stored string into a multivalued slot.
+                    # Declared in the sheet, not hardcoded here -- the file
+                    # stores e.g. "PDGFRA, DCN" or "a|b" in a single cell and
+                    # only the model knows which.
+                    sep=get("ait_separator"),
                 )
     if not out:
         raise click.ClickException(
@@ -485,14 +505,30 @@ def build(
             prev = a["id"]
 
         # ---- Abbreviation from tokens_<level> (before taxa: they link to it)
-        ab_loc = locs.get(("Abbreviation", "term"), {}).get("loc", "")
+        ab_meta = locs.get(("Abbreviation", "term"), {})
+        ab_loc = ab_meta.get("loc", "")
+        ab_sep = ab_meta.get("sep", "")
+        if ab_loc and not ab_sep:
+            # tokens_<level> packs several terms into one cell. Until the sheet
+            # declares the separator, fall back to the historical "|" -- but
+            # say so, rather than letting a hardcoded delimiter masquerade as
+            # model-driven behaviour.
+            ab_sep = "|"
+            rep.deviate(
+                "Abbreviation.term",
+                ab_loc,
+                f"{ab_loc} split on '|'",
+                "no ait_separator declared on the slot; using the historical "
+                "'|'. Add an ait_separator annotation in the sheet to make "
+                "this model-driven.",
+            )
         abbrev_id: dict[str, str] = {}
         if ci is not None and ab_loc:
             tok_cols = [c for c in ci.columns if c.startswith("tokens_")]
             for c in tok_cols:
                 for v in {str(x) for x in (ci[c] or []) if x is not None}:
-                    for t in (x.strip() for x in v.split("|")):
-                        if t and t not in abbrev_id and t not in ("", "nan", "None"):
+                    for t in split_values(v, ab_sep):
+                        if t not in abbrev_id:
                             a = {"term": t}
                             a["id"] = oid("Abbreviation", a)
                             abbrev_id[t] = a["id"]
