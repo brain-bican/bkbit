@@ -379,6 +379,30 @@ def obs_counts(h5, column):
         return {}
 
 
+URI_SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.\-]*://")
+# Virtual-hosted-style S3 over https, e.g.
+#   https://my-bucket.s3.us-west-2.amazonaws.com/path/to/file.h5ad
+S3_VHOST = re.compile(
+    r"^https?://(?P<bucket>.+?)\.s3[.\-][^/]*amazonaws\.com/(?P<key>.+)$"
+)
+
+
+def source_as_uri(path: str) -> str | None:
+    """The location the file was actually read from, as a URI.
+
+    An https URL pointing at S3 is rewritten to its s3:// form, so a taxonomy
+    read over range requests records the same identifier the bucket owner
+    would quote. Returns None for a local path -- a filesystem location is not
+    a permanent URL and must not be published as one.
+    """
+    if not URI_SCHEME.match(path or "") or path.startswith("file://"):
+        return None
+    m = S3_VHOST.match(path)
+    if m:
+        return f"s3://{m.group('bucket')}/{m.group('key')}"
+    return path
+
+
 def oid(cls_name: str, attrs: dict) -> str:
     """Deterministic id, identical to every other bkbit translator.
 
@@ -488,6 +512,26 @@ def build(
                 continue
             tax_attrs[s] = v
             rep.ok(f"{c}.{s}", meta["loc"])
+        # content_url: some releases put a placeholder in uns.dataset_purl
+        # ('BICAN_s3_bucket' in all three HMBA files) and others omit it. The
+        # location we actually read from is known and is a real URI, so fall
+        # back to it -- reported, never silent. Verified against AIT33, whose
+        # own dataset_purl equals the value derived from its URL.
+        cu_loc = locs.get(("CellTypeTaxonomy", "content_url"), {}).get("loc", "")
+        declared = tax_attrs.get("content_url")
+        resolved = source_as_uri(path)
+        if resolved and not (declared and URI_SCHEME.match(str(declared))):
+            why = (
+                f"declared value {declared!r} is not a URI; used the location the "
+                "file was read from"
+                if declared
+                else "no value in the file; used the location it was read from"
+            )
+            rep.deviate(
+                "CellTypeTaxonomy.content_url", cu_loc or "(blank)", resolved, why
+            )
+            tax_attrs["content_url"] = resolved
+
         tax_attrs["id"] = oid("CellTypeTaxonomy", tax_attrs)
         ents["CellTypeTaxonomy"].append(tax_attrs)
         tax_id = tax_attrs["id"]

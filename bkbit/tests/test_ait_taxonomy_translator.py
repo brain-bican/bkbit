@@ -170,3 +170,42 @@ def test_separator_is_read_from_annotations():
     sheet edit changes splitting with no code change."""
     locs = t.load_locations()
     assert all("sep" in v for v in locs.values())
+
+
+class TestSourceAsUri:
+    """content_url falls back to where the file was actually read from."""
+
+    def test_s3_https_is_rewritten_to_s3_scheme(self):
+        # Verified against AIT33, whose own uns.dataset_purl equals exactly the
+        # value derived from its https URL.
+        got = t.source_as_uri(
+            "https://allen-paper-supplements.s3.us-west-2.amazonaws.com"
+            "/changkyul_preprint_2025/AIT33.h5ad"
+        )
+        assert got == "s3://allen-paper-supplements/changkyul_preprint_2025/AIT33.h5ad"
+
+    def test_bucket_name_containing_digits_and_dashes(self):
+        got = t.source_as_uri(
+            "https://released-taxonomies-802451596237-us-west-2.s3.us-west-2"
+            ".amazonaws.com/HMBA/BasalGanglia/x.h5ad"
+        )
+        assert (
+            got
+            == "s3://released-taxonomies-802451596237-us-west-2/HMBA/BasalGanglia/x.h5ad"
+        )
+
+    def test_existing_s3_uri_passes_through(self):
+        assert t.source_as_uri("s3://b/k.h5ad") == "s3://b/k.h5ad"
+
+    def test_non_s3_url_passes_through(self):
+        assert (
+            t.source_as_uri("https://example.org/x.h5ad")
+            == "https://example.org/x.h5ad"
+        )
+
+    def test_local_paths_give_nothing(self):
+        # A filesystem location is not a permanent URL and must never be
+        # published as content_url.
+        assert t.source_as_uri("/data/x.h5ad") is None
+        assert t.source_as_uri("file:///data/x.h5ad") is None
+        assert t.source_as_uri("") is None

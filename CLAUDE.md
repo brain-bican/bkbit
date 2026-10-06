@@ -139,6 +139,13 @@ Rules to preserve when touching this code:
   delimiter would silently invent or merge entities. Where the code still
   falls back to a historical delimiter it records a deviation in the run
   report rather than passing it off as model-driven.
+- **`content_url` falls back to the real source location.** Several releases
+  put a placeholder in `uns.dataset_purl` (all three HMBA files say
+  `BICAN_s3_bucket`) or omit it. When the declared value is missing or is not
+  a URI, the translator substitutes the location it actually read from,
+  rewriting an https S3 URL to its `s3://` form, and records a deviation. A
+  local path yields nothing -- a filesystem location is not a permanent URL.
+  A file that declares a valid URI keeps it.
 - **ids come from `generate_object_id`,** like every other translator. The
   class name is deliberately not hashed -- see
   `bkbit/tests/test_ait_taxonomy_translator.py`.
