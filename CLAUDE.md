@@ -44,6 +44,7 @@ The package provides a CLI tool `bkbit` with multiple subcommands:
 - `bkbit specimen2jsonld` - Generate BICAN objects from Specimen Portal data
 - `bkbit gff2jsonld` - Generate genome annotation objects from GFF3 files
 - `bkbit taxonomy2jsonld` - Generate taxonomy objects from HMBA annotations
+- `bkbit ait2jsonld` - Generate Cell Taxonomy objects from an AIT `.h5ad` (local or remote)
 - `bkbit schema2model` - Convert spreadsheets to LinkML YAML models
 - `bkbit yaml2cvs` - Convert YAML to CSV
 - `bkbit linkml-trimmer` - Trim LinkML models
@@ -62,6 +63,7 @@ The package provides a CLI tool `bkbit` with multiple subcommands:
 - `library_generation_translator.py` - Specimen Portal to BICAN objects (specimen2jsonld)
 - `genome_annotation_translator.py` - GFF3 files to genome annotation objects (gff2jsonld)
 - `HMBA_annotation_translator.py` - HMBA taxonomy annotations (taxonomy2jsonld)
+- `ait_taxonomy_translator.py` - AIT `.h5ad` taxonomies to Cell Taxonomy JSON-LD (ait2jsonld)
 - `specimen_metadata_translator.py` - Specimen metadata handling
 
 **`bkbit/model_converters/`** - Tools for converting between formats:
@@ -105,6 +107,38 @@ To regenerate the bundled subset for a newer taxonomy dump:
 ```bash
 bkbit download-ncbi-taxonomy
 python -m bkbit.utils.ncbi_taxonomy_data.build_subset   # commit the resulting .json.gz
+```
+
+### AIT taxonomy translation (`ait2jsonld`)
+
+Reads an Allen Institute Taxonomy `.h5ad` and emits Cell Taxonomy JSON-LD.
+
+Rules to preserve when touching this code:
+
+- **Field locations are never hardcoded.** Every slot in
+  `bkbit/models/cell_taxonomy.yaml` carries an `ait_location` annotation saying
+  where its value lives in the file; the translator resolves those through
+  `SchemaView`. Changing the source spreadsheet changes behaviour with no code
+  edit. Where a declared location cannot be honoured the translator may fall
+  back, but the deviation is always written to the run report, never applied
+  silently.
+- **`bkbit/models/cell_taxonomy.yaml` is a merged schema, not a copy.** The
+  upstream source in brain-bican/models imports five sibling schemas that bkbit
+  does not ship. Refresh it with
+  `python scripts/refresh_cell_taxonomy_schema.py`, which merges the import
+  closure and verifies no `ait_location` annotation was lost. The `.py` and
+  `.context.jsonld` beside it come from the models repo's
+  `push_model_to_bkbit.yaml` workflow instead.
+- **ids come from `generate_object_id`,** like every other translator. The
+  class name is deliberately not hashed -- see
+  `bkbit/tests/test_ait_taxonomy_translator.py`.
+- **Remote files are read over HTTP range requests** (`fsspec` + `h5py`), never
+  downloaded; `X`, `raw` and `layers` are never materialised. A 332 GB file is
+  routine. `--cache DIR` keeps a local block cache across runs.
+
+```bash
+bkbit ait2jsonld https://.../Human_LGN_SMART_seq_04042025.h5ad \
+    --species Human --out Human_LGN.jsonld --report Human_LGN.report.json
 ```
 
 ### Environment Variables

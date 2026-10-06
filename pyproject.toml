@@ -25,6 +25,11 @@ dependencies = [
     "rdflib",
     "requests",
     "tqdm",
+    # ait2jsonld: reads .h5ad structure, remotely over range requests
+    "h5py",
+    "anndata",
+    "fsspec",
+    "aiohttp",
 ]
 dynamic = ["version"]
 
@@ -33,6 +38,9 @@ include = ["bkbit*"]
 
 [tool.setuptools.package-data]
 "bkbit.utils.ncbi_taxonomy_data" = ["*.json.gz"]
+# ait2jsonld resolves field locations from the LinkML source's ait_location
+# annotations, which the generated pydantic model does not carry.
+"bkbit.models" = ["*.yaml", "*.context.jsonld"]
 
 [project.scripts]
 bkbit = "bkbit.cli:cli"
@@ -65,5 +73,5 @@ write_to = "bkbit/_version.py"
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
 skip = '.git*'
 check-hidden = true
-ignore-regex = 'KEGG\.BRITE|https://bioregistry\.io/kegg\.brite' # codespell:ignore
+ignore-regex = 'KEGG\.BRITE|https://bioregistry\.io/kegg\.brite|https://mor\.nlm\.nih\.gov' # codespell:ignore
 ignore-words-list = 'ans'
