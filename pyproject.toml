@@ -38,9 +38,8 @@ include = ["bkbit*"]
 
 [tool.setuptools.package-data]
 "bkbit.utils.ncbi_taxonomy_data" = ["*.json.gz"]
-# ait2jsonld resolves field locations from the LinkML source's ait_location
-# annotations, which the generated pydantic model does not carry.
-"bkbit.models" = ["*.yaml", "*.context.jsonld"]
+# ait2jsonld emits JSON-LD against the generated context.
+"bkbit.models" = ["*.context.jsonld"]
 
 [project.scripts]
 bkbit = "bkbit.cli:cli"

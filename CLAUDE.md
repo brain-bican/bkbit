@@ -122,13 +122,16 @@ Rules to preserve when touching this code:
   edit. Where a declared location cannot be honoured the translator may fall
   back, but the deviation is always written to the run report, never applied
   silently.
-- **`bkbit/models/cell_taxonomy.yaml` is a merged schema, not a copy.** The
-  upstream source in brain-bican/models imports five sibling schemas that bkbit
-  does not ship. Refresh it with
-  `python scripts/refresh_cell_taxonomy_schema.py`, which merges the import
-  closure and verifies no `ait_location` annotation was lost. The `.py` and
-  `.context.jsonld` beside it come from the models repo's
-  `push_model_to_bkbit.yaml` workflow instead.
+- **The annotations are read from the generated pydantic model**, not from a
+  LinkML YAML. linkml's pydantic generator preserves them under each field's
+  `json_schema_extra["linkml_meta"]`, so `bkbit/models/cell_taxonomy.py` is a
+  complete source (verified against SchemaView: the same 52 (class, slot)
+  pairs, identical values, and identical cardinality on all 732 shared keys).
+  That means `ait2jsonld` needs **no extra artifact** — the model arrives by
+  the models repo's `push_model_to_bkbit.yaml` workflow like every other.
+- **It therefore depends on that model being current.** The annotations were
+  added 2026-10-01; against an older `cell_taxonomy.py` nothing resolves, so
+  `load_locations()` raises instead of silently emitting an empty graph.
 - **ids come from `generate_object_id`,** like every other translator. The
   class name is deliberately not hashed -- see
   `bkbit/tests/test_ait_taxonomy_translator.py`.

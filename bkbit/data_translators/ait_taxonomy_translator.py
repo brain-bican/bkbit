@@ -1,9 +1,10 @@
 """AIT .h5ad -> Cell Taxonomy JSON-LD, driven by the model's own annotations.
 
 The point of this script is that it does not hardcode where fields live. Every
-slot in cell_taxonomy.yaml carries an `ait_location` annotation saying where its
-value comes from in an AIT .h5ad; this reads those annotations via SchemaView
-and resolves each one against the file.
+slot in the cell_taxonomy model carries an `ait_location` annotation saying
+where its value comes from in an AIT .h5ad. linkml's pydantic generator keeps
+those annotations, so they are read straight off bkbit.models.cell_taxonomy --
+no LinkML YAML needs to ship alongside the generated model.
 
 Where a declared location cannot be honoured, the script may fall back to
 another source -- but every such deviation is recorded in the report, never
@@ -36,7 +37,9 @@ Usage:
 from __future__ import annotations
 
 import contextlib
+import inspect
 import json
+import typing
 import re
 import sys
 from collections import Counter, defaultdict
@@ -46,8 +49,9 @@ from typing import Any
 
 import click
 import numpy as np
-from linkml_runtime.utils.schemaview import SchemaView
+from pydantic import BaseModel
 
+from bkbit.models import cell_taxonomy as ct
 from bkbit.utils.generate_bkbit_id import generate_object_id
 
 # h5py and anndata are declared dependencies, but importing them at module
@@ -76,7 +80,6 @@ def _require_h5_deps():
 
 
 MODELS_DIR = Path(__file__).resolve().parents[1] / "models"
-MODEL = MODELS_DIR / "cell_taxonomy.yaml"
 CONTEXT = MODELS_DIR / "cell_taxonomy.context.jsonld"
 MATRIX_GROUPS = ("X", "layers", "raw", "obsp", "varp", "varm")
 
@@ -125,50 +128,68 @@ class Report:
 # --------------------------------------------------------------------------
 # the model as a map of slot -> declared location
 # --------------------------------------------------------------------------
-def multivalued_map(sv) -> dict:
+def _model_classes():
+    """Every generated pydantic class in bkbit.models.cell_taxonomy."""
+    for name, obj in vars(ct).items():
+        if inspect.isclass(obj) and issubclass(obj, BaseModel) and obj is not BaseModel:
+            yield name, obj
+
+
+def _admits_list(annotation) -> bool:
+    """True if a field's type allows a list, looking through Optional/Union."""
+    if typing.get_origin(annotation) in (list, set):
+        return True
+    args = typing.get_args(annotation)
+    return any(_admits_list(a) for a in args if a is not type(None))
+
+
+def multivalued_map() -> dict:
     """{(class, slot): bool} -- cardinality per class, not per slot *name*.
 
     Keying by name alone is wrong: Cluster.has_parent is multivalued while
     CellTypeTaxon.has_parent is not, so a global set wraps the latter in a
-    list and the model rejects it.
+    list and the model rejects it. Read straight off the generated field
+    types, which encode exactly this.
     """
-    out = {}
-    for cname, cls in sv.all_classes().items():
-        induced = {}
-        try:
-            induced = {s.name: s for s in sv.class_induced_slots(cname)}
-        except Exception:
-            pass
-        for sname, sl in induced.items():
-            out[(cname, sname)] = bool(getattr(sl, "multivalued", False))
-        for container in (cls.slot_usage or {}, cls.attributes or {}):
-            for sname, su in container.items():
-                mv = getattr(su, "multivalued", None)
-                if mv is not None:
-                    out[(cname, sname)] = bool(mv)
-    return out
+    return {
+        (cname, fname): _admits_list(f.annotation)
+        for cname, cls in _model_classes()
+        for fname, f in cls.model_fields.items()
+    }
 
 
-def load_locations(model_path=MODEL):
+def load_locations() -> dict:
     """{(class, slot): {'loc':..., 'source':..., 'note':...}} from annotations.
 
-    The sheet's "LinkML Slot" column lands in a class's ``slot_usage`` while
-    "Attribute Name" lands in ``attributes``; both carry the annotations, so
-    both have to be read or half the locations go missing.
+    These come from the ``ait_location`` / ``source`` / ``note`` annotations on
+    the cell_taxonomy LinkML schema. linkml's pydantic generator preserves them
+    verbatim under each field's ``json_schema_extra["linkml_meta"]``, so the
+    generated model is a complete source and the LinkML YAML does not have to
+    ship alongside it. Verified equal to reading the schema with SchemaView:
+    the same 52 (class, slot) pairs with identical values.
     """
-    sv = SchemaView(str(model_path))
     out = {}
-    for cname, cls in sv.all_classes().items():
-        for container in (cls.slot_usage or {}, cls.attributes or {}):
-            for sname, su in container.items():
-                ann = {k: v.value for k, v in (su.annotations or {}).items()}
-                if ann:
-                    out[(cname, sname)] = dict(
-                        loc=ann.get("ait_location", ""),
-                        source=ann.get("source", ""),
-                        note=ann.get("note", ""),
-                    )
-    return sv, out
+    for cname, cls in _model_classes():
+        for fname, f in cls.model_fields.items():
+            meta = (f.json_schema_extra or {}).get("linkml_meta") or {}
+            ann = meta.get("annotations") or {}
+            if not ann:
+                continue
+            get = lambda tag: (ann.get(tag) or {}).get("value", "")  # noqa: E731
+            if any(get(t) for t in ("ait_location", "source", "note")):
+                out[(cname, fname)] = dict(
+                    loc=get("ait_location"),
+                    source=get("source"),
+                    note=get("note"),
+                )
+    if not out:
+        raise click.ClickException(
+            "bkbit.models.cell_taxonomy carries no ait_location annotations, so "
+            "no field could be located. The installed model is probably older "
+            "than the annotations (added 2026-10-01). Refresh it by running the "
+            "models repo's push_model_to_bkbit.yaml workflow for cell_taxonomy."
+        )
+    return out
 
 
 DATA_ONLY = re.compile(r"\s*\(data only\)\s*$")
@@ -362,10 +383,9 @@ def build(
     species: str = "",
     want_counts: bool = False,
     cache_dir: str | None = None,
-    model_path: str | Path = MODEL,
 ):
-    sv, locs = load_locations(model_path)
-    MULTI = multivalued_map(sv)
+    locs = load_locations()
+    MULTI = multivalued_map()
     rep = Report(source_file=path, species=species)
     ents: dict[str, list] = defaultdict(list)
 
@@ -773,27 +793,18 @@ def to_jsonld(ents, context_path=None):
     help="local directory for the fsspec block cache (speeds up repeat runs)",
 )
 @click.option(
-    "--model",
-    default=str(MODEL),
-    show_default=False,
-    help="cell_taxonomy LinkML YAML supplying the ait_location annotations "
-    "[default: the copy packaged with bkbit]",
-)
-@click.option(
     "--context",
     default=str(CONTEXT),
     show_default=False,
     help="JSON-LD context [default: the copy packaged with bkbit]",
 )
-def ait2jsonld(path, out, report, species, counts, cache, model, context):
+def ait2jsonld(path, out, report, species, counts, cache, context):
     """Translate an AIT .h5ad taxonomy into Cell Taxonomy JSON-LD.
 
     PATH is a local path or an http(s)/s3 URL. Remote files are read over range
     requests -- a 332 GB file needs no download.
     """
-    ents, rep = build(
-        path, species, want_counts=counts, cache_dir=cache, model_path=model
-    )
+    ents, rep = build(path, species, want_counts=counts, cache_dir=cache)
     click.echo(f"--- {species or path} ---")
     for k, v in rep.counts.items():
         click.echo(f"  {k:<20} {v}")

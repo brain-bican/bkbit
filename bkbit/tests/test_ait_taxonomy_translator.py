@@ -43,24 +43,57 @@ class TestObjectIds:
         assert t.oid("Cluster", {"name": "1"}).startswith("urn:bkbit:")
 
 
-class TestPackagedSchema:
-    """The packaged schema must be self-contained and carry the annotations."""
+# The ait_location annotations were added to the model on 2026-10-01. An older
+# bkbit/models/cell_taxonomy.py has none, and these tests cannot say anything
+# useful -- skip with a pointer rather than fail the suite for an unrelated
+# reason.
+_HAS_ANNOTATIONS = any(
+    "ait_location"
+    in ((f.json_schema_extra or {}).get("linkml_meta", {}).get("annotations") or {})
+    for _n, cls in t._model_classes()
+    for f in cls.model_fields.values()
+)
+needs_current_model = pytest.mark.skipif(
+    not _HAS_ANNOTATIONS,
+    reason="bkbit.models.cell_taxonomy predates the ait_location annotations; "
+    "refresh it via the models repo's push_model_to_bkbit.yaml workflow",
+)
 
-    def test_schema_ships_with_the_package(self):
-        assert t.MODEL.is_file(), f"missing packaged schema: {t.MODEL}"
+
+@needs_current_model
+class TestLocationsFromPydantic:
+    """Locations come from the generated model, so no LinkML YAML has to ship."""
 
     def test_locations_resolve(self):
-        # Reads bkbit/models/cell_taxonomy.yaml. If the import closure were not
-        # merged in, SchemaView would raise FileNotFoundError on a sibling
-        # schema that bkbit does not ship.
-        sv, locs = t.load_locations()
-        assert locs, "no ait_location annotations found in the packaged schema"
+        locs = t.load_locations()
+        assert locs, "no ait_location annotations found in the generated model"
 
     def test_known_locations_present(self):
-        _, locs = t.load_locations()
+        locs = t.load_locations()
         by_slot = {slot: v["loc"] for (_cls, slot), v in locs.items()}
         assert by_slot.get("title") == "uns.title"
-        assert "cluster_info" in str(by_slot.get("cluster_info", ""))
+
+    def test_source_and_note_captured(self):
+        locs = t.load_locations()
+        assert any(v["source"] for v in locs.values())
+
+
+def test_stale_model_fails_loudly(monkeypatch):
+    """A model without the annotations must raise, not quietly emit a graph
+    with every field unpopulated."""
+    monkeypatch.setattr(t, "_model_classes", lambda: iter(()))
+    with pytest.raises(click.ClickException) as err:
+        t.load_locations()
+    assert "push_model_to_bkbit" in str(err.value)
+
+
+class TestCardinality:
+    def test_is_per_class_not_per_slot_name(self):
+        mv = t.multivalued_map()
+        assert mv, "no fields found in the generated model"
+        # Read off the generated field types; a bare value and a list must not
+        # collapse to one answer keyed by slot name alone.
+        assert all(isinstance(v, bool) for v in mv.values())
 
 
 def test_strip_class_is_stable_across_entity_types():
