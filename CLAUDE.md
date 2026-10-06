@@ -154,6 +154,20 @@ Rules to preserve when touching this code:
   break every subcommand including `--help` -- the same failure mode recorded
   for the NCBI taxonomy cache above. They are declared dependencies; the guard
   exists so a partial install degrades to one failing command.
+- **A plain `cluster_info` column attaches at the level it is constant
+  within.** Slots like `curated_markers` and `literature_support` point at a
+  column stored on every cluster row but describing a coarser level. The
+  translator finds the coarsest annotation level the column does not vary
+  within and attaches it there, reporting the level, the alternatives, and the
+  row coverage. A column populated in under half the rows is flagged SPARSE,
+  because absent values constrain nothing and a coarse level may be an
+  artifact of them.
+- **Model constraints are enforced by the model's own validators.** linkml
+  compiles a `pattern` into a @field_validator, so the regex cannot be read off
+  FieldInfo; `value_validators()` pulls the validators out of
+  `__pydantic_decorators__` and `accepts()` runs them. A rejected value is
+  dropped and reported once per distinct value, never raised -- a tracking
+  placeholder in one column must not fail a whole taxonomy.
 - **Remote files are read over HTTP range requests** (`fsspec` + `h5py`), never
   downloaded; `X`, `raw` and `layers` are never materialised. A 332 GB file is
   routine. `--cache DIR` keeps a local block cache across runs.

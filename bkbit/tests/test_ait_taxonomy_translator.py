@@ -209,3 +209,62 @@ class TestSourceAsUri:
         assert t.source_as_uri("/data/x.h5ad") is None
         assert t.source_as_uri("file:///data/x.h5ad") is None
         assert t.source_as_uri("") is None
+
+
+class TestValueValidators:
+    """Constraints come from the model's own validators, not restated regexes."""
+
+    @needs_current_model
+    def test_pattern_validator_is_discovered(self):
+        v = t.value_validators("CellTypeTaxon")
+        assert "cell_type_ontology_term" in v
+
+    @needs_current_model
+    def test_bad_value_is_dropped_not_raised(self):
+        rep, seen = t.Report(), set()
+        assert (
+            t.accepts(
+                "CellTypeTaxon", "cell_type_ontology_term", "PR 2579", rep, "loc", seen
+            )
+            is False
+        )
+        assert len(rep.deviations) == 1
+        assert "dropped rather than raised" in rep.deviations[0]["reason"]
+
+    @needs_current_model
+    def test_good_value_passes_silently(self):
+        rep, seen = t.Report(), set()
+        assert (
+            t.accepts(
+                "CellTypeTaxon",
+                "cell_type_ontology_term",
+                "CL:0000003",
+                rep,
+                "loc",
+                seen,
+            )
+            is True
+        )
+        assert rep.deviations == []
+
+    @needs_current_model
+    def test_repeated_rejection_reported_once(self):
+        # 216 placeholder values in one file must not mean 216 report entries.
+        rep, seen = t.Report(), set()
+        for _ in range(5):
+            t.accepts(
+                "CellTypeTaxon", "cell_type_ontology_term", "PR 2579", rep, "loc", seen
+            )
+        assert len(rep.deviations) == 1
+
+    def test_unconstrained_slot_accepts_anything(self):
+        rep, seen = t.Report(), set()
+        assert t.accepts("CellTypeTaxon", "name", "anything", rep, "loc", seen) is True
+
+
+def test_blankish_normalises_null_sentinels():
+    assert t.blankish(None) is None
+    assert t.blankish("nan") is None
+    assert t.blankish("None") is None
+    assert t.blankish("") is None
+    assert t.blankish("  x  ") == "x"

@@ -403,6 +403,61 @@ def source_as_uri(path: str) -> str | None:
     return path
 
 
+def blankish(v):
+    """None for a cell that is empty or a stringified null, else its text."""
+    if v is None:
+        return None
+    t = str(v).strip()
+    return None if t in DROP_VALUES else t
+
+
+def value_validators(cls_name: str) -> dict:
+    """{slot: callable} for slots the model constrains, e.g. with a `pattern`.
+
+    linkml's pydantic generator compiles a `pattern` into a @field_validator
+    rather than leaving it on the field, so it cannot be read off FieldInfo or
+    the JSON schema. Pulling the validators out of __pydantic_decorators__ and
+    calling them keeps the model the single authority -- no regex is restated
+    here.
+    """
+    cls = getattr(ct, cls_name, None)
+    decs = getattr(cls, "__pydantic_decorators__", None)
+    if decs is None:
+        return {}
+    return {
+        field: dec.func
+        for dec in decs.field_validators.values()
+        for field in dec.info.fields
+    }
+
+
+def accepts(cls_name, slot, value, rep, loc, seen) -> bool:
+    """True if the model accepts this value for this slot.
+
+    A rejected value is dropped and reported once per distinct value, never
+    raised: a tracking placeholder in one column should not fail a whole
+    taxonomy. Deliberate -- see the ASK NELSON note on CL:ID_<level>.
+    """
+    fn = value_validators(cls_name).get(slot)
+    if fn is None:
+        return True
+    try:
+        fn(value)
+        return True
+    except Exception as exc:
+        key = (cls_name, slot, str(value))
+        if key not in seen:
+            seen.add(key)
+            rep.deviate(
+                f"{cls_name}.{slot}",
+                loc or "(blank)",
+                f"value {value!r} skipped",
+                f"rejected by the model's own validator ({exc}); "
+                "dropped rather than raised",
+            )
+        return False
+
+
 def oid(cls_name: str, attrs: dict) -> str:
     """Deterministic id, identical to every other bkbit translator.
 
@@ -598,15 +653,85 @@ def build(
         # ---- CellTypeTaxon: un-pivot the per-level wide block ------------
         # declared locations use a <level> placeholder; resolve per level.
         taxon_slots = {s: m for (c, s), m in locs.items() if c == "CellTypeTaxon"}
+        rejected: set = set()
         per_level_tpl = {}
+        plain_cols = {}
         for s, m in taxon_slots.items():
             p = parse_loc(m["loc"])
-            if (
-                p["kind"] == "path"
-                and p.get("field", "")
-                and "<level>" in (p["field"] or "")
-            ):
+            if p["kind"] != "path" or not p.get("field", ""):
+                continue
+            field = p["field"] or ""
+            if "<level>" in field:
                 per_level_tpl[s] = p
+            elif field.startswith(("uns.cluster_info.", "cluster_info.")):
+                # A plain cluster_info column, not a per-level template:
+                # curated_markers, literature_support, ... These are stored on
+                # every cluster row but describe a coarser level, so they may
+                # only be attached where the column is constant within the
+                # level -- otherwise one of several values would be picked
+                # arbitrarily.
+                plain_cols[s] = field.split("cluster_info.", 1)[1]
+
+        plain_levels = {}
+        plain_values: dict = {}
+        if ci is not None:
+            for s_, colname in plain_cols.items():
+                if colname not in ci.columns:
+                    rep.empty(
+                        f"CellTypeTaxon.{s_}",
+                        taxon_slots[s_]["loc"],
+                        f"no column '{colname}' in cluster_info",
+                    )
+                    continue
+                vals = [blankish(v) for v in ci[colname]]
+                filled = sum(v is not None for v in vals)
+                constant_at = []
+                by_level: dict = {}
+                for lvl in levels:  # hierarchy order: coarsest first
+                    namecol = LEVEL_COL.get(lvl, lvl)
+                    if namecol not in ci.columns:
+                        continue
+                    byname: dict = {}
+                    constant = True
+                    for nm, v in zip(ci[namecol], vals):
+                        if v is None:
+                            continue
+                        key = str(nm)
+                        if byname.setdefault(key, v) != v:
+                            constant = False
+                            break
+                    if constant and len(set(byname.values())) > 1:
+                        constant_at.append(lvl)
+                        by_level[lvl] = byname
+                chosen = constant_at[0] if constant_at else None
+                plain_levels[s_] = {chosen} if chosen else set()
+                # name -> first non-empty value, verified constant within the
+                # level. Reading the current row instead would lose a taxon
+                # whose first cluster row happens to be blank.
+                plain_values[s_] = by_level.get(chosen, {})
+                if chosen:
+                    note = (
+                        f"constant within '{chosen}'; attached there "
+                        f"(coarsest of {constant_at}). "
+                        f"{filled}/{len(vals)} cluster rows populated"
+                    )
+                    # A sparse column is constant at coarse levels by accident:
+                    # absent values constrain nothing. Say so rather than let
+                    # the choice look better evidenced than it is.
+                    if filled * 2 < len(vals):
+                        note += (
+                            " -- SPARSE (<50%), so the level may be an artifact "
+                            "of missing values rather than real scope; review"
+                        )
+                    rep.ok(f"CellTypeTaxon.{s_}", taxon_slots[s_]["loc"], note)
+                else:
+                    rep.deviate(
+                        f"CellTypeTaxon.{s_}",
+                        taxon_slots[s_]["loc"],
+                        "not attached",
+                        "varies within every annotation level, or has a single "
+                        "value throughout, so it describes no one taxon; skipped",
+                    )
         counts_by_level = {}
         if want_counts:
             for lvl in levels:
@@ -652,9 +777,43 @@ def build(
                                         a[s] = int(val)
                                     except (TypeError, ValueError):
                                         pass
-                                else:
+                                elif accepts(
+                                    "CellTypeTaxon",
+                                    s,
+                                    str(val),
+                                    rep,
+                                    taxon_slots[s]["loc"],
+                                    rejected,
+                                ):
                                     a[s] = str(val)
                         # recorded once per slot, below
+                    for s, colname in plain_cols.items():
+                        if (
+                            lvl not in plain_levels.get(s, ())
+                            or colname not in ci.columns
+                        ):
+                            continue
+                        val = plain_values.get(s, {}).get(nm)
+                        if val is None:
+                            continue
+                        sep = taxon_slots[s].get("sep", "")
+                        parts = split_values(val, sep)
+                        parts = [
+                            x
+                            for x in parts
+                            if accepts(
+                                "CellTypeTaxon",
+                                s,
+                                x,
+                                rep,
+                                taxon_slots[s]["loc"],
+                                rejected,
+                            )
+                        ]
+                        if not parts:
+                            continue
+                        a[s] = parts if MULTI.get(("CellTypeTaxon", s)) else parts[0]
+
                     if li > 0:
                         pn = str(row[LEVEL_COL.get(levels[li - 1], levels[li - 1])])
                         if (levels[li - 1], pn) in taxon_ids:
