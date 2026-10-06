@@ -37,6 +37,7 @@ Usage:
 from __future__ import annotations
 
 import contextlib
+import csv
 import inspect
 import json
 import typing
@@ -458,6 +459,65 @@ def accepts(cls_name, slot, value, rep, loc, seen) -> bool:
         return False
 
 
+DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+BUNDLED_ABBREVIATIONS = {
+    "hmba-basalganglia": DATA_DIR / "hmba_basalganglia_abbreviations.csv",
+}
+ABBREV_COLUMNS = {
+    "abbreviation_term": "term",
+    "abbreviation_meaning": "meaning",
+    "abbreviation_type": "entity_type",
+}
+
+
+def load_abbreviations(spec: str) -> dict:
+    """{term: {meaning, entity_type, xref}} from an abbreviation table.
+
+    `spec` is a path, or the name of a table bundled with bkbit (see
+    BUNDLED_ABBREVIATIONS). The table is taxonomy-specific -- the HMBA
+    basal-ganglia one does not describe the tokens in other taxonomies -- so
+    there is no default: nothing is enriched unless a table is named.
+    """
+    path = BUNDLED_ABBREVIATIONS.get(spec, Path(spec))
+    if not path.is_file():
+        known = ", ".join(sorted(BUNDLED_ABBREVIATIONS))
+        raise click.ClickException(
+            f"abbreviation table not found: {spec}. Give a path, or one of: {known}"
+        )
+    out = {}
+    with path.open(newline="", encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+        missing = [c for c in ABBREV_COLUMNS if c not in (reader.fieldnames or [])]
+        if missing:
+            raise click.ClickException(
+                f"{path}: missing column(s) {', '.join(missing)}. "
+                f"Expected: {', '.join(ABBREV_COLUMNS)}"
+            )
+        for row in reader:
+            term = (row.get("abbreviation_term") or "").strip()
+            if not term:
+                continue
+            xref = [
+                v
+                for v in (
+                    (row.get("primary_identifier") or "").strip(),
+                    (row.get("secondary_identifier") or "").strip(),
+                )
+                if v
+            ]
+            rec = {}
+            for src, slot in ABBREV_COLUMNS.items():
+                if slot == "term":
+                    continue
+                val = (row.get(src) or "").strip()
+                if val:
+                    rec[slot] = val
+            if xref:
+                rec["xref"] = xref
+            out[term] = rec
+    return out
+
+
 def oid(cls_name: str, attrs: dict) -> str:
     """Deterministic id, identical to every other bkbit translator.
 
@@ -482,9 +542,13 @@ def build(
     species: str = "",
     want_counts: bool = False,
     cache_dir: str | None = None,
+    abbreviations: str | None = None,
 ):
     locs = load_locations()
     MULTI = multivalued_map()
+    # Validate the abbreviation table before opening the .h5ad: a typo in the
+    # table name should not cost a remote read of a 300 GB file first.
+    abbrev_table = load_abbreviations(abbreviations) if abbreviations else {}
     rep = Report(source_file=path, species=species)
     ents: dict[str, list] = defaultdict(list)
 
@@ -629,6 +693,7 @@ def build(
                     for t in split_values(v, ab_sep):
                         if t not in abbrev_id:
                             a = {"term": t}
+                            a.update(abbrev_table.get(t, {}))
                             a["id"] = oid("Abbreviation", a)
                             abbrev_id[t] = a["id"]
                             ents["Abbreviation"].append(a)
@@ -641,6 +706,30 @@ def build(
                 )
             else:
                 rep.empty("Abbreviation.term", ab_loc, "no tokens_* columns")
+
+            if abbreviations:
+                matched = sorted(t for t in abbrev_id if t in abbrev_table)
+                unmatched = sorted(t for t in abbrev_id if t not in abbrev_table)
+                unused = sorted(set(abbrev_table) - set(abbrev_id))
+                rep.ok(
+                    "Abbreviation.meaning/entity_type/xref",
+                    f"(external: {abbreviations})",
+                    f"{len(matched)}/{len(abbrev_id)} terms enriched from the "
+                    f"table; {len(unmatched)} token(s) absent from it; "
+                    f"{len(unused)} table row(s) unused by this file",
+                )
+                # Unmatched tokens are the interesting direction: the table is
+                # taxonomy-specific, so a long list means it does not describe
+                # this taxonomy and should probably not have been passed.
+                if unmatched:
+                    rep.deviate(
+                        "Abbreviation.meaning/entity_type/xref",
+                        f"(external: {abbreviations})",
+                        f"{len(unmatched)} token(s) left bare",
+                        "not in the abbreviation table: "
+                        + ", ".join(unmatched[:12])
+                        + (" ..." if len(unmatched) > 12 else ""),
+                    )
         for s_ in ("meaning", "entity_type"):
             mm = locs.get(("Abbreviation", s_))
             if mm:
@@ -1032,18 +1121,31 @@ def to_jsonld(ents, context_path=None):
     help="local directory for the fsspec block cache (speeds up repeat runs)",
 )
 @click.option(
+    "--abbreviations",
+    default=None,
+    help="abbreviation table (CSV) supplying Abbreviation meaning/entity_type/"
+    "xref: a path, or a bundled name such as 'hmba-basalganglia'. Tables are "
+    "taxonomy-specific, so none is used unless named.",
+)
+@click.option(
     "--context",
     default=str(CONTEXT),
     show_default=False,
     help="JSON-LD context [default: the copy packaged with bkbit]",
 )
-def ait2jsonld(path, out, report, species, counts, cache, context):
+def ait2jsonld(path, out, report, species, counts, cache, abbreviations, context):
     """Translate an AIT .h5ad taxonomy into Cell Taxonomy JSON-LD.
 
     PATH is a local path or an http(s)/s3 URL. Remote files are read over range
     requests -- a 332 GB file needs no download.
     """
-    ents, rep = build(path, species, want_counts=counts, cache_dir=cache)
+    ents, rep = build(
+        path,
+        species,
+        want_counts=counts,
+        cache_dir=cache,
+        abbreviations=abbreviations,
+    )
     click.echo(f"--- {species or path} ---")
     for k, v in rep.counts.items():
         click.echo(f"  {k:<20} {v}")

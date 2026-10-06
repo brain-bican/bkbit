@@ -168,6 +168,13 @@ Rules to preserve when touching this code:
   `__pydantic_decorators__` and `accepts()` runs them. A rejected value is
   dropped and reported once per distinct value, never raised -- a tracking
   placeholder in one column must not fail a whole taxonomy.
+- **Abbreviation meaning/type/xref come from an opt-in table.** The AIT files
+  carry only the bare token in `tokens_<level>`; the rest lives outside them.
+  `--abbreviations` takes a CSV path or a bundled name (`hmba-basalganglia`,
+  in `bkbit/data/`). **There is no default**: a table describes one taxonomy,
+  and the basal-ganglia terms say nothing about the tokens in another. The run
+  report gives the match counts both ways, and a long "not in the table" list
+  means the wrong table was passed.
 - **Remote files are read over HTTP range requests** (`fsspec` + `h5py`), never
   downloaded; `X`, `raw` and `layers` are never materialised. A 332 GB file is
   routine. `--cache DIR` keeps a local block cache across runs.

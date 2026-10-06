@@ -268,3 +268,53 @@ def test_blankish_normalises_null_sentinels():
     assert t.blankish("None") is None
     assert t.blankish("") is None
     assert t.blankish("  x  ") == "x"
+
+
+class TestAbbreviationTable:
+    """Abbreviation meaning/type/xref come from an opt-in, taxonomy-specific
+    table -- the AIT files carry only the bare token."""
+
+    def test_bundled_table_loads(self):
+        tbl = t.load_abbreviations("hmba-basalganglia")
+        assert len(tbl) == 105
+        assert tbl["Glut"] == {
+            "meaning": "glutamatergic neuron",
+            "entity_type": "cell_type",
+            "xref": ["CL:0000679"],
+        }
+
+    def test_both_identifiers_become_xrefs(self):
+        tbl = t.load_abbreviations("hmba-basalganglia")
+        assert tbl["F"]["xref"] == ["DHBA:10156", "UBERON:0004024"]
+
+    @needs_current_model
+    def test_entity_type_values_match_the_model_enum(self):
+        import bkbit.models.cell_taxonomy as ct
+
+        allowed = {e.value for e in ct.AbbreviationEntityType}
+        used = {
+            v["entity_type"] for v in t.load_abbreviations("hmba-basalganglia").values()
+        }
+        assert used <= allowed, f"table has types the model rejects: {used - allowed}"
+
+    def test_unknown_name_is_rejected_with_the_known_ones(self):
+        with pytest.raises(click.ClickException) as err:
+            t.load_abbreviations("no-such-table")
+        assert "hmba-basalganglia" in str(err.value)
+
+    def test_missing_columns_are_rejected(self, tmp_path):
+        bad = tmp_path / "bad.csv"
+        bad.write_text("a,b\n1,2\n")
+        with pytest.raises(click.ClickException) as err:
+            t.load_abbreviations(str(bad))
+        assert "abbreviation_term" in str(err.value)
+
+    def test_blank_terms_are_skipped(self, tmp_path):
+        f = tmp_path / "t.csv"
+        f.write_text(
+            "abbreviation_term,abbreviation_meaning,abbreviation_type,"
+            "primary_identifier,secondary_identifier\n"
+            ",nothing,gene,,\n"
+            "X,something,gene,ENSEMBL:1,\n"
+        )
+        assert list(t.load_abbreviations(str(f))) == ["X"]

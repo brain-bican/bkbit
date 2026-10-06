@@ -40,6 +40,8 @@ include = ["bkbit*"]
 "bkbit.utils.ncbi_taxonomy_data" = ["*.json.gz"]
 # ait2jsonld emits JSON-LD against the generated context.
 "bkbit.models" = ["*.context.jsonld"]
+# Optional abbreviation tables for ait2jsonld --abbreviations.
+"bkbit.data" = ["*.csv"]
 
 [project.scripts]
 bkbit = "bkbit.cli:cli"
@@ -70,7 +72,9 @@ write_to = "bkbit/_version.py"
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
-skip = '.git*'
+# bkbit/data holds curated abbreviation tables; two-letter anatomical
+# abbreviations in them are read as typos.
+skip = '.git*,bkbit/data/*.csv'
 check-hidden = true
 ignore-regex = 'KEGG\.BRITE|https://bioregistry\.io/kegg\.brite|https://mor\.nlm\.nih\.gov' # codespell:ignore
 ignore-words-list = 'ans'
