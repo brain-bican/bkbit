@@ -132,6 +132,11 @@ Rules to preserve when touching this code:
 - **ids come from `generate_object_id`,** like every other translator. The
   class name is deliberately not hashed -- see
   `bkbit/tests/test_ait_taxonomy_translator.py`.
+- **`h5py` and `anndata` are imported lazily.** `cli.py` imports this module to
+  register the command, so a module-scope import would make a stale environment
+  break every subcommand including `--help` -- the same failure mode recorded
+  for the NCBI taxonomy cache above. They are declared dependencies; the guard
+  exists so a partial install degrades to one failing command.
 - **Remote files are read over HTTP range requests** (`fsspec` + `h5py`), never
   downloaded; `X`, `raw` and `layers` are never materialised. A 332 GB file is
   routine. `--cache DIR` keeps a local block cache across runs.

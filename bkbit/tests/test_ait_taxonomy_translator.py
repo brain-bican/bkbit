@@ -6,6 +6,7 @@ is worth pinning down in CI is the part that silently produces a wrong-but-valid
 graph if it regresses -- the id scheme and the annotation lookup.
 """
 
+import click
 import pytest
 
 from bkbit.data_translators import ait_taxonomy_translator as t
@@ -69,3 +70,34 @@ def test_strip_class_is_stable_across_entity_types():
     a = t.oid("CellTypeTaxon", {"name": "Glut", "part_of_set": "s1"})
     b = t.oid("CellTypeTaxon", {"name": "GABA", "part_of_set": "s1"})
     assert a != b
+
+
+def test_module_imports_without_h5py(monkeypatch):
+    """cli.py imports this module to register the command, so a missing h5py
+    must not take down `bkbit --help` along with it -- the same failure mode
+    CLAUDE.md records for the NCBI taxonomy cache."""
+    import importlib
+
+    import bkbit.data_translators.ait_taxonomy_translator as mod
+
+    real_import = (
+        __builtins__["__import__"]
+        if isinstance(__builtins__, dict)
+        else __builtins__.__import__
+    )
+
+    def fake_import(name, *args, **kwargs):
+        if name in ("h5py", "anndata", "anndata.io"):
+            raise ImportError(f"No module named '{name}'")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr("builtins.__import__", fake_import)
+    reloaded = importlib.reload(mod)
+    try:
+        assert reloaded.h5py is None
+        with pytest.raises(click.ClickException) as err:
+            reloaded._require_h5_deps()
+        assert "h5py" in str(err.value)
+    finally:
+        monkeypatch.undo()
+        importlib.reload(mod)

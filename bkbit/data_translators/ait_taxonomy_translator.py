@@ -45,12 +45,35 @@ from pathlib import Path
 from typing import Any
 
 import click
-import h5py
 import numpy as np
-from anndata.io import read_elem
 from linkml_runtime.utils.schemaview import SchemaView
 
 from bkbit.utils.generate_bkbit_id import generate_object_id
+
+# h5py and anndata are declared dependencies, but importing them at module
+# scope would make a stale or partial environment break EVERY bkbit
+# subcommand -- `bkbit --help` included -- because cli.py imports this module
+# to register the command. Degrade to one failing command instead.
+try:
+    import h5py
+    from anndata.io import read_elem
+except ImportError as exc:  # pragma: no cover - environment-dependent
+    h5py = None
+    read_elem = None
+    _MISSING_DEP = exc
+else:
+    _MISSING_DEP = None
+
+
+def _require_h5_deps():
+    """Fail with something actionable rather than a bare ImportError."""
+    if _MISSING_DEP is not None:
+        raise click.ClickException(
+            "ait2jsonld needs h5py and anndata, which are not importable in "
+            f"this environment ({_MISSING_DEP}). Reinstall bkbit, or: "
+            "pip install h5py anndata fsspec aiohttp"
+        )
+
 
 MODELS_DIR = Path(__file__).resolve().parents[1] / "models"
 MODEL = MODELS_DIR / "cell_taxonomy.yaml"
@@ -197,6 +220,7 @@ def open_h5(path: str, cache_dir: str | None = None):
     """Open local or remote. Remote uses a local block cache so that repeat runs
     do not re-fetch the same HDF5 metadata blocks (the dominant cost: listing
     uns alone is ~26s cold)."""
+    _require_h5_deps()
     stack = contextlib.ExitStack()
     if "://" in path and not path.startswith("file://"):
         import fsspec
