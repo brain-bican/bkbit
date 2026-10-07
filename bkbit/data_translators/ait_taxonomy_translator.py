@@ -1156,12 +1156,22 @@ def ait2jsonld(path, out, report, species, counts, cache, abbreviations, context
     )
 
     if out:
+        # ensure_ascii=False keeps non-ASCII readable in the output -- a
+        # citation like "Munoz-Manchado" should render as written rather than
+        # as \u00f1 escapes. Both are valid JSON; this one is legible.
+        # The encoding is pinned rather than left to the locale.
         Path(out).write_text(
-            json.dumps(to_jsonld(ents, context), indent=2, default=str)
+            json.dumps(
+                to_jsonld(ents, context), indent=2, default=str, ensure_ascii=False
+            ),
+            encoding="utf-8",
         )
         click.echo(f"  wrote {out}")
     if report:
-        Path(report).write_text(json.dumps(rep.to_dict(), indent=2, default=str))
+        Path(report).write_text(
+            json.dumps(rep.to_dict(), indent=2, default=str, ensure_ascii=False),
+            encoding="utf-8",
+        )
         click.echo(f"  wrote {report}")
 
 
