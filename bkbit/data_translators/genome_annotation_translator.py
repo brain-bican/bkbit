@@ -59,6 +59,18 @@ PREFIX_MAP = {
     "ENSEMBL:": "http://identifiers.org/ensembl/",
     "NCBIAssembly:": "https://www.ncbi.nlm.nih.gov/assembly/",
 }
+# The JSON-LD context is pinned to a specific brain-bican/models commit rather
+# than to main. Files written by this translator carry the context by URL, not
+# by value, so with "main" the meaning of an already-published file changes
+# whenever the model changes. Bump this whenever push_model_to_bkbit.yaml
+# brings in a new genome_annotation model; the pinned commit should be the one
+# that produced bkbit/models/genome_annotation.py sitting next to it.
+MODELS_COMMIT = "3fc7b7befa370af805d7f2e7e8ecd1756cfd1012"
+CONTEXT_URL = (
+    "https://raw.githubusercontent.com/brain-bican/models/"
+    f"{MODELS_COMMIT}/jsonld-context-autogen/genome_annotation.context.jsonld"
+)
+
 NCBI_GENE_ID_PREFIX = "NCBIGene:"
 ENSEMBL_GENE_ID_PREFIX = "ENSEMBL:"
 TAXON_PREFIX = "NCBITaxon:"
@@ -397,7 +409,13 @@ class Gff3:
             "xref": [TAXON_PREFIX + taxon_id],
         }
         attributes["id"] = generate_object_id(attributes)
-        return ga.OrganismTaxon(**attributes)
+        # exact_match is set after the id is generated, on purpose. The id is a
+        # hash of the attributes and it cascades into every other object in the
+        # file (genome assembly, genome annotation, and each gene all carry
+        # in_taxon), so folding a new key into the hash would renumber all of
+        # them. Nothing is lost by leaving it out: taxon_id is already covered
+        # by iri and xref, so the hash is just as specific either way.
+        return ga.OrganismTaxon(**attributes, exact_match=[TAXON_PREFIX + taxon_id])
 
     def generate_genome_assembly(
         self,
@@ -891,7 +909,7 @@ class Gff3:
             data.append(json.loads(json_dumper.dumps(gene_annotation)))
 
         output_data = {
-            "@context": "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/genome_annotation.context.jsonld",
+            "@context": CONTEXT_URL,
             "@graph": data,
         }
         return json.dumps(output_data, indent=2)
