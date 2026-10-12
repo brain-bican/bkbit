@@ -471,8 +471,43 @@ ABBREV_COLUMNS = {
     "abbreviation_type": "entity_type",
 }
 
+#: Prefixes whose terms are concepts in a published ontology, as opposed to
+#: records in a database.
+#:
+#: The distinction decides which slot a value lands in. Biolink defines
+#: ``xref`` as a cross reference to a database identifier, and it serialises
+#: as a literal, so a CL or UBERON term sitting there joins with nothing. The
+#: SKOS mapping slots have a class range, so the generated context gives them
+#: ``"@type": "@id"`` and the CURIE becomes a real node that resolves against
+#: the published ontology. Database identifiers stay in ``xref``, which is
+#: what it is for.
+#:
+#: Keyed on the prefix rather than the table's ``abbreviation_type`` column,
+#: because the two can disagree -- the prefix is what decides whether a value
+#: is resolvable, and a row typed ``gene`` could still carry an ontology term.
+#: An unrecognised prefix is left in ``xref`` and reported, so a new ontology
+#: shows up as a deviation rather than silently becoming an unjoinable
+#: literal.
+ONTOLOGY_PREFIXES = frozenset({"CL", "UBERON", "DHBA"})
 
-def load_abbreviations(spec: str) -> dict:
+#: Which SKOS predicate the ontology terms are asserted with.
+#:
+#: ``broad_match``, not ``exact_match``: the mapping is many-to-one. Measured
+#: across the HMBA files, up to three distinct CellTypeTaxon entries share one
+#: CL term (CL:0000128, CL:4042025, CL:0000192), and abbreviations reuse terms
+#: too. ``skos:exactMatch`` is symmetric *and* transitive, so asserting it
+#: three times against one term would entail that those three taxa are
+#: equivalent to each other, which is false -- they are distinct taxa sharing
+#: a coarser class. ``skos:broadMatch`` says the true thing: the external
+#: concept is broader than ours.
+ONTOLOGY_PREDICATE = "broad_match"
+
+#: Prefixes known to be database identifiers, so correctly left in ``xref``.
+#: Anything in neither set is reported rather than silently assumed to be one.
+KNOWN_DATABASE_PREFIXES = frozenset({"ENSEMBL", "NCBIGene"})
+
+
+def load_abbreviations(spec: str) -> tuple[dict, list]:
     """{term: {meaning, entity_type, xref}} from an abbreviation table.
 
     `spec` is a path, or the name of a table bundled with bkbit (see
@@ -487,6 +522,7 @@ def load_abbreviations(spec: str) -> dict:
             f"abbreviation table not found: {spec}. Give a path, or one of: {known}"
         )
     out = {}
+    unknown: set = set()
     with path.open(newline="", encoding="utf-8") as fh:
         reader = csv.DictReader(fh)
         missing = [c for c in ABBREV_COLUMNS if c not in (reader.fieldnames or [])]
@@ -499,7 +535,7 @@ def load_abbreviations(spec: str) -> dict:
             term = (row.get("abbreviation_term") or "").strip()
             if not term:
                 continue
-            xref = [
+            identifiers = [
                 v
                 for v in (
                     (row.get("primary_identifier") or "").strip(),
@@ -514,10 +550,21 @@ def load_abbreviations(spec: str) -> dict:
                 val = (row.get(src) or "").strip()
                 if val:
                     rec[slot] = val
+            # Ontology terms go to a SKOS slot so they serialise as nodes;
+            # database identifiers stay in xref. See ONTOLOGY_PREFIXES.
+            mapped = [v for v in identifiers if v.split(":")[0] in ONTOLOGY_PREFIXES]
+            xref = [v for v in identifiers if v not in mapped]
+            if mapped:
+                rec[ONTOLOGY_PREDICATE] = mapped
             if xref:
                 rec["xref"] = xref
+            unknown.update(
+                v.split(":")[0]
+                for v in xref
+                if ":" in v and v.split(":")[0] not in KNOWN_DATABASE_PREFIXES
+            )
             out[term] = rec
-    return out
+    return out, sorted(unknown)
 
 
 def oid(cls_name: str, attrs: dict) -> str:
@@ -550,7 +597,9 @@ def build(
     MULTI = multivalued_map()
     # Validate the abbreviation table before opening the .h5ad: a typo in the
     # table name should not cost a remote read of a 300 GB file first.
-    abbrev_table = load_abbreviations(abbreviations) if abbreviations else {}
+    abbrev_table, unknown_prefixes = (
+        load_abbreviations(abbreviations) if abbreviations else ({}, [])
+    )
     rep = Report(source_file=path, species=species)
     ents: dict[str, list] = defaultdict(list)
 
@@ -723,6 +772,16 @@ def build(
                 # Unmatched tokens are the interesting direction: the table is
                 # taxonomy-specific, so a long list means it does not describe
                 # this taxonomy and should probably not have been passed.
+                if unknown_prefixes:
+                    rep.deviate(
+                        f"Abbreviation.{ONTOLOGY_PREDICATE}/xref",
+                        f"(external: {abbreviations})",
+                        f"{', '.join(unknown_prefixes)} left in xref",
+                        "prefix is in neither ONTOLOGY_PREFIXES nor "
+                        "KNOWN_DATABASE_PREFIXES, so it was treated as a "
+                        "database identifier. If it names an ontology, add it "
+                        "to ONTOLOGY_PREFIXES or its terms will not resolve.",
+                    )
                 if unmatched:
                     rep.deviate(
                         "Abbreviation.meaning/entity_type/xref",
@@ -911,6 +970,19 @@ def build(
                             a["has_parent"] = taxon_ids[(levels[li - 1], pn)]
                     if want_counts and counts_by_level.get(lvl, {}).get(nm):
                         a["number_of_cells"] = counts_by_level[lvl][nm]
+                    # cell_type_ontology_term is the declared AIT source field
+                    # and stays a literal; asserting the same CL term through
+                    # a SKOS slot as well is what makes it a node that resolves
+                    # against the Cell Ontology. Kept rather than replaced, so
+                    # the mapping back to the source column remains explicit.
+                    cl = a.get("cell_type_ontology_term")
+                    if cl:
+                        terms = cl if isinstance(cl, list) else [cl]
+                        terms = [
+                            v for v in terms if v.split(":")[0] in ONTOLOGY_PREFIXES
+                        ]
+                        if terms:
+                            a[ONTOLOGY_PREDICATE] = terms
                     a["id"] = oid("CellTypeTaxon", a)
                     seen[nm] = a["id"]
                     taxon_ids[(lvl, nm)] = a["id"]

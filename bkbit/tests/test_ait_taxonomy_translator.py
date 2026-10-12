@@ -279,26 +279,74 @@ class TestAbbreviationTable:
     table -- the AIT files carry only the bare token."""
 
     def test_bundled_table_loads(self):
-        tbl = t.load_abbreviations("hmba-basalganglia")
+        tbl, _ = t.load_abbreviations("hmba-basalganglia")
         assert len(tbl) == 105
         assert tbl["Glut"] == {
             "meaning": "glutamatergic neuron",
             "entity_type": "cell_type",
-            "xref": ["CL:0000679"],
+            "broad_match": ["CL:0000679"],
         }
 
-    def test_both_identifiers_become_xrefs(self):
-        tbl = t.load_abbreviations("hmba-basalganglia")
-        assert tbl["F"]["xref"] == ["DHBA:10156", "UBERON:0004024"]
+    def test_both_identifiers_are_kept_and_routed_by_prefix(self):
+        """Ontology terms become a node-valued SKOS mapping; database
+        identifiers stay in xref, which is what biolink defines it as."""
+        tbl, _ = t.load_abbreviations("hmba-basalganglia")
+        assert tbl["F"]["broad_match"] == ["DHBA:10156", "UBERON:0004024"]
+        assert "xref" not in tbl["F"]
+        # ADARB2 is a gene: ENSEMBL is a database, so it stays put
+        assert tbl["ADARB2"]["xref"] == ["ENSEMBL:ENSG00000185736"]
+        assert "broad_match" not in tbl["ADARB2"]
+
+    def test_routing_loses_nothing_and_duplicates_nothing(self):
+        """Every identifier in the CSV must land in exactly one slot.
+
+        Checked against the file rather than a count, so the test still means
+        something if the table is edited.
+        """
+        import csv
+
+        path = t.BUNDLED_ABBREVIATIONS["hmba-basalganglia"]
+        expected = {}
+        with path.open(newline="", encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                term = (row.get("abbreviation_term") or "").strip()
+                if not term:
+                    continue
+                expected[term] = [
+                    v
+                    for v in (
+                        (row.get("primary_identifier") or "").strip(),
+                        (row.get("secondary_identifier") or "").strip(),
+                    )
+                    if v
+                ]
+
+        tbl, _ = t.load_abbreviations("hmba-basalganglia")
+        for term, ids in expected.items():
+            rec = tbl[term]
+            routed = list(rec.get("xref", [])) + list(rec.get("broad_match", []))
+            assert sorted(routed) == sorted(ids), term
+
+    def test_an_unrecognised_prefix_is_reported_not_swallowed(self, tmp_path):
+        """A new ontology must surface, rather than silently becoming an
+        unjoinable literal in xref."""
+        f = tmp_path / "t.csv"
+        f.write_text(
+            "abbreviation_term,abbreviation_meaning,abbreviation_type,"
+            "primary_identifier,secondary_identifier\n"
+            "X,something,anatomical,MBA:12345,\n"
+        )
+        tbl, unknown = t.load_abbreviations(str(f))
+        assert unknown == ["MBA"]
+        assert tbl["X"]["xref"] == ["MBA:12345"]
 
     @needs_current_model
     def test_entity_type_values_match_the_model_enum(self):
         import bkbit.models.cell_taxonomy as ct
 
         allowed = {e.value for e in ct.AbbreviationEntityType}
-        used = {
-            v["entity_type"] for v in t.load_abbreviations("hmba-basalganglia").values()
-        }
+        tbl, _ = t.load_abbreviations("hmba-basalganglia")
+        used = {v["entity_type"] for v in tbl.values()}
         assert used <= allowed, f"table has types the model rejects: {used - allowed}"
 
     def test_unknown_name_is_rejected_with_the_known_ones(self):
@@ -321,4 +369,5 @@ class TestAbbreviationTable:
             ",nothing,gene,,\n"
             "X,something,gene,ENSEMBL:1,\n"
         )
-        assert list(t.load_abbreviations(str(f))) == ["X"]
+        tbl, _ = t.load_abbreviations(str(f))
+        assert list(tbl) == ["X"]
