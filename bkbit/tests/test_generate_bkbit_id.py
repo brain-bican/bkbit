@@ -102,3 +102,25 @@ def test_no_translator_redefines_the_hasher():
         "these redefine generate_object_id instead of importing it from "
         f"bkbit.utils.generate_bkbit_id: {', '.join(offenders)}"
     )
+
+
+def test_hmba_translator_path_is_stable_under_a_cross_reference():
+    """The taxonomy2jsonld path itself, not just the helper.
+
+    HMBA maps a taxon's CL_ID column onto xref, so before this filter every
+    curated CL id renumbered the taxon and, through has_abbreviation and
+    has_parent, the rest of the tree. Exercises generate_object rather than
+    generate_object_id so that reintroducing a local hasher fails here too.
+    The xref must survive on the object -- it is excluded from the identity,
+    not dropped from the data.
+    """
+    from bkbit.data_translators.HMBA_annotation_translator import generate_object
+    from bkbit.models import bke_taxonomy
+
+    attrs = {"name": "Astro_1", "accession_id": "CS001"}
+    bare = generate_object(bke_taxonomy.CellTypeTaxon, dict(attrs))
+    annotated = generate_object(
+        bke_taxonomy.CellTypeTaxon, dict(attrs, xref=["CL:0000127"])
+    )
+    assert bare.id == annotated.id
+    assert annotated.xref == ["CL:0000127"]
