@@ -187,8 +187,13 @@ class BKETaxonomy:
                     )
                 else:
                     attributes[model_value] = row.get(data_key)
-        if attribute_suffix == 'Group':
-            spatial_region_columns = ['spatial_regional_proportions', 'spatial_proportions_marmoset', 'spatial_proportions_macaque', 'spatial_proportions_human']
+        if attribute_suffix == "Group":
+            spatial_region_columns = [
+                "spatial_regional_proportions",
+                "spatial_proportions_marmoset",
+                "spatial_proportions_macaque",
+                "spatial_proportions_human",
+            ]
             for sr in spatial_region_columns:
                 if sr in row and pd.notna(row[sr]):
                     print(f"Parsing spatial proportions for column: {sr}")
@@ -199,16 +204,27 @@ class BKETaxonomy:
                         value = value.strip()
                         print(f"Region: {region}, Value: {value}")
                         if bke_taxonomy.Region[region] in bke_taxonomy.Region:
-                            proportions[bke_taxonomy.Region[region].value] = float(value)
+                            proportions[bke_taxonomy.Region[region].value] = float(
+                                value
+                            )
                         else:
-                            print(f"Warning: Unknown region '{region}' in spatial proportions.")
+                            print(
+                                f"Warning: Unknown region '{region}' in spatial proportions."
+                            )
                             print(row[sr])
                     print(row)
                     print(proportions)
-                    spatial_region_object = generate_object(bke_taxonomy.SpatialProportions, proportions)
-                    self.spatial_proportions[spatial_region_object.id] = spatial_region_object
+                    spatial_region_object = generate_object(
+                        bke_taxonomy.SpatialProportions, proportions
+                    )
+                    self.spatial_proportions[spatial_region_object.id] = (
+                        spatial_region_object
+                    )
                     attributes[sr] = spatial_region_object.id
-            curated_markers_columns = ['curated_markers_to_primates', 'curated_markers_to_mouse']
+            curated_markers_columns = [
+                "curated_markers_to_primates",
+                "curated_markers_to_mouse",
+            ]
             for cm in curated_markers_columns:
                 if cm in row and pd.notna(row[cm]):
                     markers = [marker.strip() for marker in row[cm].split(",")]
