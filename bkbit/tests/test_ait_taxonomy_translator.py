@@ -73,9 +73,13 @@ class TestLocationsFromPydantic:
         by_slot = {slot: v["loc"] for (_cls, slot), v in locs.items()}
         assert by_slot.get("title") == "uns.title"
 
-    def test_source_and_note_captured(self):
+    def test_separator_captured(self):
+        """ait_separator rides along with ait_location, and is the only other
+        annotation the pipeline consumes. The sheet's Notes and Source columns
+        are deliberately mapped to ignore, so they never reach the model."""
         locs = t.load_locations()
-        assert any(v["source"] for v in locs.values())
+        assert any(v["sep"] for v in locs.values())
+        assert not any(set(v) - {"loc", "sep"} for v in locs.values())
 
 
 def test_stale_model_fails_loudly(monkeypatch):

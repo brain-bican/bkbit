@@ -175,14 +175,18 @@ def multivalued_map() -> dict:
 
 
 def load_locations() -> dict:
-    """{(class, slot): {'loc':..., 'source':..., 'note':...}} from annotations.
+    """{(class, slot): {'loc':..., 'sep':...}} from the model's annotations.
 
-    These come from the ``ait_location`` / ``source`` / ``note`` annotations on
+    These come from the ``ait_location`` and ``ait_separator`` annotations on
     the cell_taxonomy LinkML schema. linkml's pydantic generator preserves them
     verbatim under each field's ``json_schema_extra["linkml_meta"]``, so the
     generated model is a complete source and the LinkML YAML does not have to
     ship alongside it. Verified equal to reading the schema with SchemaView:
-    the same 52 (class, slot) pairs with identical values.
+    the same (class, slot) pairs with identical values.
+
+    The sheet also has Notes and Source columns, but both are deliberately
+    mapped to ``ignore`` and so never reach the model; this used to read them
+    and no longer does.
     """
     out = {}
     for cname, cls in _model_classes():
@@ -192,11 +196,9 @@ def load_locations() -> dict:
             if not ann:
                 continue
             get = lambda tag: (ann.get(tag) or {}).get("value", "")  # noqa: E731
-            if any(get(t) for t in ("ait_location", "source", "note")):
+            if get("ait_location"):
                 out[(cname, fname)] = dict(
                     loc=get("ait_location"),
-                    source=get("source"),
-                    note=get("note"),
                     # How to split one stored string into a multivalued slot.
                     # Declared in the sheet, not hardcoded here -- the file
                     # stores e.g. "PDGFRA, DCN" or "a|b" in a single cell and
