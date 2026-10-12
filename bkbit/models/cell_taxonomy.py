@@ -29,7 +29,7 @@ from pydantic import (
 )
 
 
-metamodel_version = "1.11.0"
+metamodel_version = "1.12.0"
 version = "None"
 
 
@@ -72,11 +72,18 @@ linkml_meta = LinkMLMeta({'default_prefix': 'bican',
      'imports': ['bican_biolink',
                  'bican_prov',
                  'bican_core',
+                 'bican_skos',
                  'genome_annotation',
                  'anatomical_structure',
                  'linkml:types'],
      'name': 'CellTaxonomy',
-     'prefixes': {'bican': {'prefix_prefix': 'bican',
+     'prefixes': {'CL': {'prefix_prefix': 'CL',
+                         'prefix_reference': 'http://purl.obolibrary.org/obo/CL_'},
+                  'DHBA': {'prefix_prefix': 'DHBA',
+                           'prefix_reference': 'https://purl.brain-bican.org/ontology/dhbao/DHBA_'},
+                  'UBERON': {'prefix_prefix': 'UBERON',
+                             'prefix_reference': 'http://purl.obolibrary.org/obo/UBERON_'},
+                  'bican': {'prefix_prefix': 'bican',
                             'prefix_reference': 'https://identifiers.org/brain-bican/vocab/'},
                   'linkml': {'prefix_prefix': 'linkml',
                              'prefix_reference': 'https://w3id.org/linkml/'}},
@@ -194,6 +201,21 @@ class ExpressionMatrixType(str, Enum):
     """
 
 
+class AbbreviationEntityType(str, Enum):
+    cell_type = "cell_type"
+    """
+    Abbreviation denotes a Cell Type entity.
+    """
+    gene = "gene"
+    """
+    Abbreviation denotes a Gene entity.
+    """
+    anatomical = "anatomical"
+    """
+    Abbreviation denotes an Anatomical Structure entity.
+    """
+
+
 
 class OntologyClass(ConfiguredBaseModel):
     """
@@ -247,7 +269,10 @@ class OntologyClass(ConfiguredBaseModel):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -328,7 +353,10 @@ class Entity(ConfiguredBaseModel):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -401,7 +429,8 @@ class Entity(ConfiguredBaseModel):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -423,7 +452,8 @@ class Entity(ConfiguredBaseModel):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -583,7 +613,10 @@ class NamedThing(Entity):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -648,7 +681,8 @@ class NamedThing(Entity):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -670,7 +704,8 @@ class NamedThing(Entity):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -964,7 +999,10 @@ class Attribute(NamedThing, OntologyClass):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -1004,7 +1042,8 @@ class Attribute(NamedThing, OntologyClass):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -1272,7 +1311,8 @@ class Attribute(NamedThing, OntologyClass):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -1355,7 +1395,10 @@ class TaxonomicRank(OntologyClass):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -1405,7 +1448,10 @@ class OrganismTaxon(NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -1470,7 +1516,8 @@ class OrganismTaxon(NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -1492,7 +1539,8 @@ class OrganismTaxon(NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -1744,6 +1792,7 @@ class OrganismTaxon(NamedThing):
          'is_a': 'node property',
          'mappings': ['WIKIDATA:P105'],
          'slot_uri': 'biolink:has_taxonomic_rank'} })
+    exact_match: Optional[list[str]] = Field(default=None, description="""An external concept that is interchangeable with this entity. Symmetric and transitive, so it chains through third-party mappings. NOTE: this slot was added by bican (utils/bican_biolink_edit.py); it is not part of the Biolink Model.""", json_schema_extra = { "linkml_meta": {'domain_of': ['organism taxon'], 'slot_uri': 'skos:exactMatch'} })
 
 
 class InformationContentEntity(NamedThing):
@@ -1796,7 +1845,10 @@ class InformationContentEntity(NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -1861,7 +1913,8 @@ class InformationContentEntity(NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -1883,7 +1936,8 @@ class InformationContentEntity(NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -2213,7 +2267,10 @@ class StudyResult(InformationContentEntity):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -2278,7 +2335,8 @@ class StudyResult(InformationContentEntity):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -2300,7 +2358,8 @@ class StudyResult(InformationContentEntity):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -2620,7 +2679,10 @@ class RelativeFrequencyAnalysisResult(StudyResult):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -2685,7 +2747,8 @@ class RelativeFrequencyAnalysisResult(StudyResult):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -2707,7 +2770,8 @@ class RelativeFrequencyAnalysisResult(StudyResult):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -3031,7 +3095,10 @@ class Dataset(InformationContentEntity):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -3096,7 +3163,8 @@ class Dataset(InformationContentEntity):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -3118,7 +3186,8 @@ class Dataset(InformationContentEntity):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -3465,7 +3534,10 @@ class PhysicalEntity(PhysicalEssence, NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -3530,7 +3602,8 @@ class PhysicalEntity(PhysicalEssence, NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -3552,7 +3625,8 @@ class PhysicalEntity(PhysicalEssence, NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -3869,7 +3943,10 @@ class Activity(ActivityAndBehavior, NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -3934,7 +4011,8 @@ class Activity(ActivityAndBehavior, NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -3956,7 +4034,8 @@ class Activity(ActivityAndBehavior, NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -4242,7 +4321,10 @@ class Procedure(ActivityAndBehavior, NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -4307,7 +4389,8 @@ class Procedure(ActivityAndBehavior, NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -4329,7 +4412,8 @@ class Procedure(ActivityAndBehavior, NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -4627,7 +4711,10 @@ class MaterialSample(SubjectOfInvestigation, PhysicalEntity):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -4692,7 +4779,8 @@ class MaterialSample(SubjectOfInvestigation, PhysicalEntity):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -4714,7 +4802,8 @@ class MaterialSample(SubjectOfInvestigation, PhysicalEntity):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -5035,7 +5124,10 @@ class BiologicalEntity(ThingWithTaxon, NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -5100,7 +5192,8 @@ class BiologicalEntity(ThingWithTaxon, NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -5122,7 +5215,8 @@ class BiologicalEntity(ThingWithTaxon, NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -5459,7 +5553,8 @@ class MacromolecularMachineMixin(ConfiguredBaseModel):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -5499,7 +5594,8 @@ class GeneOrGeneProduct(MacromolecularMachineMixin):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -5568,7 +5664,10 @@ class Gene(GeneOrGeneProduct, ChemicalEntityOrGeneOrGeneProduct, GenomicEntity, 
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -5639,7 +5738,8 @@ class Gene(GeneOrGeneProduct, ChemicalEntityOrGeneOrGeneProduct, GenomicEntity, 
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -5960,7 +6060,10 @@ class Genome(GenomicEntity, BiologicalEntity, PhysicalEssence, OntologyClass):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -6025,7 +6128,8 @@ class Genome(GenomicEntity, BiologicalEntity, PhysicalEssence, OntologyClass):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -6047,7 +6151,8 @@ class Genome(GenomicEntity, BiologicalEntity, PhysicalEssence, OntologyClass):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -6389,7 +6494,10 @@ class VersionedNamedThing(NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -6454,7 +6562,8 @@ class VersionedNamedThing(NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -6476,7 +6585,8 @@ class VersionedNamedThing(NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -6758,7 +6868,10 @@ class Checksum(Entity):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -6831,7 +6944,8 @@ class Checksum(Entity):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -6853,7 +6967,8 @@ class Checksum(Entity):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -6973,6 +7088,22 @@ class Checksum(Entity):
          'slot_uri': 'biolink:deprecated'} })
 
 
+class OntologyMappable(ConfiguredBaseModel):
+    """
+    A mixin for entities that map to concepts in external vocabularies.
+    Choose the property by cardinality and confidence. All of them are sub-properties of skos:mappingRelation, so a weaker claim can be tightened later without contradicting what was already published. Note that close_match is NOT a more general form of broad_match: they are siblings asserting different things (similarity at the same level vs. a hierarchy), and the neutral fallback is mapping_relation.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://identifiers.org/brain-bican/bican-skos-schema',
+         'mixin': True})
+
+    mapping_relation: Optional[list[str]] = Field(default=None, description="""A mapping of unspecified kind. The honest choice when the relationship is not established: it entails nothing, being neither symmetric nor transitive and carrying no direction.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:mappingRelation'} })
+    exact_match: Optional[list[str]] = Field(default=None, description="""The external concept is interchangeable with this entity. Symmetric AND transitive, so it chains through third-party mappings. Do not use where several of our entities map to one external concept: the entailment would then assert that those entities are equivalent to each other.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:exactMatch'} })
+    close_match: Optional[list[str]] = Field(default=None, description="""Close enough to be used interchangeably in some applications. Symmetric but not transitive. Asserts similarity at the same level, so it is not a substitute for broad_match where a hierarchy exists.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:closeMatch'} })
+    broad_match: Optional[list[str]] = Field(default=None, description="""The external concept is broader than this entity. Use where several of our entities map to a single external concept.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:broadMatch'} })
+    narrow_match: Optional[list[str]] = Field(default=None, description="""The external concept is narrower than this entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:narrowMatch'} })
+    related_match: Optional[list[str]] = Field(default=None, description="""Associatively related. Note that this positively asserts that the concepts are NOT equivalent and NOT hierarchically related, so it is a claim in its own right rather than a neutral fallback.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:relatedMatch'} })
+
+
 class GeneAnnotation(Gene):
     """
     Represents a single gene. Includes metadata about the gene, such as its molecular type and the genome annotation it was referenced from.
@@ -7010,7 +7141,10 @@ class GeneAnnotation(Gene):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -7081,7 +7215,8 @@ class GeneAnnotation(Gene):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -7410,7 +7545,10 @@ class GenomeAnnotation(Genome):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -7475,7 +7613,8 @@ class GenomeAnnotation(Genome):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -7497,7 +7636,8 @@ class GenomeAnnotation(Genome):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -7838,7 +7978,10 @@ class GenomeAssembly(ThingWithTaxon, NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -7903,7 +8046,8 @@ class GenomeAssembly(ThingWithTaxon, NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -7925,7 +8069,8 @@ class GenomeAssembly(ThingWithTaxon, NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -8238,7 +8383,10 @@ class ImageDataset(VersionedNamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -8303,7 +8451,8 @@ class ImageDataset(VersionedNamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -8325,7 +8474,8 @@ class ImageDataset(VersionedNamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -8572,6 +8722,45 @@ class ImageDataset(VersionedNamedThing):
          'is_class_field': True,
          'slot_uri': 'biolink:category'} })
 
+    @field_validator('x_resolution')
+    def pattern_x_resolution(cls, v):
+        pattern=re.compile(r"^(?:\{PositiveFloat\})$")
+        if isinstance(v, list):
+            for element in v:
+                if isinstance(element, str) and not pattern.match(element):
+                    err_msg = f"Invalid x_resolution format: {element}"
+                    raise ValueError(err_msg)
+        elif isinstance(v, str) and not pattern.match(v):
+            err_msg = f"Invalid x_resolution format: {v}"
+            raise ValueError(err_msg)
+        return v
+
+    @field_validator('y_resolution')
+    def pattern_y_resolution(cls, v):
+        pattern=re.compile(r"^(?:\{PositiveFloat\})$")
+        if isinstance(v, list):
+            for element in v:
+                if isinstance(element, str) and not pattern.match(element):
+                    err_msg = f"Invalid y_resolution format: {element}"
+                    raise ValueError(err_msg)
+        elif isinstance(v, str) and not pattern.match(v):
+            err_msg = f"Invalid y_resolution format: {v}"
+            raise ValueError(err_msg)
+        return v
+
+    @field_validator('z_resolution')
+    def pattern_z_resolution(cls, v):
+        pattern=re.compile(r"^(?:\{PositiveFloat\})$")
+        if isinstance(v, list):
+            for element in v:
+                if isinstance(element, str) and not pattern.match(element):
+                    err_msg = f"Invalid z_resolution format: {element}"
+                    raise ValueError(err_msg)
+        elif isinstance(v, str) and not pattern.match(v):
+            err_msg = f"Invalid z_resolution format: {v}"
+            raise ValueError(err_msg)
+        return v
+
 
 class AnatomicalSpace(VersionedNamedThing):
     """
@@ -8618,7 +8807,10 @@ class AnatomicalSpace(VersionedNamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -8683,7 +8875,8 @@ class AnatomicalSpace(VersionedNamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -8705,7 +8898,8 @@ class AnatomicalSpace(VersionedNamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -8996,7 +9190,10 @@ class ParcellationTerminology(VersionedNamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -9061,7 +9258,8 @@ class ParcellationTerminology(VersionedNamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -9083,7 +9281,8 @@ class ParcellationTerminology(VersionedNamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -9380,7 +9579,10 @@ class ParcellationTermSet(VersionedNamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -9445,7 +9647,8 @@ class ParcellationTermSet(VersionedNamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -9467,7 +9670,8 @@ class ParcellationTermSet(VersionedNamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -9765,7 +9969,10 @@ class ParcellationTerm(VersionedNamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -9830,7 +10037,8 @@ class ParcellationTerm(VersionedNamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -9852,7 +10060,8 @@ class ParcellationTerm(VersionedNamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -10145,7 +10354,10 @@ class ParcellationColorScheme(VersionedNamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -10210,7 +10422,8 @@ class ParcellationColorScheme(VersionedNamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -10232,7 +10445,8 @@ class ParcellationColorScheme(VersionedNamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -10493,6 +10707,19 @@ class ParcellationColorAssignment(ConfiguredBaseModel):
     color: Optional[str] = Field(default=None, description="""A string representing to hex triplet code of a color""", json_schema_extra = { "linkml_meta": {'domain_of': ['ParcellationColorAssignment'],
          'structured_pattern': {'syntax': '{ColorHexTriplet}'}} })
 
+    @field_validator('color')
+    def pattern_color(cls, v):
+        pattern=re.compile(r"^(?:\{ColorHexTriplet\})$")
+        if isinstance(v, list):
+            for element in v:
+                if isinstance(element, str) and not pattern.match(element):
+                    err_msg = f"Invalid color format: {element}"
+                    raise ValueError(err_msg)
+        elif isinstance(v, str) and not pattern.match(v):
+            err_msg = f"Invalid color format: {v}"
+            raise ValueError(err_msg)
+        return v
+
 
 class AnatomicalAnnotationSet(VersionedNamedThing):
     """
@@ -10539,7 +10766,10 @@ class AnatomicalAnnotationSet(VersionedNamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -10604,7 +10834,8 @@ class AnatomicalAnnotationSet(VersionedNamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -10626,7 +10857,8 @@ class AnatomicalAnnotationSet(VersionedNamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -10949,7 +11181,10 @@ class ParcellationAtlas(VersionedNamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
@@ -11014,7 +11249,8 @@ class ParcellationAtlas(VersionedNamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -11036,7 +11272,8 @@ class ParcellationAtlas(VersionedNamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -11290,14 +11527,16 @@ class Cell(ProvEntity, NamedThing):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/brain-bican/cell-taxonomy',
          'mixins': ['ProvEntity'],
-         'slot_usage': {'id': {'description': 'Unique identifier for each individual '
+         'slot_usage': {'id': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                'value': 'obs.index'}},
+                               'description': 'Unique identifier for each individual '
                                               'cell.',
-                               'from_schema': 'bican_biolink',
                                'in_subset': ['obs', 'assigned_metadata'],
                                'name': 'id',
                                'range': 'string'}}})
 
-    id: str = Field(default=..., description="""Unique identifier for each individual cell.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/id',
+    id: str = Field(default=..., description="""Unique identifier for each individual cell.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location', 'value': 'obs.index'}},
+         'definition_uri': 'https://w3id.org/biolink/vocab/id',
          'domain': 'entity',
          'domain_of': ['ontology class',
                        'entity',
@@ -11323,20 +11562,53 @@ class Cell(ProvEntity, NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['obs', 'assigned_metadata'],
          'slot_uri': 'biolink:id'} })
-    part_of_cluster: Optional[str] = Field(default=None, description="""The cluster to which this cell has been assigned by the clustering algorithm.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Cell'], 'in_subset': ['obs', 'annotations']} })
-    cluster_id: Optional[str] = Field(default=None, description="""Human-readable cluster label for the cluster assigned to this cell at a given annotation level.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Cell'], 'in_subset': ['obs', 'annotations']} })
-    load_id: Optional[str] = Field(default=None, description="""Identifier for the sequencing library from which molecular measurements were derived.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Cell'], 'in_subset': ['obs', 'assigned_metadata']} })
-    assay: Optional[str] = Field(default=None, description="""Human-readable sequencing modality (e.g. 10x 3' v3).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Cell'], 'in_subset': ['obs', 'assigned_metadata']} })
-    assay_ontology_term_id: Optional[str] = Field(default=None, description="""EFO ontology term for assay (e.g. EFO:0009922 for 10x 3' v3).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Cell'], 'in_subset': ['obs', 'assigned_metadata']} })
-    anatomical_region: Optional[str] = Field(default=None, description="""Human-readable name for the anatomical region from which the cell was collected.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Cell'], 'in_subset': ['obs', 'assigned_metadata']} })
-    anatomical_region_ontology_term_id: Optional[str] = Field(default=None, description="""UBERON ontology term for anatomical region (e.g. UBERON:0000955 for brain).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Cell'], 'in_subset': ['obs', 'assigned_metadata']} })
-    brain_region_ontology_term_id: Optional[str] = Field(default=None, description="""Brain atlas region ID from DHBA/HBA/MBA for the anatomical region.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Cell'], 'in_subset': ['obs', 'assigned_metadata']} })
-    suspension_type: Optional[SuspensionType] = Field(default=None, description="""Whether the measurement was performed on intact cells, nuclei, or is not applicable.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Cell'], 'in_subset': ['obs', 'assigned_metadata']} })
-    is_primary_data: Optional[bool] = Field(default=None, description="""True if this is the canonical instance of this cellular observation; False for reanalysis or secondary views.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Cell'], 'in_subset': ['obs', 'assigned_metadata']} })
+    cluster_id: Optional[str] = Field(default=None, description="""Human-readable cluster label for the cluster assigned to this cell at a given annotation level.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'obs.cluster_id'}},
+         'domain_of': ['Cell'],
+         'in_subset': ['obs', 'annotations']} })
+    load_id: Optional[str] = Field(default=None, description="""Identifier for the sequencing library from which molecular measurements were derived.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'obs.load_id'}},
+         'domain_of': ['Cell'],
+         'in_subset': ['obs', 'assigned_metadata']} })
+    assay: Optional[str] = Field(default=None, description="""Human-readable sequencing modality (e.g. 10x 3' v3).""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location', 'value': 'obs.assay'}},
+         'domain_of': ['Cell'],
+         'in_subset': ['obs', 'assigned_metadata']} })
+    assay_ontology_term_id: Optional[str] = Field(default=None, description="""EFO ontology term for assay (e.g. EFO:0009922 for 10x 3' v3).""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'obs.assay_ontology_term_id'}},
+         'domain_of': ['Cell'],
+         'in_subset': ['obs', 'assigned_metadata']} })
+    anatomical_region: Optional[str] = Field(default=None, description="""Human-readable name for the anatomical region from which the cell was collected.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'obs.anatomical_region'}},
+         'domain_of': ['Cell'],
+         'in_subset': ['obs', 'assigned_metadata']} })
+    anatomical_region_ontology_term_id: Optional[str] = Field(default=None, description="""UBERON ontology term for anatomical region (e.g. UBERON:0000955 for brain).""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'obs.anatomical_region_ontology_term_id'}},
+         'domain_of': ['Cell'],
+         'in_subset': ['obs', 'assigned_metadata']} })
+    brain_region_ontology_term_id: Optional[str] = Field(default=None, description="""Brain atlas region ID from DHBA/HBA/MBA for the anatomical region.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'obs.brain_region_ontology_term_id'}},
+         'domain_of': ['Cell'],
+         'in_subset': ['obs', 'assigned_metadata']} })
+    suspension_type: Optional[SuspensionType] = Field(default=None, description="""Whether the measurement was performed on intact cells, nuclei, or is not applicable.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'obs.suspension_type'}},
+         'domain_of': ['Cell'],
+         'in_subset': ['obs', 'assigned_metadata']} })
+    is_primary_data: Optional[bool] = Field(default=None, description="""True if this is the canonical instance of this cellular observation; False for reanalysis or secondary views.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'obs.is_primary_data'}},
+         'domain_of': ['Cell'],
+         'in_subset': ['obs', 'assigned_metadata']} })
+    part_of_cluster: Optional[str] = Field(default=None, description="""The cluster to which this cell has been assigned by the clustering algorithm.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(derived: the Cluster named by '
+                                                   'obs.cluster_id)'}},
+         'domain_of': ['Cell'],
+         'in_subset': ['obs', 'annotations']} })
     was_derived_from: Optional[str] = Field(default=None, description="""A derivation is a transformation of an entity into another, an update of an entity resulting in a new one, or the construction of a new entity based on a pre-existing entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity', 'CellTypeTaxonomy', 'ClusterSet'],
          'slot_uri': 'prov:wasDerivedFrom'} })
     was_generated_by: Optional[str] = Field(default=None, description="""Generation is the completion of production of a new entity by an activity. This entity did not exist before generation and becomes available for usage after this generation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity'], 'slot_uri': 'prov:wasGeneratedBy'} })
@@ -11401,7 +11673,8 @@ class Cell(ProvEntity, NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -11423,7 +11696,8 @@ class Cell(ProvEntity, NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -11677,36 +11951,69 @@ class CellTypeSet(ProvEntity, NamedThing):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/brain-bican/cell-taxonomy',
          'mixins': ['ProvEntity'],
-         'slot_usage': {'has_parent': {'description': 'The next broader annotation '
+         'slot_usage': {'has_abbreviation': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                              'value': 'uns.cluster_info.tokens_<level> '
+                                                                                       '(data '
+                                                                                       'only)'},
+                                                             'ait_separator': {'tag': 'ait_separator',
+                                                                               'value': '|'}},
+                                             'description': 'One of potentially many '
+                                                            'abbreviations that are '
+                                                            'part of the cell type set '
+                                                            'name.',
+                                             'in_subset': ['uns', 'annotations'],
+                                             'multivalued': True,
+                                             'name': 'has_abbreviation',
+                                             'range': 'Abbreviation'},
+                        'has_parent': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                        'value': '(derived: '
+                                                                                 'the '
+                                                                                 'preceding '
+                                                                                 'level '
+                                                                                 'in '
+                                                                                 'uns.hierarchy, '
+                                                                                 'by '
+                                                                                 'order)'}},
+                                       'description': 'The next broader annotation '
                                                       'level in the taxonomy hierarchy '
                                                       '(e.g. Subclass has_parent '
                                                       'Class).',
                                        'in_subset': ['uns', 'annotations'],
                                        'name': 'has_parent',
                                        'range': 'CellTypeSet'},
-                        'id': {'description': 'Unique identifier for this annotation '
+                        'id': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                'value': 'uns.hierarchy '
+                                                                         '(key)'}},
+                               'description': 'Unique identifier for this annotation '
                                               'level.',
-                               'from_schema': 'bican_biolink',
                                'in_subset': ['uns', 'annotations'],
                                'name': 'id',
                                'range': 'string'},
-                        'name': {'description': 'Name of this annotation level used as '
+                        'name': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                  'value': 'uns.hierarchy '
+                                                                           '(key) / '
+                                                                           'obs '
+                                                                           '(column '
+                                                                           'name)'}},
+                                 'description': 'Name of this annotation level used as '
                                                 'column header in obs (e.g. Class, '
                                                 'Subclass).',
-                                 'from_schema': 'bican_biolink',
                                  'in_subset': ['obs', 'uns', 'annotations'],
                                  'name': 'name',
                                  'range': 'string'},
-                        'order': {'description': 'Integer rank of this annotation '
+                        'order': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                   'value': 'uns.hierarchy '
+                                                                            '(value)'}},
+                                  'description': 'Integer rank of this annotation '
                                                  'level in the hierarchy; lower values '
                                                  'are broader types.',
                                   'in_subset': ['uns', 'annotations'],
                                   'name': 'order',
                                   'range': 'integer'}}})
 
-    has_parent: Optional[str] = Field(default=None, description="""The next broader annotation level in the taxonomy hierarchy (e.g. Subclass has_parent Class).""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeSet', 'CellTypeTaxon', 'Cluster'],
-         'in_subset': ['uns', 'annotations']} })
-    id: str = Field(default=..., description="""Unique identifier for this annotation level.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/id',
+    id: str = Field(default=..., description="""Unique identifier for this annotation level.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.hierarchy (key)'}},
+         'definition_uri': 'https://w3id.org/biolink/vocab/id',
          'domain': 'entity',
          'domain_of': ['ontology class',
                        'entity',
@@ -11732,11 +12039,17 @@ class CellTypeSet(ProvEntity, NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['uns', 'annotations'],
          'slot_uri': 'biolink:id'} })
     name: Optional[str] = Field(default=None, description="""Name of this annotation level used as column header in obs (e.g. Class, Subclass).""", json_schema_extra = { "linkml_meta": {'aliases': ['label', 'display name', 'title'],
+         'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.hierarchy (key) / obs (column '
+                                                   'name)'}},
          'definition_uri': 'https://w3id.org/biolink/vocab/name',
          'domain': 'entity',
          'domain_of': ['attribute',
@@ -11758,16 +12071,34 @@ class CellTypeSet(ProvEntity, NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['obs', 'uns', 'annotations'],
          'mappings': ['rdfs:label'],
          'narrow_mappings': ['dct:title', 'WIKIDATA_PROPERTY:P1476'],
          'slot_uri': 'rdfs:label'} })
-    order: Optional[int] = Field(default=None, description="""Integer rank of this annotation level in the hierarchy; lower values are broader types.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeSet', 'CellTypeTaxon'],
+    order: Optional[int] = Field(default=None, description="""Integer rank of this annotation level in the hierarchy; lower values are broader types.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.hierarchy (value)'}},
+         'domain_of': ['CellTypeSet', 'CellTypeTaxon'],
          'in_subset': ['uns', 'annotations']} })
-    part_of_taxonomy: Optional[str] = Field(default=None, description="""The taxonomy for which this annotation level is defined.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeSet'], 'in_subset': ['uns', 'annotations']} })
+    has_parent: Optional[str] = Field(default=None, description="""The next broader annotation level in the taxonomy hierarchy (e.g. Subclass has_parent Class).""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(derived: the preceding level in '
+                                                   'uns.hierarchy, by order)'}},
+         'domain_of': ['CellTypeSet', 'CellTypeTaxon', 'Cluster'],
+         'in_subset': ['uns', 'annotations']} })
+    has_abbreviation: Optional[list[str]] = Field(default=None, description="""One of potentially many abbreviations that are part of the cell type set name.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.cluster_info.tokens_<level> '
+                                                   '(data only)'},
+                         'ait_separator': {'tag': 'ait_separator', 'value': '|'}},
+         'domain_of': ['CellTypeSet', 'CellTypeTaxon'],
+         'in_subset': ['uns', 'annotations']} })
     cell_type_set_type: Optional[CellTypeSetType] = Field(default=None, description="""A tag denoting whether this grouping represents a taxonomic level or neighborhood.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeSet'], 'in_subset': ['uns', 'annotations']} })
+    part_of_taxonomy: Optional[str] = Field(default=None, description="""The taxonomy for which this annotation level is defined.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(derived: the single taxonomy '
+                                                   'described by this file)'}},
+         'domain_of': ['CellTypeSet'],
+         'in_subset': ['uns', 'annotations']} })
     was_derived_from: Optional[str] = Field(default=None, description="""A derivation is a transformation of an entity into another, an update of an entity resulting in a new one, or the construction of a new entity based on a pre-existing entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity', 'CellTypeTaxonomy', 'ClusterSet'],
          'slot_uri': 'prov:wasDerivedFrom'} })
     was_generated_by: Optional[str] = Field(default=None, description="""Generation is the completion of production of a new entity by an activity. This entity did not exist before generation and becomes available for usage after this generation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity'], 'slot_uri': 'prov:wasGeneratedBy'} })
@@ -11826,7 +12157,8 @@ class CellTypeSet(ProvEntity, NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -12074,55 +12406,101 @@ class CellTypeSet(ProvEntity, NamedThing):
          'slot_uri': 'biolink:category'} })
 
 
-class CellTypeTaxon(ProvEntity, NamedThing):
+class CellTypeTaxon(OntologyMappable, ProvEntity, NamedThing):
     """
     A node in the cell type taxonomy representing a unit of cell type classification at a specific annotation level. Taxons may be organized into a hierarchy and grouped into neighborhoods.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/brain-bican/cell-taxonomy',
-         'mixins': ['ProvEntity'],
-         'slot_usage': {'accession_id': {'description': 'Stable cross-version '
+         'mixins': ['ProvEntity', 'OntologyMappable'],
+         'slot_usage': {'accession_id': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                          'value': 'uns.cluster_info.accession_<level> '
+                                                                                   '(data '
+                                                                                   'only)'}},
+                                         'description': 'Stable cross-version '
                                                         'identifier for this cell type '
                                                         'taxon (e.g. '
                                                         'CS20230722_CLAS_11).',
                                          'in_subset': ['uns', 'annotations'],
                                          'name': 'accession_id',
                                          'range': 'string'},
-                        'has_parent': {'description': 'Reference to the parent taxon '
+                        'has_abbreviation': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                              'value': 'uns.cluster_info.tokens_<level> '
+                                                                                       '(data '
+                                                                                       'only)'},
+                                                             'ait_separator': {'tag': 'ait_separator',
+                                                                               'value': '|'}},
+                                             'description': 'One of potentially many '
+                                                            'abbreviations that are '
+                                                            'part of the cell type '
+                                                            'taxon name.',
+                                             'in_subset': ['uns', 'annotations'],
+                                             'multivalued': True,
+                                             'name': 'has_abbreviation',
+                                             'range': 'Abbreviation'},
+                        'has_parent': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                        'value': '(derived: '
+                                                                                 'the '
+                                                                                 'taxon '
+                                                                                 'at '
+                                                                                 'the '
+                                                                                 'preceding '
+                                                                                 'uns.hierarchy '
+                                                                                 'level, '
+                                                                                 'same '
+                                                                                 'uns.cluster_info '
+                                                                                 'row)'}},
+                                       'description': 'Reference to the parent taxon '
                                                       'at the next broader annotation '
                                                       'level.',
                                        'in_subset': ['uns', 'annotations'],
                                        'name': 'has_parent',
                                        'range': 'CellTypeTaxon'},
-                        'id': {'description': 'Unique identifier for this cell type '
+                        'id': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                'value': '(synthesized)'}},
+                               'description': 'Unique identifier for this cell type '
                                               'taxon.',
-                               'from_schema': 'bican_biolink',
-                               'in_subset': ['uns', 'annotations'],
                                'name': 'id',
                                'range': 'string'},
-                        'name': {'description': 'Human-readable label for this cell '
+                        'name': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                  'value': 'obs.<annotation_level>'}},
+                                 'description': 'Human-readable label for this cell '
                                                 'type taxon at the given annotation '
                                                 'level (e.g. Glutamatergic).',
-                                 'from_schema': 'bican_biolink',
                                  'in_subset': ['obs', 'annotations'],
                                  'name': 'name',
                                  'range': 'string'},
-                        'order': {'description': 'The priority or display order of '
+                        'order': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                   'value': 'uns.cluster_info.display_order_<level> '
+                                                                            '(data '
+                                                                            'only)'}},
+                                  'description': 'The priority or display order of '
                                                  'this taxon among all taxons in the '
                                                  'taxonomy.',
                                   'in_subset': ['uns', 'annotations'],
                                   'name': 'order',
                                   'range': 'integer'},
-                        'part_of_set': {'description': 'The annotation level '
+                        'part_of_set': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                         'value': '(derived: '
+                                                                                  'the '
+                                                                                  'uns.hierarchy '
+                                                                                  'level '
+                                                                                  'whose '
+                                                                                  'uns.cluster_info '
+                                                                                  'column '
+                                                                                  'this '
+                                                                                  'taxon '
+                                                                                  'came '
+                                                                                  'from)'}},
+                                        'description': 'The annotation level '
                                                        '(CellTypeSet) for which this '
                                                        'taxon is a member.',
                                         'in_subset': ['uns', 'annotations'],
                                         'name': 'part_of_set',
                                         'range': 'CellTypeSet'}}})
 
-    has_parent: Optional[str] = Field(default=None, description="""Reference to the parent taxon at the next broader annotation level.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeSet', 'CellTypeTaxon', 'Cluster'],
-         'in_subset': ['uns', 'annotations']} })
-    part_of_set: Optional[str] = Field(default=None, description="""The annotation level (CellTypeSet) for which this taxon is a member.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxon', 'Cluster'], 'in_subset': ['uns', 'annotations']} })
-    id: str = Field(default=..., description="""Unique identifier for this cell type taxon.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/id',
+    id: str = Field(default=..., description="""Unique identifier for this cell type taxon.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(synthesized)'}},
+         'definition_uri': 'https://w3id.org/biolink/vocab/id',
          'domain': 'entity',
          'domain_of': ['ontology class',
                        'entity',
@@ -12148,11 +12526,16 @@ class CellTypeTaxon(ProvEntity, NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
-         'in_subset': ['uns', 'annotations'],
+         'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
     name: Optional[str] = Field(default=None, description="""Human-readable label for this cell type taxon at the given annotation level (e.g. Glutamatergic).""", json_schema_extra = { "linkml_meta": {'aliases': ['label', 'display name', 'title'],
+         'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'obs.<annotation_level>'}},
          'definition_uri': 'https://w3id.org/biolink/vocab/name',
          'domain': 'entity',
          'domain_of': ['attribute',
@@ -12174,23 +12557,81 @@ class CellTypeTaxon(ProvEntity, NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['obs', 'annotations'],
          'mappings': ['rdfs:label'],
          'narrow_mappings': ['dct:title', 'WIKIDATA_PROPERTY:P1476'],
          'slot_uri': 'rdfs:label'} })
-    accession_id: Optional[str] = Field(default=None, description="""Stable cross-version identifier for this cell type taxon (e.g. CS20230722_CLAS_11).""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxon', 'CellTypeTaxonomy'],
+    accession_id: Optional[str] = Field(default=None, description="""Stable cross-version identifier for this cell type taxon (e.g. CS20230722_CLAS_11).""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.cluster_info.accession_<level> '
+                                                   '(data only)'}},
+         'domain_of': ['CellTypeTaxon', 'CellTypeTaxonomy'],
          'in_subset': ['uns', 'annotations']} })
-    order: Optional[int] = Field(default=None, description="""The priority or display order of this taxon among all taxons in the taxonomy.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeSet', 'CellTypeTaxon'],
+    order: Optional[int] = Field(default=None, description="""The priority or display order of this taxon among all taxons in the taxonomy.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.cluster_info.display_order_<level> '
+                                                   '(data only)'}},
+         'domain_of': ['CellTypeSet', 'CellTypeTaxon'],
          'in_subset': ['uns', 'annotations']} })
-    curated_markers_to_primates: Optional[list[str]] = Field(default=None, description="""Marker genes in the primate species that are related to the respective cell type.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxon']} })
-    curated_markers_to_mouse: Optional[list[str]] = Field(default=None, description="""Marker genes in the mouse species that are related to the respective cell type.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxon']} })
-    cell_type_ontology_term_id: Optional[str] = Field(default=None, description="""CL ontology term for this cell type; use CL:0000003 for native cell if unknown.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxon'], 'in_subset': ['obs', 'annotations']} })
-    number_of_cells: Optional[int] = Field(default=None, description="""The aggregated number of cells that defines this cell type taxon.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxon'], 'in_subset': ['uns', 'annotations']} })
+    has_parent: Optional[str] = Field(default=None, description="""Reference to the parent taxon at the next broader annotation level.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(derived: the taxon at the '
+                                                   'preceding uns.hierarchy level, '
+                                                   'same uns.cluster_info row)'}},
+         'domain_of': ['CellTypeSet', 'CellTypeTaxon', 'Cluster'],
+         'in_subset': ['uns', 'annotations']} })
+    part_of_set: Optional[str] = Field(default=None, description="""The annotation level (CellTypeSet) for which this taxon is a member.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(derived: the uns.hierarchy level '
+                                                   'whose uns.cluster_info column this '
+                                                   'taxon came from)'}},
+         'domain_of': ['CellTypeTaxon', 'Cluster'],
+         'in_subset': ['uns', 'annotations']} })
+    has_abbreviation: Optional[list[str]] = Field(default=None, description="""One of potentially many abbreviations that are part of the cell type taxon name.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.cluster_info.tokens_<level> '
+                                                   '(data only)'},
+                         'ait_separator': {'tag': 'ait_separator', 'value': '|'}},
+         'domain_of': ['CellTypeSet', 'CellTypeTaxon'],
+         'in_subset': ['uns', 'annotations']} })
+    cell_type_ontology_term: Optional[str] = Field(default=None, description="""CL ontology term for this cell type; use CL:0000003 for native cell if unknown.""", json_schema_extra = { "linkml_meta": {'aliases': ['cell_type_ontology_term_id'],
+         'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.cluster_info.CL:ID_<level> '
+                                                   '(data only)'}},
+         'domain_of': ['CellTypeTaxon'],
+         'in_subset': ['obs', 'annotations']} })
+    number_of_cells: Optional[int] = Field(default=None, description="""The aggregated number of cells that defines this cell type taxon.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(derived: count obs rows grouped '
+                                                   'by obs.<annotation_level>)'}},
+         'domain_of': ['CellTypeTaxon'],
+         'in_subset': ['uns', 'annotations']} })
+    literature_support: Optional[list[str]] = Field(default=None, description="""Published study in which this cell type was previously described. The value \"Novel\" indicates no prior published description.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.cluster_info.literature_support'},
+                         'ait_separator': {'tag': 'ait_separator', 'value': '|'}},
+         'domain_of': ['CellTypeTaxon'],
+         'in_subset': ['uns', 'annotations']} })
+    literature_name_short: Optional[list[str]] = Field(default=None, description="""Short name used for this cell type in the supporting literature.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.cluster_info.literature_name_short'},
+                         'ait_separator': {'tag': 'ait_separator', 'value': '|'}},
+         'domain_of': ['CellTypeTaxon'],
+         'in_subset': ['uns', 'annotations']} })
+    literature_name_long: Optional[list[str]] = Field(default=None, description="""Full name used for this cell type in the supporting literature.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.cluster_info.literature_name_long'},
+                         'ait_separator': {'tag': 'ait_separator', 'value': '|'}},
+         'domain_of': ['CellTypeTaxon'],
+         'in_subset': ['uns', 'annotations']} })
+    curated_markers: Optional[list[str]] = Field(default=None, description="""Marker genes curated as characteristic of this cell type. One set per taxon; the AIT consensus taxonomy does not split these by species.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.cluster_info.curated_markers'},
+                         'ait_separator': {'tag': 'ait_separator', 'value': ','}},
+         'domain_of': ['CellTypeTaxon'],
+         'in_subset': ['uns', 'annotations']} })
     was_derived_from: Optional[str] = Field(default=None, description="""A derivation is a transformation of an entity into another, an update of an entity resulting in a new one, or the construction of a new entity based on a pre-existing entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity', 'CellTypeTaxonomy', 'ClusterSet'],
          'slot_uri': 'prov:wasDerivedFrom'} })
     was_generated_by: Optional[str] = Field(default=None, description="""Generation is the completion of production of a new entity by an activity. This entity did not exist before generation and becomes available for usage after this generation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity'], 'slot_uri': 'prov:wasGeneratedBy'} })
+    mapping_relation: Optional[list[str]] = Field(default=None, description="""A mapping of unspecified kind. The honest choice when the relationship is not established: it entails nothing, being neither symmetric nor transitive and carrying no direction.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:mappingRelation'} })
+    exact_match: Optional[list[str]] = Field(default=None, description="""The external concept is interchangeable with this entity. Symmetric AND transitive, so it chains through third-party mappings. Do not use where several of our entities map to one external concept: the entailment would then assert that those entities are equivalent to each other.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:exactMatch'} })
+    close_match: Optional[list[str]] = Field(default=None, description="""Close enough to be used interchangeably in some applications. Symmetric but not transitive. Asserts similarity at the same level, so it is not a substitute for broad_match where a hierarchy exists.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:closeMatch'} })
+    broad_match: Optional[list[str]] = Field(default=None, description="""The external concept is broader than this entity. Use where several of our entities map to a single external concept.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:broadMatch'} })
+    narrow_match: Optional[list[str]] = Field(default=None, description="""The external concept is narrower than this entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:narrowMatch'} })
+    related_match: Optional[list[str]] = Field(default=None, description="""Associatively related. Note that this positively asserts that the concepts are NOT equivalent and NOT hierarchically related, so it is a claim in its own right rather than a neutral fallback.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:relatedMatch'} })
     iri: Optional[str] = Field(default=None, description="""An IRI for an entity. This is determined by the id using expansion rules.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/iri',
          'domain_of': ['attribute',
                        'entity',
@@ -12246,7 +12687,8 @@ class CellTypeTaxon(ProvEntity, NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -12493,6 +12935,19 @@ class CellTypeTaxon(ProvEntity, NamedThing):
          'is_class_field': True,
          'slot_uri': 'biolink:category'} })
 
+    @field_validator('cell_type_ontology_term')
+    def pattern_cell_type_ontology_term(cls, v):
+        pattern=re.compile(r"^CL:\d{7}$")
+        if isinstance(v, list):
+            for element in v:
+                if isinstance(element, str) and not pattern.match(element):
+                    err_msg = f"Invalid cell_type_ontology_term format: {element}"
+                    raise ValueError(err_msg)
+        elif isinstance(v, str) and not pattern.match(v):
+            err_msg = f"Invalid cell_type_ontology_term format: {v}"
+            raise ValueError(err_msg)
+        return v
+
 
 class CellTypeTaxonomy(ProvEntity, NamedThing):
     """
@@ -12503,18 +12958,20 @@ class CellTypeTaxonomy(ProvEntity, NamedThing):
          'slot_usage': {'accession_id': {'description': 'Provider-assigned accession '
                                                         'identifier for this taxonomy '
                                                         '(e.g. CCN20230722).',
-                                         'in_subset': ['uns', 'tooling'],
                                          'name': 'accession_id',
                                          'range': 'string'},
-                        'content_url': {'description': 'Permanent URL to molecular '
+                        'content_url': {'aliases': ['dataset_purl'],
+                                        'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                         'value': 'uns.dataset_purl'}},
+                                        'description': 'Permanent URL to molecular '
                                                        'data if the expression matrix '
                                                        'is not embedded in the file.',
-                                        'from_schema': 'bican_core',
                                         'in_subset': ['uns', 'data'],
                                         'name': 'content_url',
                                         'range': 'uri'},
-                        'id': {'description': 'Unique identifier for this taxonomy.',
-                               'from_schema': 'bican_biolink',
+                        'id': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                'value': '(synthesized)'}},
+                               'description': 'Unique identifier for this taxonomy.',
                                'name': 'id',
                                'range': 'string'},
                         'was_derived_from': {'description': 'One or more cluster sets '
@@ -12524,9 +12981,9 @@ class CellTypeTaxonomy(ProvEntity, NamedThing):
                                              'name': 'was_derived_from',
                                              'range': 'ClusterSet'}}})
 
-    was_derived_from: Optional[list[str]] = Field(default=None, description="""One or more cluster sets from which this taxonomy was derived.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity', 'CellTypeTaxonomy', 'ClusterSet'],
-         'slot_uri': 'prov:wasDerivedFrom'} })
-    id: str = Field(default=..., description="""Unique identifier for this taxonomy.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/id',
+    id: str = Field(default=..., description="""Unique identifier for this taxonomy.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(synthesized)'}},
+         'definition_uri': 'https://w3id.org/biolink/vocab/id',
          'domain': 'entity',
          'domain_of': ['ontology class',
                        'entity',
@@ -12552,29 +13009,88 @@ class CellTypeTaxonomy(ProvEntity, NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
-    accession_id: Optional[str] = Field(default=None, description="""Provider-assigned accession identifier for this taxonomy (e.g. CCN20230722).""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxon', 'CellTypeTaxonomy'],
-         'in_subset': ['uns', 'tooling']} })
-    content_url: Optional[list[str]] = Field(default=None, description="""Permanent URL to molecular data if the expression matrix is not embedded in the file.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GenomeAnnotation', 'CellTypeTaxonomy', 'ExpressionMatrix'],
+    accession_id: Optional[str] = Field(default=None, description="""Provider-assigned accession identifier for this taxonomy (e.g. CCN20230722).""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxon', 'CellTypeTaxonomy'], 'in_subset': ['uns']} })
+    content_url: Optional[list[str]] = Field(default=None, description="""Permanent URL to molecular data if the expression matrix is not embedded in the file.""", json_schema_extra = { "linkml_meta": {'aliases': ['dataset_purl'],
+         'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.dataset_purl'}},
+         'domain_of': ['GenomeAnnotation', 'CellTypeTaxonomy', 'ExpressionMatrix'],
          'in_subset': ['uns', 'data'],
          'slot_uri': 'schema:url'} })
-    has_embedding: Optional[list[str]] = Field(default=None, description="""One or more dimensionality reductions associated with this taxonomy.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxonomy'], 'in_subset': ['obsm', 'analysis']} })
-    has_expression_matrix: Optional[list[str]] = Field(default=None, description="""One or more cell-by-gene matrices associated with this taxonomy (normalized and/or raw counts).""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxonomy'], 'in_subset': ['X', 'raw', 'data']} })
-    title: Optional[str] = Field(default=None, description="""Description differentiating this taxonomy from others in the same collection; should be unique within a collection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxonomy'], 'in_subset': ['uns', 'tooling']} })
-    schema_version: Optional[str] = Field(default=None, description="""Version of the AIT schema used to produce this file (e.g. 1.0.0).""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxonomy'], 'in_subset': ['uns', 'tooling']} })
-    batch_condition: Optional[str] = Field(default=None, description="""Cell metadata key(s) in obs that define batches for normalization or integration.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxonomy'], 'in_subset': ['uns', 'tooling']} })
-    dendrogram: Optional[str] = Field(default=None, description="""JSON-formatted hierarchical clustering dendrogram encoding the taxonomy hierarchy.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxonomy'], 'in_subset': ['uns', 'annotations']} })
-    hierarchy: Optional[str] = Field(default=None, description="""Ordered mapping of annotation level names to integer ranks; lower rank means broader type.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxonomy'], 'in_subset': ['uns', 'annotations']} })
-    mode: Optional[str] = Field(default=None, description="""Active taxonomy mode controlling which subset of cells and analysis components to use.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxonomy'], 'in_subset': ['uns', 'tooling']} })
-    filter: Optional[bool] = Field(default=None, description="""Per-mode boolean flags indicating cells to exclude (True means exclude).""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxonomy'], 'in_subset': ['uns', 'tooling']} })
-    cluster_algorithm: Optional[str] = Field(default=None, description="""Full description of clustering algorithm and parameters used to produce cluster assignments.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxonomy'], 'in_subset': ['uns', 'tooling']} })
-    cluster_info: Optional[str] = Field(default=None, description="""Summary table of cluster-level metadata including cluster sizes and representative metadata.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxonomy'], 'in_subset': ['uns', 'annotations']} })
-    default_embedding: Optional[str] = Field(default=None, description="""Key in obsm of the embedding to display by default; must match an X_-prefixed entry.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxonomy'], 'in_subset': ['uns', 'tooling']} })
-    cellannotation_schema: Optional[str] = Field(default=None, description="""CAS annotation schema stored as JSON encoding labelset and annotation metadata.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxonomy'], 'in_subset': ['uns', 'tooling']} })
-    quality_control_markers: Optional[str] = Field(default=None, description="""Marker gene expression data for patchseq quality control analysis.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxonomy'], 'in_subset': ['uns', 'analysis']} })
+    was_derived_from: Optional[list[str]] = Field(default=None, description="""One or more cluster sets from which this taxonomy was derived.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity', 'CellTypeTaxonomy', 'ClusterSet'],
+         'slot_uri': 'prov:wasDerivedFrom'} })
+    title: Optional[str] = Field(default=None, description="""Description differentiating this taxonomy from others in the same collection; should be unique within a collection.""", json_schema_extra = { "linkml_meta": {'aliases': ['name'],
+         'annotations': {'ait_location': {'tag': 'ait_location', 'value': 'uns.title'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['uns', 'tooling']} })
+    schema_version: Optional[str] = Field(default=None, description="""Version of the AIT schema used to produce this file (e.g. 1.0.0).""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.schema_version'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['uns', 'tooling']} })
+    batch_condition: Optional[str] = Field(default=None, description="""Cell metadata key(s) in obs that define batches for normalization or integration.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.batch_condition'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['uns', 'tooling']} })
+    dendrogram: Optional[str] = Field(default=None, description="""JSON-formatted hierarchical clustering dendrogram encoding the taxonomy hierarchy.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.dendrogram'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['uns', 'annotations']} })
+    hierarchy: Optional[str] = Field(default=None, description="""Ordered mapping of annotation level names to integer ranks; lower rank means broader type.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.hierarchy'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['uns', 'annotations']} })
+    mode: Optional[str] = Field(default=None, description="""Active taxonomy mode controlling which subset of cells and analysis components to use.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location', 'value': 'uns.mode'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['uns', 'tooling']} })
+    filter: Optional[bool] = Field(default=None, description="""Per-mode boolean flags indicating cells to exclude (True means exclude).""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.filter'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['uns', 'tooling']} })
+    cluster_algorithm: Optional[str] = Field(default=None, description="""Full description of clustering algorithm and parameters used to produce cluster assignments.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.cluster_algorithm'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['uns', 'tooling']} })
+    cluster_info: Optional[str] = Field(default=None, description="""Summary table of cluster-level metadata including cluster sizes and representative metadata.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.cluster_info'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['uns', 'annotations']} })
+    default_embedding: Optional[str] = Field(default=None, description="""Key in obsm of the embedding to display by default; must match an X_-prefixed entry.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.default_embedding'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['uns', 'tooling']} })
+    cellannotation_schema: Optional[str] = Field(default=None, description="""CAS annotation schema stored as JSON encoding labelset and annotation metadata.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.cellannotation_schema'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['uns', 'tooling']} })
+    quality_control_markers: Optional[str] = Field(default=None, description="""Marker gene expression data for patchseq quality control analysis.""", json_schema_extra = { "linkml_meta": {'aliases': ['quality_control_markers'],
+         'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.qualty_control_markers'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['uns', 'analysis']} })
+    reference_genome: Optional[str] = Field(default=None, description="""Reference genome assembly used to align the molecular measurements.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.reference_genome'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['uns', 'assigned_metadata']} })
+    gene_annotation_version: Optional[str] = Field(default=None, description="""Genome annotation version used during alignment.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.gene_annotation_version'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['uns', 'assigned_metadata']} })
+    has_embedding: Optional[list[str]] = Field(default=None, description="""One or more dimensionality reductions associated with this taxonomy.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(derived: one Embedding per obsm '
+                                                   'key)'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['obsm', 'analysis']} })
+    has_expression_matrix: Optional[list[str]] = Field(default=None, description="""One or more cell-by-gene matrices associated with this taxonomy (normalized and/or raw counts).""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(derived: one ExpressionMatrix per '
+                                                   'X / raw.X group present)'}},
+         'domain_of': ['CellTypeTaxonomy'],
+         'in_subset': ['X', 'raw', 'data']} })
     was_generated_by: Optional[str] = Field(default=None, description="""Generation is the completion of production of a new entity by an activity. This entity did not exist before generation and becomes available for usage after this generation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity'], 'slot_uri': 'prov:wasGeneratedBy'} })
     iri: Optional[str] = Field(default=None, description="""An IRI for an entity. This is determined by the id using expansion rules.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/iri',
          'domain_of': ['attribute',
@@ -12637,7 +13153,8 @@ class CellTypeTaxonomy(ProvEntity, NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -12659,7 +13176,8 @@ class CellTypeTaxonomy(ProvEntity, NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -12913,15 +13431,15 @@ class ClusterSet(ProvEntity, NamedThing):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/brain-bican/cell-taxonomy',
          'mixins': ['ProvEntity'],
-         'slot_usage': {'id': {'description': 'Unique identifier for this cluster set.',
-                               'from_schema': 'bican_biolink',
+         'slot_usage': {'id': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                'value': '(synthesized)'}},
+                               'description': 'Unique identifier for this cluster set.',
                                'in_subset': ['uns', 'annotations'],
                                'name': 'id',
                                'range': 'string'},
                         'name': {'description': 'Human-readable name for this cluster '
                                                 'set (e.g. the name of the clustering '
                                                 'run).',
-                                 'from_schema': 'bican_biolink',
                                  'in_subset': ['uns', 'annotations'],
                                  'name': 'name',
                                  'range': 'string'},
@@ -12929,9 +13447,9 @@ class ClusterSet(ProvEntity, NamedThing):
                                              'name': 'was_derived_from',
                                              'range': 'ExpressionMatrix'}}})
 
-    was_derived_from: Optional[list[str]] = Field(default=None, description="""A derivation is a transformation of an entity into another, an update of an entity resulting in a new one, or the construction of a new entity based on a pre-existing entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity', 'CellTypeTaxonomy', 'ClusterSet'],
-         'slot_uri': 'prov:wasDerivedFrom'} })
-    id: str = Field(default=..., description="""Unique identifier for this cluster set.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/id',
+    id: str = Field(default=..., description="""Unique identifier for this cluster set.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(synthesized)'}},
+         'definition_uri': 'https://w3id.org/biolink/vocab/id',
          'domain': 'entity',
          'domain_of': ['ontology class',
                        'entity',
@@ -12957,7 +13475,10 @@ class ClusterSet(ProvEntity, NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['uns', 'annotations'],
          'slot_uri': 'biolink:id'} })
@@ -12983,12 +13504,15 @@ class ClusterSet(ProvEntity, NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['uns', 'annotations'],
          'mappings': ['rdfs:label'],
          'narrow_mappings': ['dct:title', 'WIKIDATA_PROPERTY:P1476'],
          'slot_uri': 'rdfs:label'} })
+    was_derived_from: Optional[list[str]] = Field(default=None, description="""A derivation is a transformation of an entity into another, an update of an entity resulting in a new one, or the construction of a new entity based on a pre-existing entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity', 'CellTypeTaxonomy', 'ClusterSet'],
+         'slot_uri': 'prov:wasDerivedFrom'} })
     was_generated_by: Optional[str] = Field(default=None, description="""Generation is the completion of production of a new entity by an activity. This entity did not exist before generation and becomes available for usage after this generation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity'], 'slot_uri': 'prov:wasGeneratedBy'} })
     iri: Optional[str] = Field(default=None, description="""An IRI for an entity. This is determined by the id using expansion rules.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/iri',
          'domain_of': ['attribute',
@@ -13045,7 +13569,8 @@ class ClusterSet(ProvEntity, NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -13299,32 +13824,57 @@ class Cluster(ProvEntity, NamedThing):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/brain-bican/cell-taxonomy',
          'mixins': ['ProvEntity'],
-         'slot_usage': {'has_parent': {'in_subset': ['obs', 'uns', 'annotations'],
+         'slot_usage': {'has_parent': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                        'value': '(derived: '
+                                                                                 'taxa '
+                                                                                 'at '
+                                                                                 'the '
+                                                                                 'levels '
+                                                                                 'above '
+                                                                                 'cluster_id '
+                                                                                 'in '
+                                                                                 'uns.hierarchy; '
+                                                                                 'read '
+                                                                                 'per '
+                                                                                 'row '
+                                                                                 'of '
+                                                                                 'uns.cluster_info)'}},
+                                       'in_subset': ['obs', 'uns', 'annotations'],
                                        'multivalued': True,
                                        'name': 'has_parent',
                                        'range': 'CellTypeTaxon'},
-                        'id': {'description': 'Unique identifier for this cluster.',
-                               'from_schema': 'bican_biolink',
+                        'id': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                'value': '(synthesized)'}},
+                               'description': 'Unique identifier for this cluster.',
                                'in_subset': ['obs', 'uns', 'annotations'],
                                'name': 'id',
                                'range': 'string'},
-                        'name': {'description': 'Human-readable label for this '
+                        'name': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                  'value': 'obs.cluster_id'}},
+                                 'description': 'Human-readable label for this '
                                                 'cluster; corresponds to cluster_id '
                                                 'values in obs.',
-                                 'from_schema': 'bican_biolink',
                                  'in_subset': ['obs', 'uns', 'annotations'],
                                  'name': 'name',
                                  'range': 'string'},
-                        'part_of_set': {'description': 'The cluster set to which this '
+                        'part_of_set': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                         'value': '(derived: '
+                                                                                  'the '
+                                                                                  'single '
+                                                                                  'synthesized '
+                                                                                  'ClusterSet '
+                                                                                  'for '
+                                                                                  'this '
+                                                                                  'file)'}},
+                                        'description': 'The cluster set to which this '
                                                        'cluster belongs.',
                                         'in_subset': ['uns', 'annotations'],
                                         'name': 'part_of_set',
                                         'range': 'ClusterSet'}}})
 
-    part_of_set: Optional[str] = Field(default=None, description="""The cluster set to which this cluster belongs.""", json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeTaxon', 'Cluster'], 'in_subset': ['uns', 'annotations']} })
-    has_parent: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'domain_of': ['CellTypeSet', 'CellTypeTaxon', 'Cluster'],
-         'in_subset': ['obs', 'uns', 'annotations']} })
-    id: str = Field(default=..., description="""Unique identifier for this cluster.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/id',
+    id: str = Field(default=..., description="""Unique identifier for this cluster.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(synthesized)'}},
+         'definition_uri': 'https://w3id.org/biolink/vocab/id',
          'domain': 'entity',
          'domain_of': ['ontology class',
                        'entity',
@@ -13350,11 +13900,16 @@ class Cluster(ProvEntity, NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['obs', 'uns', 'annotations'],
          'slot_uri': 'biolink:id'} })
     name: Optional[str] = Field(default=None, description="""Human-readable label for this cluster; corresponds to cluster_id values in obs.""", json_schema_extra = { "linkml_meta": {'aliases': ['label', 'display name', 'title'],
+         'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'obs.cluster_id'}},
          'definition_uri': 'https://w3id.org/biolink/vocab/name',
          'domain': 'entity',
          'domain_of': ['attribute',
@@ -13376,13 +13931,29 @@ class Cluster(ProvEntity, NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['obs', 'uns', 'annotations'],
          'mappings': ['rdfs:label'],
          'narrow_mappings': ['dct:title', 'WIKIDATA_PROPERTY:P1476'],
          'slot_uri': 'rdfs:label'} })
-    number_of_observations: Optional[int] = Field(default=None, description="""Number of cells assigned to this cluster.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Cluster'], 'in_subset': ['uns', 'annotations']} })
+    part_of_set: Optional[str] = Field(default=None, description="""The cluster set to which this cluster belongs.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(derived: the single synthesized '
+                                                   'ClusterSet for this file)'}},
+         'domain_of': ['CellTypeTaxon', 'Cluster'],
+         'in_subset': ['uns', 'annotations']} })
+    has_parent: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(derived: taxa at the levels above '
+                                                   'cluster_id in uns.hierarchy; read '
+                                                   'per row of uns.cluster_info)'}},
+         'domain_of': ['CellTypeSet', 'CellTypeTaxon', 'Cluster'],
+         'in_subset': ['obs', 'uns', 'annotations']} })
+    number_of_observations: Optional[int] = Field(default=None, description="""Number of cells assigned to this cluster.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(derived: count obs rows grouped '
+                                                   'by obs.cluster_id)'}},
+         'domain_of': ['Cluster'],
+         'in_subset': ['uns', 'annotations']} })
     was_derived_from: Optional[str] = Field(default=None, description="""A derivation is a transformation of an entity into another, an update of an entity resulting in a new one, or the construction of a new entity based on a pre-existing entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity', 'CellTypeTaxonomy', 'ClusterSet'],
          'slot_uri': 'prov:wasDerivedFrom'} })
     was_generated_by: Optional[str] = Field(default=None, description="""Generation is the completion of production of a new entity by an activity. This entity did not exist before generation and becomes available for usage after this generation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity'], 'slot_uri': 'prov:wasGeneratedBy'} })
@@ -13441,7 +14012,8 @@ class Cluster(ProvEntity, NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -13693,22 +14265,28 @@ class ExpressionMatrix(ProvEntity, NamedThing):
     """
     A cell-by-gene matrix of molecular measurements. Each row represents a cell and each column represents a gene. May be normalized (X) or raw counts (raw.X).
     """
-    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/brain-bican/cell-taxonomy',
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'aliases': ['X', 'raw.X'],
+         'from_schema': 'https://w3id.org/brain-bican/cell-taxonomy',
          'mixins': ['ProvEntity'],
-         'slot_usage': {'content_url': {'description': 'URL to the matrix file if the '
+         'slot_usage': {'content_url': {'aliases': ['dataset_purl'],
+                                        'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                         'value': 'uns.dataset_purl'}},
+                                        'description': 'URL to the matrix file if the '
                                                        'matrix is not embedded '
                                                        'directly in the h5ad file.',
-                                        'from_schema': 'bican_core',
                                         'in_subset': ['uns', 'data'],
                                         'name': 'content_url',
                                         'range': 'uri'},
-                        'id': {'description': 'Unique identifier for this expression '
+                        'id': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                'value': '(synthesized)'}},
+                               'description': 'Unique identifier for this expression '
                                               'matrix.',
-                               'from_schema': 'bican_biolink',
                                'name': 'id',
                                'range': 'string'}}})
 
-    id: str = Field(default=..., description="""Unique identifier for this expression matrix.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/id',
+    id: str = Field(default=..., description="""Unique identifier for this expression matrix.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(synthesized)'}},
+         'definition_uri': 'https://w3id.org/biolink/vocab/id',
          'domain': 'entity',
          'domain_of': ['ontology class',
                        'entity',
@@ -13734,15 +14312,29 @@ class ExpressionMatrix(ProvEntity, NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
-    content_url: Optional[list[str]] = Field(default=None, description="""URL to the matrix file if the matrix is not embedded directly in the h5ad file.""", json_schema_extra = { "linkml_meta": {'domain_of': ['GenomeAnnotation', 'CellTypeTaxonomy', 'ExpressionMatrix'],
+    content_url: Optional[list[str]] = Field(default=None, description="""URL to the matrix file if the matrix is not embedded directly in the h5ad file.""", json_schema_extra = { "linkml_meta": {'aliases': ['dataset_purl'],
+         'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.dataset_purl'}},
+         'domain_of': ['GenomeAnnotation', 'CellTypeTaxonomy', 'ExpressionMatrix'],
          'in_subset': ['uns', 'data'],
          'slot_uri': 'schema:url'} })
-    has_variable: Optional[list[str]] = Field(default=None, description="""One of the genes (variables) measured across all cells in this matrix; corresponds to a column in var.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExpressionMatrix'], 'in_subset': ['var', 'assigned_metadata']} })
-    matrix_type: Optional[ExpressionMatrixType] = Field(default=None, description="""Whether this matrix contains normalized expression values or raw counts.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ExpressionMatrix'], 'in_subset': ['X', 'raw', 'data']} })
+    matrix_type: Optional[ExpressionMatrixType] = Field(default=None, description="""Whether this matrix contains normalized expression values or raw counts.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(derived: normalized if read from '
+                                                   'X, raw_count if read from raw.X)'}},
+         'domain_of': ['ExpressionMatrix'],
+         'in_subset': ['X', 'raw', 'data']} })
+    has_variable: Optional[list[str]] = Field(default=None, description="""One of the genes (variables) measured across all cells in this matrix; corresponds to a column in var.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(derived: one GeneAnnotation per '
+                                                   'var row)'}},
+         'domain_of': ['ExpressionMatrix'],
+         'in_subset': ['var', 'assigned_metadata']} })
     was_derived_from: Optional[str] = Field(default=None, description="""A derivation is a transformation of an entity into another, an update of an entity resulting in a new one, or the construction of a new entity based on a pre-existing entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity', 'CellTypeTaxonomy', 'ClusterSet'],
          'slot_uri': 'prov:wasDerivedFrom'} })
     was_generated_by: Optional[str] = Field(default=None, description="""Generation is the completion of production of a new entity by an activity. This entity did not exist before generation and becomes available for usage after this generation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity'], 'slot_uri': 'prov:wasGeneratedBy'} })
@@ -13807,7 +14399,8 @@ class ExpressionMatrix(ProvEntity, NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -13829,7 +14422,8 @@ class ExpressionMatrix(ProvEntity, NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -14083,12 +14677,15 @@ class Embedding(ProvEntity, NamedThing):
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/brain-bican/cell-taxonomy',
          'mixins': ['ProvEntity'],
-         'slot_usage': {'id': {'description': 'Unique identifier for this embedding.',
-                               'from_schema': 'bican_biolink',
+         'slot_usage': {'id': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                'value': '(synthesized)'}},
+                               'description': 'Unique identifier for this embedding.',
                                'name': 'id',
                                'range': 'string'}}})
 
-    id: str = Field(default=..., description="""Unique identifier for this embedding.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/id',
+    id: str = Field(default=..., description="""Unique identifier for this embedding.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(synthesized)'}},
+         'definition_uri': 'https://w3id.org/biolink/vocab/id',
          'domain': 'entity',
          'domain_of': ['ontology class',
                        'entity',
@@ -14114,12 +14711,21 @@ class Embedding(ProvEntity, NamedThing):
                        'ClusterSet',
                        'Cluster',
                        'ExpressionMatrix',
-                       'Embedding'],
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
          'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
          'in_subset': ['translator_minimal'],
          'slot_uri': 'biolink:id'} })
-    embedding_key: Optional[str] = Field(default=None, description="""Key used to store the embedding in obsm; must be prefixed with X_ (e.g. X_umap, X_pca).""", json_schema_extra = { "linkml_meta": {'domain_of': ['Embedding'], 'in_subset': ['obsm', 'analysis']} })
-    embedding_matrix: Optional[float] = Field(default=None, description="""N-dimensional matrix of shape n_cells × n_dims representing the low-dimensional projection.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Embedding'], 'in_subset': ['obsm', 'analysis']} })
+    embedding_key: Optional[str] = Field(default=None, description="""Key used to store the embedding in obsm; must be prefixed with X_ (e.g. X_umap, X_pca).""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'obsm.X_<embedding> (key)'}},
+         'domain_of': ['Embedding'],
+         'in_subset': ['obsm', 'analysis']} })
+    embedding_matrix: Optional[float] = Field(default=None, description="""N-dimensional matrix of shape n_cells × n_dims representing the low-dimensional projection.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'obsm.X_<embedding> (value)'}},
+         'domain_of': ['Embedding'],
+         'in_subset': ['obsm', 'analysis']} })
     was_derived_from: Optional[str] = Field(default=None, description="""A derivation is a transformation of an entity into another, an update of an entity resulting in a new one, or the construction of a new entity based on a pre-existing entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity', 'CellTypeTaxonomy', 'ClusterSet'],
          'slot_uri': 'prov:wasDerivedFrom'} })
     was_generated_by: Optional[str] = Field(default=None, description="""Generation is the completion of production of a new entity by an activity. This entity did not exist before generation and becomes available for usage after this generation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity'], 'slot_uri': 'prov:wasGeneratedBy'} })
@@ -14184,7 +14790,8 @@ class Embedding(ProvEntity, NamedThing):
                        'CellTypeSet',
                        'CellTypeTaxon',
                        'ClusterSet',
-                       'Cluster'],
+                       'Cluster',
+                       'ColorPalette'],
          'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
          'in_subset': ['translator_minimal', 'samples'],
          'mappings': ['rdfs:label'],
@@ -14206,7 +14813,8 @@ class Embedding(ProvEntity, NamedThing):
                        'material sample',
                        'biological entity',
                        'gene',
-                       'genome'],
+                       'genome',
+                       'ColorPalette'],
          'exact_mappings': ['IAO:0000115', 'skos:definitions'],
          'in_subset': ['translator_minimal'],
          'mappings': ['dct:description'],
@@ -14454,6 +15062,1196 @@ class Embedding(ProvEntity, NamedThing):
          'slot_uri': 'biolink:category'} })
 
 
+class Abbreviation(OntologyMappable, ProvEntity, NamedThing):
+    """
+    Maps an abbreviation string to its decoded meaning. Optionally the abbreviation can be linked to one or more entities it denotes.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/brain-bican/cell-taxonomy',
+         'mixins': ['ProvEntity', 'OntologyMappable'],
+         'slot_usage': {'id': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                'value': '(synthesized)'}},
+                               'description': 'Unique identifier for this abbreviation '
+                                              'entry.',
+                               'in_subset': ['uns', 'annotations'],
+                               'name': 'id',
+                               'range': 'string'}}})
+
+    id: str = Field(default=..., description="""Unique identifier for this abbreviation entry.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(synthesized)'}},
+         'definition_uri': 'https://w3id.org/biolink/vocab/id',
+         'domain': 'entity',
+         'domain_of': ['ontology class',
+                       'entity',
+                       'attribute',
+                       'named thing',
+                       'taxonomic rank',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome',
+                       'Cell',
+                       'CellTypeSet',
+                       'CellTypeTaxon',
+                       'CellTypeTaxonomy',
+                       'ClusterSet',
+                       'Cluster',
+                       'ExpressionMatrix',
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
+         'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
+         'in_subset': ['uns', 'annotations'],
+         'slot_uri': 'biolink:id'} })
+    term: Optional[str] = Field(default=None, description="""An abbreviation term as it appears in a cell type or cell set name.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.cluster_info.tokens_<level> '
+                                                   '(data only)'},
+                         'ait_separator': {'tag': 'ait_separator', 'value': '|'}},
+         'domain_of': ['Abbreviation'],
+         'in_subset': ['uns', 'annotations']} })
+    meaning: Optional[str] = Field(default=None, description="""The decoded meaning of the abbreviation term.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Abbreviation'], 'in_subset': ['uns', 'annotations']} })
+    entity_type: Optional[AbbreviationEntityType] = Field(default=None, description="""The entity type which the abbreviation term denotes.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Abbreviation'], 'in_subset': ['uns', 'annotations']} })
+    denotes_gene_annotation: Optional[list[str]] = Field(default=None, description="""One of potentially many gene annotation terms to which the abbreviation denotes.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Abbreviation'], 'in_subset': ['uns', 'annotations']} })
+    denotes_parcellation_term: Optional[list[str]] = Field(default=None, description="""One of potentially many parcellation terms (anatomical structures) to which the abbreviation denotes.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Abbreviation'], 'in_subset': ['uns', 'annotations']} })
+    denotes_cell_type: Optional[list[str]] = Field(default=None, description="""One of potentially many cell type terms which the abbreviation denotes.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Abbreviation'], 'in_subset': ['uns', 'annotations']} })
+    was_derived_from: Optional[str] = Field(default=None, description="""A derivation is a transformation of an entity into another, an update of an entity resulting in a new one, or the construction of a new entity based on a pre-existing entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity', 'CellTypeTaxonomy', 'ClusterSet'],
+         'slot_uri': 'prov:wasDerivedFrom'} })
+    was_generated_by: Optional[str] = Field(default=None, description="""Generation is the completion of production of a new entity by an activity. This entity did not exist before generation and becomes available for usage after this generation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity'], 'slot_uri': 'prov:wasGeneratedBy'} })
+    mapping_relation: Optional[list[str]] = Field(default=None, description="""A mapping of unspecified kind. The honest choice when the relationship is not established: it entails nothing, being neither symmetric nor transitive and carrying no direction.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:mappingRelation'} })
+    exact_match: Optional[list[str]] = Field(default=None, description="""The external concept is interchangeable with this entity. Symmetric AND transitive, so it chains through third-party mappings. Do not use where several of our entities map to one external concept: the entailment would then assert that those entities are equivalent to each other.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:exactMatch'} })
+    close_match: Optional[list[str]] = Field(default=None, description="""Close enough to be used interchangeably in some applications. Symmetric but not transitive. Asserts similarity at the same level, so it is not a substitute for broad_match where a hierarchy exists.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:closeMatch'} })
+    broad_match: Optional[list[str]] = Field(default=None, description="""The external concept is broader than this entity. Use where several of our entities map to a single external concept.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:broadMatch'} })
+    narrow_match: Optional[list[str]] = Field(default=None, description="""The external concept is narrower than this entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:narrowMatch'} })
+    related_match: Optional[list[str]] = Field(default=None, description="""Associatively related. Note that this positively asserts that the concepts are NOT equivalent and NOT hierarchically related, so it is a claim in its own right rather than a neutral fallback.""", json_schema_extra = { "linkml_meta": {'domain_of': ['OntologyMappable'], 'slot_uri': 'skos:relatedMatch'} })
+    iri: Optional[str] = Field(default=None, description="""An IRI for an entity. This is determined by the id using expansion rules.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/iri',
+         'domain_of': ['attribute',
+                       'entity',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'exact_mappings': ['WIKIDATA_PROPERTY:P854'],
+         'in_subset': ['translator_minimal', 'samples'],
+         'slot_uri': 'biolink:iri'} })
+    type: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/type',
+         'domain': 'entity',
+         'domain_of': ['entity',
+                       'attribute',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'exact_mappings': ['gff3:type', 'gpi:DB_Object_Type'],
+         'mappings': ['rdf:type'],
+         'slot_uri': 'rdf:type'} })
+    name: Optional[str] = Field(default=None, description="""A human-readable name for an attribute or entity.""", json_schema_extra = { "linkml_meta": {'aliases': ['label', 'display name', 'title'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/name',
+         'domain': 'entity',
+         'domain_of': ['attribute',
+                       'entity',
+                       'macromolecular machine mixin',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome',
+                       'CellTypeSet',
+                       'CellTypeTaxon',
+                       'ClusterSet',
+                       'Cluster',
+                       'ColorPalette'],
+         'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
+         'in_subset': ['translator_minimal', 'samples'],
+         'mappings': ['rdfs:label'],
+         'narrow_mappings': ['dct:title', 'WIKIDATA_PROPERTY:P1476'],
+         'slot_uri': 'rdfs:label'} })
+    description: Optional[str] = Field(default=None, description="""a human-readable description of an entity""", json_schema_extra = { "linkml_meta": {'aliases': ['definition'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/description',
+         'domain_of': ['entity',
+                       'attribute',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome',
+                       'ColorPalette'],
+         'exact_mappings': ['IAO:0000115', 'skos:definitions'],
+         'in_subset': ['translator_minimal'],
+         'mappings': ['dct:description'],
+         'narrow_mappings': ['gff3:Description'],
+         'slot_uri': 'dct:description'} })
+    has_attribute: Optional[list[str]] = Field(default=None, description="""connects any entity to an attribute""", json_schema_extra = { "linkml_meta": {'close_mappings': ['OBI:0001927'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/has_attribute',
+         'domain': 'entity',
+         'domain_of': ['entity',
+                       'attribute',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'exact_mappings': ['SIO:000008'],
+         'in_subset': ['samples'],
+         'narrow_mappings': ['OBAN:association_has_subject_property',
+                             'OBAN:association_has_object_property',
+                             'CPT:has_possibly_included_panel_element',
+                             'DRUGBANK:category',
+                             'EFO:is_executed_in',
+                             'HANCESTRO:0301',
+                             'LOINC:has_action_guidance',
+                             'LOINC:has_adjustment',
+                             'LOINC:has_aggregation_view',
+                             'LOINC:has_approach_guidance',
+                             'LOINC:has_divisor',
+                             'LOINC:has_exam',
+                             'LOINC:has_method',
+                             'LOINC:has_modality_subtype',
+                             'LOINC:has_object_guidance',
+                             'LOINC:has_scale',
+                             'LOINC:has_suffix',
+                             'LOINC:has_time_aspect',
+                             'LOINC:has_time_modifier',
+                             'LOINC:has_timing_of',
+                             'NCIT:R88',
+                             'NCIT:eo_disease_has_property_or_attribute',
+                             'NCIT:has_data_element',
+                             'NCIT:has_pharmaceutical_administration_method',
+                             'NCIT:has_pharmaceutical_basic_dose_form',
+                             'NCIT:has_pharmaceutical_intended_site',
+                             'NCIT:has_pharmaceutical_release_characteristics',
+                             'NCIT:has_pharmaceutical_state_of_matter',
+                             'NCIT:has_pharmaceutical_transformation',
+                             'NCIT:is_qualified_by',
+                             'NCIT:qualifier_applies_to',
+                             'NCIT:role_has_domain',
+                             'NCIT:role_has_range',
+                             'INO:0000154',
+                             'HANCESTRO:0308',
+                             'orphanet:C016',
+                             'orphanet:C017',
+                             'RO:0000053',
+                             'RO:0000086',
+                             'RO:0000087',
+                             'SNOMED:has_access',
+                             'SNOMED:has_clinical_course',
+                             'SNOMED:has_count_of_base_of_active_ingredient',
+                             'SNOMED:has_dose_form_administration_method',
+                             'SNOMED:has_dose_form_release_characteristic',
+                             'SNOMED:has_dose_form_transformation',
+                             'SNOMED:has_finding_context',
+                             'SNOMED:has_finding_informer',
+                             'SNOMED:has_inherent_attribute',
+                             'SNOMED:has_intent',
+                             'SNOMED:has_interpretation',
+                             'SNOMED:has_laterality',
+                             'SNOMED:has_measurement_method',
+                             'SNOMED:has_method',
+                             'SNOMED:has_priority',
+                             'SNOMED:has_procedure_context',
+                             'SNOMED:has_process_duration',
+                             'SNOMED:has_property',
+                             'SNOMED:has_revision_status',
+                             'SNOMED:has_scale_type',
+                             'SNOMED:has_severity',
+                             'SNOMED:has_specimen',
+                             'SNOMED:has_state_of_matter',
+                             'SNOMED:has_subject_relationship_context',
+                             'SNOMED:has_surgical_approach',
+                             'SNOMED:has_technique',
+                             'SNOMED:has_temporal_context',
+                             'SNOMED:has_time_aspect',
+                             'SNOMED:has_units',
+                             'UMLS:has_structural_class',
+                             'UMLS:has_supported_concept_property',
+                             'UMLS:has_supported_concept_relationship',
+                             'UMLS:may_be_qualified_by'],
+         'slot_uri': 'biolink:has_attribute'} })
+    deprecated: Optional[bool] = Field(default=None, description="""A boolean flag indicating that an entity is no longer considered current or valid.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/deprecated',
+         'domain_of': ['entity',
+                       'attribute',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'exact_mappings': ['oboInOwl:ObsoleteClass'],
+         'slot_uri': 'biolink:deprecated'} })
+    provided_by: Optional[list[str]] = Field(default=None, description="""The value in this node property represents the knowledge provider that created or assembled the node and all of its attributes.  Used internally to represent how a particular node made its way into a knowledge provider or graph.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/provided_by',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'is_a': 'node property',
+         'slot_uri': 'biolink:provided_by'} })
+    xref: Optional[list[str]] = Field(default=None, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""", json_schema_extra = { "linkml_meta": {'aliases': ['dbxref', 'Dbxref', 'DbXref', 'record_url', 'source_record_urls'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/xref',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'gene',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'genome'],
+         'in_subset': ['translator_minimal'],
+         'narrow_mappings': ['gff3:Dbxref', 'gpi:DB_Xrefs'],
+         'slot_uri': 'biolink:xref'} })
+    full_name: Optional[str] = Field(default=None, description="""a long-form human readable name for a thing""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/full_name',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'is_a': 'node property',
+         'slot_uri': 'biolink:full_name'} })
+    synonym: Optional[list[str]] = Field(default=None, description="""Alternate human-readable names for a thing""", json_schema_extra = { "linkml_meta": {'aliases': ['alias'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/synonym',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'in_subset': ['translator_minimal'],
+         'is_a': 'node property',
+         'narrow_mappings': ['skos:altLabel',
+                             'gff3:Alias',
+                             'AGRKB:synonyms',
+                             'gpi:DB_Object_Synonyms',
+                             'HANCESTRO:0330',
+                             'IAO:0000136',
+                             'RXNORM:has_tradename'],
+         'slot_uri': 'biolink:synonym'} })
+    information_content: Optional[float] = Field(default=None, description="""Information content (IC) value for a term, primarily from Automats.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/information_content',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'is_a': 'node property',
+         'slot_uri': 'biolink:information_content'} })
+    equivalent_identifiers: Optional[list[str]] = Field(default=None, description="""A set of identifiers that are considered equivalent to the primary identifier of the entity. This attribute is used to represent a collection of identifiers that are considered equivalent to the primary identifier of an entity. These equivalent identifiers may come from different databases, ontologies, or naming conventions, but they all refer to the same underlying concept or entity. This attribute is particularly useful in data integration and interoperability scenarios, where it is important to recognize and link different representations of the same entity across various sources.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/equivalent_identifiers',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'is_a': 'node property',
+         'see_also': ['biolink:xref', 'biolink:synonyms'],
+         'slot_uri': 'biolink:equivalent_identifiers'} })
+    category: list[Literal["https://identifiers.org/brain-bican/vocab/Abbreviation","bican:Abbreviation"]] = Field(default=["bican:Abbreviation"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/category',
+         'designates_type': True,
+         'domain': 'entity',
+         'domain_of': ['entity'],
+         'in_subset': ['translator_minimal'],
+         'is_a': 'type',
+         'is_class_field': True,
+         'slot_uri': 'biolink:category'} })
+
+
+class ColorPalette(ProvEntity, NamedThing):
+    """
+    A schematic set of display colors that can be applied to individual components of the associated entity set (for example, a taxonomy).
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/brain-bican/cell-taxonomy',
+         'mixins': ['ProvEntity'],
+         'slot_usage': {'description': {'description': 'Description of the color '
+                                                       'palette.',
+                                        'in_subset': ['uns', 'tooling'],
+                                        'name': 'description',
+                                        'range': 'string'},
+                        'id': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                'value': '(synthesized)'}},
+                               'description': 'Unique identifier for this color '
+                                              'palette.',
+                               'in_subset': ['uns', 'tooling'],
+                               'name': 'id',
+                               'range': 'string'},
+                        'name': {'description': 'Name of the color palette.',
+                                 'in_subset': ['uns', 'tooling'],
+                                 'name': 'name',
+                                 'range': 'string'}}})
+
+    id: str = Field(default=..., description="""Unique identifier for this color palette.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(synthesized)'}},
+         'definition_uri': 'https://w3id.org/biolink/vocab/id',
+         'domain': 'entity',
+         'domain_of': ['ontology class',
+                       'entity',
+                       'attribute',
+                       'named thing',
+                       'taxonomic rank',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome',
+                       'Cell',
+                       'CellTypeSet',
+                       'CellTypeTaxon',
+                       'CellTypeTaxonomy',
+                       'ClusterSet',
+                       'Cluster',
+                       'ExpressionMatrix',
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
+         'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
+         'in_subset': ['uns', 'tooling'],
+         'slot_uri': 'biolink:id'} })
+    name: Optional[str] = Field(default=None, description="""Name of the color palette.""", json_schema_extra = { "linkml_meta": {'aliases': ['label', 'display name', 'title'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/name',
+         'domain': 'entity',
+         'domain_of': ['attribute',
+                       'entity',
+                       'macromolecular machine mixin',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome',
+                       'CellTypeSet',
+                       'CellTypeTaxon',
+                       'ClusterSet',
+                       'Cluster',
+                       'ColorPalette'],
+         'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
+         'in_subset': ['uns', 'tooling'],
+         'mappings': ['rdfs:label'],
+         'narrow_mappings': ['dct:title', 'WIKIDATA_PROPERTY:P1476'],
+         'slot_uri': 'rdfs:label'} })
+    description: Optional[str] = Field(default=None, description="""Description of the color palette.""", json_schema_extra = { "linkml_meta": {'aliases': ['definition'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/description',
+         'domain_of': ['entity',
+                       'attribute',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome',
+                       'ColorPalette'],
+         'exact_mappings': ['IAO:0000115', 'skos:definitions'],
+         'in_subset': ['uns', 'tooling'],
+         'mappings': ['dct:description'],
+         'narrow_mappings': ['gff3:Description'],
+         'slot_uri': 'dct:description'} })
+    is_palette_for: Optional[str] = Field(default=None, description="""The cell type taxonomy for which the palette provides display color properties.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ColorPalette'], 'in_subset': ['uns', 'tooling']} })
+    was_derived_from: Optional[str] = Field(default=None, description="""A derivation is a transformation of an entity into another, an update of an entity resulting in a new one, or the construction of a new entity based on a pre-existing entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity', 'CellTypeTaxonomy', 'ClusterSet'],
+         'slot_uri': 'prov:wasDerivedFrom'} })
+    was_generated_by: Optional[str] = Field(default=None, description="""Generation is the completion of production of a new entity by an activity. This entity did not exist before generation and becomes available for usage after this generation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity'], 'slot_uri': 'prov:wasGeneratedBy'} })
+    iri: Optional[str] = Field(default=None, description="""An IRI for an entity. This is determined by the id using expansion rules.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/iri',
+         'domain_of': ['attribute',
+                       'entity',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'exact_mappings': ['WIKIDATA_PROPERTY:P854'],
+         'in_subset': ['translator_minimal', 'samples'],
+         'slot_uri': 'biolink:iri'} })
+    type: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/type',
+         'domain': 'entity',
+         'domain_of': ['entity',
+                       'attribute',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'exact_mappings': ['gff3:type', 'gpi:DB_Object_Type'],
+         'mappings': ['rdf:type'],
+         'slot_uri': 'rdf:type'} })
+    has_attribute: Optional[list[str]] = Field(default=None, description="""connects any entity to an attribute""", json_schema_extra = { "linkml_meta": {'close_mappings': ['OBI:0001927'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/has_attribute',
+         'domain': 'entity',
+         'domain_of': ['entity',
+                       'attribute',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'exact_mappings': ['SIO:000008'],
+         'in_subset': ['samples'],
+         'narrow_mappings': ['OBAN:association_has_subject_property',
+                             'OBAN:association_has_object_property',
+                             'CPT:has_possibly_included_panel_element',
+                             'DRUGBANK:category',
+                             'EFO:is_executed_in',
+                             'HANCESTRO:0301',
+                             'LOINC:has_action_guidance',
+                             'LOINC:has_adjustment',
+                             'LOINC:has_aggregation_view',
+                             'LOINC:has_approach_guidance',
+                             'LOINC:has_divisor',
+                             'LOINC:has_exam',
+                             'LOINC:has_method',
+                             'LOINC:has_modality_subtype',
+                             'LOINC:has_object_guidance',
+                             'LOINC:has_scale',
+                             'LOINC:has_suffix',
+                             'LOINC:has_time_aspect',
+                             'LOINC:has_time_modifier',
+                             'LOINC:has_timing_of',
+                             'NCIT:R88',
+                             'NCIT:eo_disease_has_property_or_attribute',
+                             'NCIT:has_data_element',
+                             'NCIT:has_pharmaceutical_administration_method',
+                             'NCIT:has_pharmaceutical_basic_dose_form',
+                             'NCIT:has_pharmaceutical_intended_site',
+                             'NCIT:has_pharmaceutical_release_characteristics',
+                             'NCIT:has_pharmaceutical_state_of_matter',
+                             'NCIT:has_pharmaceutical_transformation',
+                             'NCIT:is_qualified_by',
+                             'NCIT:qualifier_applies_to',
+                             'NCIT:role_has_domain',
+                             'NCIT:role_has_range',
+                             'INO:0000154',
+                             'HANCESTRO:0308',
+                             'orphanet:C016',
+                             'orphanet:C017',
+                             'RO:0000053',
+                             'RO:0000086',
+                             'RO:0000087',
+                             'SNOMED:has_access',
+                             'SNOMED:has_clinical_course',
+                             'SNOMED:has_count_of_base_of_active_ingredient',
+                             'SNOMED:has_dose_form_administration_method',
+                             'SNOMED:has_dose_form_release_characteristic',
+                             'SNOMED:has_dose_form_transformation',
+                             'SNOMED:has_finding_context',
+                             'SNOMED:has_finding_informer',
+                             'SNOMED:has_inherent_attribute',
+                             'SNOMED:has_intent',
+                             'SNOMED:has_interpretation',
+                             'SNOMED:has_laterality',
+                             'SNOMED:has_measurement_method',
+                             'SNOMED:has_method',
+                             'SNOMED:has_priority',
+                             'SNOMED:has_procedure_context',
+                             'SNOMED:has_process_duration',
+                             'SNOMED:has_property',
+                             'SNOMED:has_revision_status',
+                             'SNOMED:has_scale_type',
+                             'SNOMED:has_severity',
+                             'SNOMED:has_specimen',
+                             'SNOMED:has_state_of_matter',
+                             'SNOMED:has_subject_relationship_context',
+                             'SNOMED:has_surgical_approach',
+                             'SNOMED:has_technique',
+                             'SNOMED:has_temporal_context',
+                             'SNOMED:has_time_aspect',
+                             'SNOMED:has_units',
+                             'UMLS:has_structural_class',
+                             'UMLS:has_supported_concept_property',
+                             'UMLS:has_supported_concept_relationship',
+                             'UMLS:may_be_qualified_by'],
+         'slot_uri': 'biolink:has_attribute'} })
+    deprecated: Optional[bool] = Field(default=None, description="""A boolean flag indicating that an entity is no longer considered current or valid.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/deprecated',
+         'domain_of': ['entity',
+                       'attribute',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'exact_mappings': ['oboInOwl:ObsoleteClass'],
+         'slot_uri': 'biolink:deprecated'} })
+    provided_by: Optional[list[str]] = Field(default=None, description="""The value in this node property represents the knowledge provider that created or assembled the node and all of its attributes.  Used internally to represent how a particular node made its way into a knowledge provider or graph.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/provided_by',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'is_a': 'node property',
+         'slot_uri': 'biolink:provided_by'} })
+    xref: Optional[list[str]] = Field(default=None, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""", json_schema_extra = { "linkml_meta": {'aliases': ['dbxref', 'Dbxref', 'DbXref', 'record_url', 'source_record_urls'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/xref',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'gene',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'genome'],
+         'in_subset': ['translator_minimal'],
+         'narrow_mappings': ['gff3:Dbxref', 'gpi:DB_Xrefs'],
+         'slot_uri': 'biolink:xref'} })
+    full_name: Optional[str] = Field(default=None, description="""a long-form human readable name for a thing""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/full_name',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'is_a': 'node property',
+         'slot_uri': 'biolink:full_name'} })
+    synonym: Optional[list[str]] = Field(default=None, description="""Alternate human-readable names for a thing""", json_schema_extra = { "linkml_meta": {'aliases': ['alias'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/synonym',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'in_subset': ['translator_minimal'],
+         'is_a': 'node property',
+         'narrow_mappings': ['skos:altLabel',
+                             'gff3:Alias',
+                             'AGRKB:synonyms',
+                             'gpi:DB_Object_Synonyms',
+                             'HANCESTRO:0330',
+                             'IAO:0000136',
+                             'RXNORM:has_tradename'],
+         'slot_uri': 'biolink:synonym'} })
+    information_content: Optional[float] = Field(default=None, description="""Information content (IC) value for a term, primarily from Automats.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/information_content',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'is_a': 'node property',
+         'slot_uri': 'biolink:information_content'} })
+    equivalent_identifiers: Optional[list[str]] = Field(default=None, description="""A set of identifiers that are considered equivalent to the primary identifier of the entity. This attribute is used to represent a collection of identifiers that are considered equivalent to the primary identifier of an entity. These equivalent identifiers may come from different databases, ontologies, or naming conventions, but they all refer to the same underlying concept or entity. This attribute is particularly useful in data integration and interoperability scenarios, where it is important to recognize and link different representations of the same entity across various sources.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/equivalent_identifiers',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'is_a': 'node property',
+         'see_also': ['biolink:xref', 'biolink:synonyms'],
+         'slot_uri': 'biolink:equivalent_identifiers'} })
+    category: list[Literal["https://identifiers.org/brain-bican/vocab/ColorPalette","bican:ColorPalette"]] = Field(default=["bican:ColorPalette"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/category',
+         'designates_type': True,
+         'domain': 'entity',
+         'domain_of': ['entity'],
+         'in_subset': ['translator_minimal'],
+         'is_a': 'type',
+         'is_class_field': True,
+         'slot_uri': 'biolink:category'} })
+
+
+class DisplayColor(ProvEntity, NamedThing):
+    """
+    One element of a color palette representing the association between a color and an entity.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'from_schema': 'https://w3id.org/brain-bican/cell-taxonomy',
+         'mixins': ['ProvEntity'],
+         'slot_usage': {'id': {'annotations': {'ait_location': {'tag': 'ait_location',
+                                                                'value': '(synthesized)'}},
+                               'description': 'Unique identifier for this display '
+                                              'color entry.',
+                               'in_subset': ['uns', 'tooling'],
+                               'name': 'id',
+                               'range': 'string'}}})
+
+    id: str = Field(default=..., description="""Unique identifier for this display color entry.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': '(synthesized)'}},
+         'definition_uri': 'https://w3id.org/biolink/vocab/id',
+         'domain': 'entity',
+         'domain_of': ['ontology class',
+                       'entity',
+                       'attribute',
+                       'named thing',
+                       'taxonomic rank',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome',
+                       'Cell',
+                       'CellTypeSet',
+                       'CellTypeTaxon',
+                       'CellTypeTaxonomy',
+                       'ClusterSet',
+                       'Cluster',
+                       'ExpressionMatrix',
+                       'Embedding',
+                       'Abbreviation',
+                       'ColorPalette',
+                       'DisplayColor'],
+         'exact_mappings': ['AGRKB:primaryId', 'gff3:ID', 'gpi:DB_Object_ID'],
+         'in_subset': ['uns', 'tooling'],
+         'slot_uri': 'biolink:id'} })
+    color_hex_triplet: Optional[str] = Field(default=None, description="""A hex string representing the display color for an associated entity.""", json_schema_extra = { "linkml_meta": {'annotations': {'ait_location': {'tag': 'ait_location',
+                                          'value': 'uns.cluster_info.color_hex_<level> '
+                                                   '(data only)'}},
+         'domain_of': ['DisplayColor'],
+         'in_subset': ['uns', 'tooling']} })
+    part_of_palette: Optional[str] = Field(default=None, description="""The color palette for which the display color map is part of.""", json_schema_extra = { "linkml_meta": {'domain_of': ['DisplayColor'], 'in_subset': ['uns', 'tooling']} })
+    is_color_for_taxon: Optional[str] = Field(default=None, description="""The associated cell type taxon for the specified display color.""", json_schema_extra = { "linkml_meta": {'domain_of': ['DisplayColor'], 'in_subset': ['uns', 'tooling']} })
+    is_color_for_set: Optional[str] = Field(default=None, description="""The associated cell type set for the specified display color.""", json_schema_extra = { "linkml_meta": {'domain_of': ['DisplayColor'], 'in_subset': ['uns', 'tooling']} })
+    was_derived_from: Optional[str] = Field(default=None, description="""A derivation is a transformation of an entity into another, an update of an entity resulting in a new one, or the construction of a new entity based on a pre-existing entity.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity', 'CellTypeTaxonomy', 'ClusterSet'],
+         'slot_uri': 'prov:wasDerivedFrom'} })
+    was_generated_by: Optional[str] = Field(default=None, description="""Generation is the completion of production of a new entity by an activity. This entity did not exist before generation and becomes available for usage after this generation.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ProvEntity'], 'slot_uri': 'prov:wasGeneratedBy'} })
+    iri: Optional[str] = Field(default=None, description="""An IRI for an entity. This is determined by the id using expansion rules.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/iri',
+         'domain_of': ['attribute',
+                       'entity',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'exact_mappings': ['WIKIDATA_PROPERTY:P854'],
+         'in_subset': ['translator_minimal', 'samples'],
+         'slot_uri': 'biolink:iri'} })
+    type: Optional[list[str]] = Field(default=None, json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/type',
+         'domain': 'entity',
+         'domain_of': ['entity',
+                       'attribute',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'exact_mappings': ['gff3:type', 'gpi:DB_Object_Type'],
+         'mappings': ['rdf:type'],
+         'slot_uri': 'rdf:type'} })
+    name: Optional[str] = Field(default=None, description="""A human-readable name for an attribute or entity.""", json_schema_extra = { "linkml_meta": {'aliases': ['label', 'display name', 'title'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/name',
+         'domain': 'entity',
+         'domain_of': ['attribute',
+                       'entity',
+                       'macromolecular machine mixin',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome',
+                       'CellTypeSet',
+                       'CellTypeTaxon',
+                       'ClusterSet',
+                       'Cluster',
+                       'ColorPalette'],
+         'exact_mappings': ['gff3:Name', 'gpi:DB_Object_Name'],
+         'in_subset': ['translator_minimal', 'samples'],
+         'mappings': ['rdfs:label'],
+         'narrow_mappings': ['dct:title', 'WIKIDATA_PROPERTY:P1476'],
+         'slot_uri': 'rdfs:label'} })
+    description: Optional[str] = Field(default=None, description="""a human-readable description of an entity""", json_schema_extra = { "linkml_meta": {'aliases': ['definition'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/description',
+         'domain_of': ['entity',
+                       'attribute',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome',
+                       'ColorPalette'],
+         'exact_mappings': ['IAO:0000115', 'skos:definitions'],
+         'in_subset': ['translator_minimal'],
+         'mappings': ['dct:description'],
+         'narrow_mappings': ['gff3:Description'],
+         'slot_uri': 'dct:description'} })
+    has_attribute: Optional[list[str]] = Field(default=None, description="""connects any entity to an attribute""", json_schema_extra = { "linkml_meta": {'close_mappings': ['OBI:0001927'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/has_attribute',
+         'domain': 'entity',
+         'domain_of': ['entity',
+                       'attribute',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'exact_mappings': ['SIO:000008'],
+         'in_subset': ['samples'],
+         'narrow_mappings': ['OBAN:association_has_subject_property',
+                             'OBAN:association_has_object_property',
+                             'CPT:has_possibly_included_panel_element',
+                             'DRUGBANK:category',
+                             'EFO:is_executed_in',
+                             'HANCESTRO:0301',
+                             'LOINC:has_action_guidance',
+                             'LOINC:has_adjustment',
+                             'LOINC:has_aggregation_view',
+                             'LOINC:has_approach_guidance',
+                             'LOINC:has_divisor',
+                             'LOINC:has_exam',
+                             'LOINC:has_method',
+                             'LOINC:has_modality_subtype',
+                             'LOINC:has_object_guidance',
+                             'LOINC:has_scale',
+                             'LOINC:has_suffix',
+                             'LOINC:has_time_aspect',
+                             'LOINC:has_time_modifier',
+                             'LOINC:has_timing_of',
+                             'NCIT:R88',
+                             'NCIT:eo_disease_has_property_or_attribute',
+                             'NCIT:has_data_element',
+                             'NCIT:has_pharmaceutical_administration_method',
+                             'NCIT:has_pharmaceutical_basic_dose_form',
+                             'NCIT:has_pharmaceutical_intended_site',
+                             'NCIT:has_pharmaceutical_release_characteristics',
+                             'NCIT:has_pharmaceutical_state_of_matter',
+                             'NCIT:has_pharmaceutical_transformation',
+                             'NCIT:is_qualified_by',
+                             'NCIT:qualifier_applies_to',
+                             'NCIT:role_has_domain',
+                             'NCIT:role_has_range',
+                             'INO:0000154',
+                             'HANCESTRO:0308',
+                             'orphanet:C016',
+                             'orphanet:C017',
+                             'RO:0000053',
+                             'RO:0000086',
+                             'RO:0000087',
+                             'SNOMED:has_access',
+                             'SNOMED:has_clinical_course',
+                             'SNOMED:has_count_of_base_of_active_ingredient',
+                             'SNOMED:has_dose_form_administration_method',
+                             'SNOMED:has_dose_form_release_characteristic',
+                             'SNOMED:has_dose_form_transformation',
+                             'SNOMED:has_finding_context',
+                             'SNOMED:has_finding_informer',
+                             'SNOMED:has_inherent_attribute',
+                             'SNOMED:has_intent',
+                             'SNOMED:has_interpretation',
+                             'SNOMED:has_laterality',
+                             'SNOMED:has_measurement_method',
+                             'SNOMED:has_method',
+                             'SNOMED:has_priority',
+                             'SNOMED:has_procedure_context',
+                             'SNOMED:has_process_duration',
+                             'SNOMED:has_property',
+                             'SNOMED:has_revision_status',
+                             'SNOMED:has_scale_type',
+                             'SNOMED:has_severity',
+                             'SNOMED:has_specimen',
+                             'SNOMED:has_state_of_matter',
+                             'SNOMED:has_subject_relationship_context',
+                             'SNOMED:has_surgical_approach',
+                             'SNOMED:has_technique',
+                             'SNOMED:has_temporal_context',
+                             'SNOMED:has_time_aspect',
+                             'SNOMED:has_units',
+                             'UMLS:has_structural_class',
+                             'UMLS:has_supported_concept_property',
+                             'UMLS:has_supported_concept_relationship',
+                             'UMLS:may_be_qualified_by'],
+         'slot_uri': 'biolink:has_attribute'} })
+    deprecated: Optional[bool] = Field(default=None, description="""A boolean flag indicating that an entity is no longer considered current or valid.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/deprecated',
+         'domain_of': ['entity',
+                       'attribute',
+                       'named thing',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'exact_mappings': ['oboInOwl:ObsoleteClass'],
+         'slot_uri': 'biolink:deprecated'} })
+    provided_by: Optional[list[str]] = Field(default=None, description="""The value in this node property represents the knowledge provider that created or assembled the node and all of its attributes.  Used internally to represent how a particular node made its way into a knowledge provider or graph.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/provided_by',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'is_a': 'node property',
+         'slot_uri': 'biolink:provided_by'} })
+    xref: Optional[list[str]] = Field(default=None, description="""A database cross reference or alternative identifier for a NamedThing or edge between two NamedThings.  This property should point to a database record or webpage that supports the existence of the edge, or gives more detail about the edge. This property can be used on a node or edge to provide multiple URIs or CURIE cross references.""", json_schema_extra = { "linkml_meta": {'aliases': ['dbxref', 'Dbxref', 'DbXref', 'record_url', 'source_record_urls'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/xref',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'gene',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'genome'],
+         'in_subset': ['translator_minimal'],
+         'narrow_mappings': ['gff3:Dbxref', 'gpi:DB_Xrefs'],
+         'slot_uri': 'biolink:xref'} })
+    full_name: Optional[str] = Field(default=None, description="""a long-form human readable name for a thing""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/full_name',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'is_a': 'node property',
+         'slot_uri': 'biolink:full_name'} })
+    synonym: Optional[list[str]] = Field(default=None, description="""Alternate human-readable names for a thing""", json_schema_extra = { "linkml_meta": {'aliases': ['alias'],
+         'definition_uri': 'https://w3id.org/biolink/vocab/synonym',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'in_subset': ['translator_minimal'],
+         'is_a': 'node property',
+         'narrow_mappings': ['skos:altLabel',
+                             'gff3:Alias',
+                             'AGRKB:synonyms',
+                             'gpi:DB_Object_Synonyms',
+                             'HANCESTRO:0330',
+                             'IAO:0000136',
+                             'RXNORM:has_tradename'],
+         'slot_uri': 'biolink:synonym'} })
+    information_content: Optional[float] = Field(default=None, description="""Information content (IC) value for a term, primarily from Automats.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/information_content',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'is_a': 'node property',
+         'slot_uri': 'biolink:information_content'} })
+    equivalent_identifiers: Optional[list[str]] = Field(default=None, description="""A set of identifiers that are considered equivalent to the primary identifier of the entity. This attribute is used to represent a collection of identifiers that are considered equivalent to the primary identifier of an entity. These equivalent identifiers may come from different databases, ontologies, or naming conventions, but they all refer to the same underlying concept or entity. This attribute is particularly useful in data integration and interoperability scenarios, where it is important to recognize and link different representations of the same entity across various sources.""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/equivalent_identifiers',
+         'domain': 'named thing',
+         'domain_of': ['named thing',
+                       'attribute',
+                       'organism taxon',
+                       'study result',
+                       'relative frequency analysis result',
+                       'information content entity',
+                       'dataset',
+                       'physical entity',
+                       'activity',
+                       'procedure',
+                       'material sample',
+                       'biological entity',
+                       'gene',
+                       'genome'],
+         'is_a': 'node property',
+         'see_also': ['biolink:xref', 'biolink:synonyms'],
+         'slot_uri': 'biolink:equivalent_identifiers'} })
+    category: list[Literal["https://identifiers.org/brain-bican/vocab/DisplayColor","bican:DisplayColor"]] = Field(default=["bican:DisplayColor"], description="""Name of the high level ontology class in which this entity is categorized. Corresponds to the label for the biolink entity type class. In a neo4j database this MAY correspond to the neo4j label tag. In an RDF database it should be a biolink model class URI. This field is multi-valued. It should include values for ancestors of the biolink class; for example, a protein such as Shh would have category values `biolink:Protein`, `biolink:GeneProduct`, `biolink:MolecularEntity`. In an RDF database, nodes will typically have an rdf:type triples. This can be to the most specific biolink class, or potentially to a class more specific than something in biolink. For example, a sequence feature `f` may have a rdf:type assertion to a SO class such as TF_binding_site, which is more specific than anything in biolink. Here we would have categories {biolink:GenomicEntity, biolink:MolecularEntity, biolink:NamedThing}""", json_schema_extra = { "linkml_meta": {'definition_uri': 'https://w3id.org/biolink/vocab/category',
+         'designates_type': True,
+         'domain': 'entity',
+         'domain_of': ['entity'],
+         'in_subset': ['translator_minimal'],
+         'is_a': 'type',
+         'is_class_field': True,
+         'slot_uri': 'biolink:category'} })
+
+
 # Model rebuild
 # see https://pydantic-docs.helpmanual.io/usage/models/#rebuilding-a-model
 OntologyClass.model_rebuild()
@@ -14489,6 +16287,7 @@ ProvActivity.model_rebuild()
 ProvEntity.model_rebuild()
 VersionedNamedThing.model_rebuild()
 Checksum.model_rebuild()
+OntologyMappable.model_rebuild()
 GeneAnnotation.model_rebuild()
 GenomeAnnotation.model_rebuild()
 GenomeAssembly.model_rebuild()
@@ -14512,3 +16311,6 @@ ClusterSet.model_rebuild()
 Cluster.model_rebuild()
 ExpressionMatrix.model_rebuild()
 Embedding.model_rebuild()
+Abbreviation.model_rebuild()
+ColorPalette.model_rebuild()
+DisplayColor.model_rebuild()
