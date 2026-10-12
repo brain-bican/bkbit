@@ -2,10 +2,11 @@ import itertools
 import click
 from bkbit.models import bke_taxonomy
 import json
-import hashlib
 import pandas as pd
 import json
 from linkml_runtime.dumpers import json_dumper
+
+from bkbit.utils.generate_bkbit_id import generate_object_id
 
 
 class BKETaxonomy:
@@ -248,22 +249,6 @@ def generate_object(cls, attributes: dict):
     object_id = generate_object_id(attributes)
     attributes["id"] = object_id
     return cls(**attributes)
-
-
-def generate_object_id(attributes: dict):
-    """
-    Generate a unique object ID based on the provided attributes.
-    Args:
-        attributes (dict): A dictionary containing the attributes of the object.
-    Returns:
-        str: The generated object ID.
-    """
-    # Sort the attributes by keys and convert to a consistent JSON string
-    # print(attributes)
-    BKBIT_OBJECT_ID_PREFIX = "urn:bkbit:"
-    normalized_attributes = json.dumps(attributes, sort_keys=True)
-    object_id = hashlib.sha256(normalized_attributes.encode()).hexdigest()
-    return BKBIT_OBJECT_ID_PREFIX + object_id
 
 
 @click.command()

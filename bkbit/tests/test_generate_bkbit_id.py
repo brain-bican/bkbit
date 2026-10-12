@@ -4,6 +4,8 @@ The id is a content hash, so these tests are really about one question: what
 counts as part of an entity, and what is merely said about it.
 """
 
+import pathlib
+
 import pytest
 
 from bkbit.utils.generate_bkbit_id import (
@@ -75,4 +77,28 @@ def test_known_ids_are_stable():
     """
     assert generate_object_id({"term": "Astro"}) == (
         "urn:bkbit:944bbb61253ef08254feb749a856aa29053d6b39c5ff27eee6ad320e5ba78426"
+    )
+
+
+def test_no_translator_redefines_the_hasher():
+    """No translator may keep its own copy of the hash.
+
+    HMBA_annotation_translator did, so the filter above silently did not apply
+    to it and its CL_ID -> xref values kept renumbering taxa. A local
+    reimplementation is invisible at the call site, which is why this is
+    checked rather than assumed. Parsed rather than imported, so a module that
+    cannot be imported does not mask the result.
+    """
+    import ast
+    import bkbit.data_translators as pkg
+
+    offenders = []
+    for path in sorted(pathlib.Path(pkg.__path__[0]).glob("*.py")):
+        tree = ast.parse(path.read_text(), filename=str(path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef) and node.name == "generate_object_id":
+                offenders.append(f"{path.name}:{node.lineno}")
+    assert not offenders, (
+        "these redefine generate_object_id instead of importing it from "
+        f"bkbit.utils.generate_bkbit_id: {', '.join(offenders)}"
     )

@@ -14,8 +14,9 @@ BKBIT_OBJECT_ID_PREFIX = "urn:bkbit:"
 #: 1. Changing a hashed attribute renumbers the entity, then everything that
 #:    refers to it, recursively. In the AIT taxonomy one abbreviation feeds
 #:    ``CellTypeTaxon.has_abbreviation``, which feeds the taxon's own id, which
-#:    feeds ``has_parent`` on its children -- so editing a single cross
-#:    reference renumbers 100% of the taxa in the file.
+#:    feeds ``has_parent`` on its children -- so editing the cross references
+#:    on 67 of 104 abbreviations renumbers 564 of the 565 taxa in the HMBA
+#:    human file.
 #: 2. Two sources recording *different* mappings for the same entity produce
 #:    two different nodes, so the mappings never meet. Keeping them out lets
 #:    the descriptions merge onto one node, which is the point of a graph.
