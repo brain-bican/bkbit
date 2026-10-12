@@ -4,6 +4,7 @@
       "source": "cell_taxonomy.yaml"
    },
    "@context": {
+      "@version": 1.1,
       "xsd": "http://www.w3.org/2001/XMLSchema#",
       "AGRKB": "https://www.alliancegenome.org/",
       "AspGD": {
@@ -25,7 +26,15 @@
          "@prefix": true
       },
       "CHEMBL.TARGET": "http://identifiers.org/chembl.target/",
+      "CL": {
+         "@id": "http://purl.obolibrary.org/obo/CL_",
+         "@prefix": true
+      },
       "CPT": "https://www.ama-assn.org/practice-management/cpt/",
+      "DHBA": {
+         "@id": "https://purl.brain-bican.org/ontology/dhbao/DHBA_",
+         "@prefix": true
+      },
       "DRUGBANK": "http://identifiers.org/drugbank/",
       "EDAM-DATA": {
          "@id": "http://edamontology.org/data_",
@@ -89,7 +98,10 @@
       },
       "NBO-PROPERTY": "http://purl.obolibrary.org/obo/nbo#",
       "NCBIGene": "http://identifiers.org/ncbigene/",
-      "NCBITaxon": "http://identifiers.org/taxonomy/",
+      "NCBITaxon": {
+         "@id": "http://purl.obolibrary.org/obo/NCBITaxon_",
+         "@prefix": true
+      },
       "NCIT": {
          "@id": "http://purl.obolibrary.org/obo/NCIT_",
          "@prefix": true
@@ -186,6 +198,33 @@
       "schema": "http://schema.org/",
       "skos": "http://www.w3.org/2004/02/skos/core#",
       "@vocab": "https://identifiers.org/brain-bican/vocab/",
+      "denotes_cell_type": {
+         "@type": "@id",
+         "@id": "denotes_cell_type"
+      },
+      "denotes_gene_annotation": {
+         "@type": "@id",
+         "@id": "denotes_gene_annotation"
+      },
+      "denotes_parcellation_term": {
+         "@type": "@id",
+         "@id": "denotes_parcellation_term"
+      },
+      "entity_type": {
+         "@context": {
+            "text": "skos:notation",
+            "description": "skos:prefLabel",
+            "meaning": "@id"
+         },
+         "@id": "entity_type"
+      },
+      "meaning": {
+         "@id": "meaning"
+      },
+      "term": {
+         "@id": "term"
+      },
+      "id": "@id",
       "accession_id": {
          "@id": "accession_id"
       },
@@ -214,6 +253,10 @@
             "meaning": "@id"
          },
          "@id": "authority"
+      },
+      "broad_match": {
+         "@type": "@id",
+         "@id": "skos:broadMatch"
       },
       "category": {
          "@type": "xsd:anyURI",
@@ -256,7 +299,6 @@
          },
          "@id": "suspension_type"
       },
-      "id": "@id",
       "cell_type_set_type": {
          "@context": {
             "text": "skos:notation",
@@ -269,16 +311,21 @@
          "@type": "@id",
          "@id": "part_of_taxonomy"
       },
-      "cell_type_ontology_term_id": {
-         "@id": "cell_type_ontology_term_id"
+      "cell_type_ontology_term": {
+         "@id": "cell_type_ontology_term"
       },
-      "curated_markers_to_mouse": {
+      "curated_markers": {
          "@type": "@id",
-         "@id": "curated_markers_to_mouse"
+         "@id": "curated_markers"
       },
-      "curated_markers_to_primates": {
-         "@type": "@id",
-         "@id": "curated_markers_to_primates"
+      "literature_name_long": {
+         "@id": "literature_name_long"
+      },
+      "literature_name_short": {
+         "@id": "literature_name_short"
+      },
+      "literature_support": {
+         "@id": "literature_support"
       },
       "number_of_cells": {
          "@type": "xsd:integer",
@@ -306,6 +353,9 @@
          "@type": "xsd:boolean",
          "@id": "filter"
       },
+      "gene_annotation_version": {
+         "@id": "gene_annotation_version"
+      },
       "has_embedding": {
          "@type": "@id",
          "@id": "has_embedding"
@@ -322,6 +372,9 @@
       },
       "quality_control_markers": {
          "@id": "quality_control_markers"
+      },
+      "reference_genome": {
+         "@id": "reference_genome"
       },
       "schema_version": {
          "@id": "schema_version"
@@ -350,9 +403,17 @@
          "@type": "xsd:boolean",
          "@id": "biolink:chembl_prodrug"
       },
+      "close_match": {
+         "@type": "@id",
+         "@id": "skos:closeMatch"
+      },
       "number_of_observations": {
          "@type": "xsd:integer",
          "@id": "number_of_observations"
+      },
+      "is_palette_for": {
+         "@type": "@id",
+         "@id": "is_palette_for"
       },
       "content_url": {
          "@id": "schema:url"
@@ -371,6 +432,21 @@
       "digest": {
          "@id": "digest"
       },
+      "color_hex_triplet": {
+         "@id": "color_hex_triplet"
+      },
+      "is_color_for_set": {
+         "@type": "@id",
+         "@id": "is_color_for_set"
+      },
+      "is_color_for_taxon": {
+         "@type": "@id",
+         "@id": "is_color_for_taxon"
+      },
+      "part_of_palette": {
+         "@type": "@id",
+         "@id": "part_of_palette"
+      },
       "embedding_key": {
          "@id": "embedding_key"
       },
@@ -381,6 +457,10 @@
       "equivalent_identifiers": {
          "@type": "xsd:anyURI",
          "@id": "biolink:equivalent_identifiers"
+      },
+      "exact_match": {
+         "@type": "@id",
+         "@id": "skos:exactMatch"
       },
       "has_variable": {
          "@type": "@id",
@@ -436,6 +516,9 @@
       "has_unit": {
          "@type": "UO:0000000",
          "@id": "biolink:has_unit"
+      },
+      "has_abbreviation": {
+         "@id": "has_abbreviation"
       },
       "has_parent": {
          "@id": "has_parent"
@@ -513,11 +596,19 @@
       "license": {
          "@id": "biolink:license"
       },
+      "mapping_relation": {
+         "@type": "@id",
+         "@id": "skos:mappingRelation"
+      },
       "molecular_type": {
          "@id": "molecular_type"
       },
       "name": {
          "@id": "rdfs:label"
+      },
+      "narrow_match": {
+         "@type": "@id",
+         "@id": "skos:narrowMatch"
       },
       "node_property": {
          "@id": "biolink:node_property"
@@ -593,6 +684,10 @@
          "@type": "@id",
          "@id": "biolink:related_to_at_instance_level"
       },
+      "related_match": {
+         "@type": "@id",
+         "@id": "skos:relatedMatch"
+      },
       "revision_of": {
          "@type": "@id",
          "@id": "revision_of"
@@ -634,6 +729,9 @@
          "@type": "xsd:anyURI",
          "@id": "biolink:xref"
       },
+      "Abbreviation": {
+         "@id": "Abbreviation"
+      },
       "Activity": {
          "@id": "biolink:Activity"
       },
@@ -667,6 +765,10 @@
             "has_parent": {
                "@id": "has_parent",
                "@type": "@id"
+            },
+            "has_abbreviation": {
+               "@id": "has_abbreviation",
+               "@type": "@id"
             }
          }
       },
@@ -679,6 +781,10 @@
             },
             "part_of_set": {
                "@id": "part_of_set",
+               "@type": "@id"
+            },
+            "has_abbreviation": {
+               "@id": "has_abbreviation",
                "@type": "@id"
             }
          }
@@ -714,8 +820,14 @@
       "ClusterSet": {
          "@id": "ClusterSet"
       },
+      "ColorPalette": {
+         "@id": "ColorPalette"
+      },
       "Dataset": {
          "@id": "biolink:Dataset"
+      },
+      "DisplayColor": {
+         "@id": "DisplayColor"
       },
       "Embedding": {
          "@id": "Embedding"
@@ -773,6 +885,9 @@
       },
       "OntologyClass": {
          "@id": "biolink:OntologyClass"
+      },
+      "OntologyMappable": {
+         "@id": "OntologyMappable"
       },
       "OrganismTaxon": {
          "@id": "biolink:OrganismTaxon"
