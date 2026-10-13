@@ -72,9 +72,9 @@ write_to = "bkbit/_version.py"
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
-# bkbit/data holds curated abbreviation tables; two-letter anatomical
+# CSV files hold data tables (e.g. curated abbreviations); short anatomical
 # abbreviations in them are read as typos.
-skip = '.git*,bkbit/data/*.csv'
+skip = '.git*,*.csv'
 check-hidden = true
 ignore-regex = 'KEGG\.BRITE|https://bioregistry\.io/kegg\.brite|https://mor\.nlm\.nih\.gov' # codespell:ignore
 ignore-words-list = 'ans'
