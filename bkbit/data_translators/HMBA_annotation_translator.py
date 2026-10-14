@@ -1,9 +1,7 @@
-import itertools
 import click
 from bkbit.models import bke_taxonomy
 import json
 import pandas as pd
-import json
 from linkml_runtime.dumpers import json_dumper
 
 from bkbit.utils.generate_bkbit_id import generate_object_id

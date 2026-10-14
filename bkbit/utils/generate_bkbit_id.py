@@ -5,39 +5,32 @@ import hashlib
 
 BKBIT_OBJECT_ID_PREFIX = "urn:bkbit:"
 
-#: Attributes deliberately kept out of the identity hash.
+#: Attributes deliberately kept out of the identity hash: the SKOS ontology
+#: mappings.
 #:
 #: The id is a content hash, so whatever is hashed becomes part of what makes
-#: an entity *that* entity. Two consequences follow, and both argue for a
-#: narrow hash:
+#: an entity *that* entity. Two consequences follow:
 #:
 #: 1. Changing a hashed attribute renumbers the entity, then everything that
-#:    refers to it, recursively. In the AIT taxonomy one abbreviation feeds
+#:    refers to it, recursively. In a cell taxonomy one abbreviation feeds
 #:    ``CellTypeTaxon.has_abbreviation``, which feeds the taxon's own id, which
-#:    feeds ``has_parent`` on its children -- so editing the cross references
-#:    on 67 of 104 abbreviations renumbers 564 of the 565 taxa in the HMBA
-#:    human file.
+#:    feeds ``has_parent`` on its children -- so recording a new ontology
+#:    mapping on an abbreviation would renumber most of the tree.
 #: 2. Two sources recording *different* mappings for the same entity produce
 #:    two different nodes, so the mappings never meet. Keeping them out lets
-#:    the descriptions merge onto one node, which is the point of a graph.
+#:    the descriptions merge onto one node.
 #:
-#: Cross references and ontology mappings are assertions *about* an entity
-#: rather than part of what it is. Biolink defines ``xref`` as "Alternate
-#: CURIEs for a thing" -- alternate, so by definition not the identifier -- and
-#: the SKOS mapping properties are defined as links between concepts in
-#: different schemes. Both are open-ended: more get discovered over time.
+#: The SKOS mapping properties are links between concepts in different
+#: schemes -- assertions *about* an entity rather than part of what it is --
+#: and they are open-ended: more get discovered over time.
 #:
-#: Verified collision-free: across all 17 released AIT taxonomy files (22,534
-#: entities) and the NCBI Sus scrofa genome annotation (30,379 entities),
-#: hashing without these keys produces no duplicate ids. The information is
-#: already carried by an intrinsic attribute in every case --
-#: ``GeneAnnotation.source_id`` holds the same accession as its ``NCBIGene:``
-#: xref, ``OrganismTaxon.iri`` the same taxon id as its ``NCBITaxon:`` xref,
-#: and an ``Abbreviation`` is keyed by its ``term`` -- so these keys were
-#: adding instability without adding specificity.
+#: ``xref`` is deliberately *not* listed. For some classes it is the only
+#: attribute that tells two entities apart: a ``GenomeAssembly``'s accession
+#: lives only in its ``NCBIAssembly:`` xref, so the GenBank (GCA_) and RefSeq
+#: (GCF_) assemblies of one genome, which share a name and version, would
+#: otherwise get the same id.
 NON_IDENTIFYING_ATTRIBUTES = frozenset(
     {
-        "xref",
         "mapping_relation",
         "exact_match",
         "close_match",
@@ -53,8 +46,8 @@ def generate_object_id(attributes: dict):
     Generate a unique object ID based on the provided attributes.
 
     Attributes named in :data:`NON_IDENTIFYING_ATTRIBUTES` are ignored, so
-    recording a new cross reference or ontology mapping for an entity does not
-    change its id.
+    recording a new ontology mapping for an entity does not change its id.
+    Cross references (``xref``) are still hashed.
 
     Args:
         attributes (dict): A dictionary containing the attributes of the object.
