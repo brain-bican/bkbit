@@ -661,6 +661,19 @@ def build(
             p = parse_loc(meta["loc"])
             if p["kind"] == "synthesized":
                 continue
+            if p["kind"] == "path" and p["surface"] in MATRIX_GROUPS:
+                # A matrix (e.g. varm.cluster_id_mean_expr, genes x clusters)
+                # is declared so the model records where it lives, but its
+                # values are not put in the graph. Say whether this file has it.
+                grp = h5.get(p["surface"])
+                present = grp is not None and bool(p["field"]) and p["field"] in grp
+                rep.empty(
+                    f"{c}.{s}",
+                    meta["loc"],
+                    "matrix values deliberately not materialised "
+                    f"({'present' if present else 'absent'} in this file)",
+                )
+                continue
             if p["kind"] != "path" or p["surface"] != "uns" or not p["field"]:
                 if p["kind"] == "none":
                     rep.empty(

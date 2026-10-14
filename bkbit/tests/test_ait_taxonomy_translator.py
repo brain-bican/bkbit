@@ -73,6 +73,14 @@ class TestLocationsFromPydantic:
         by_slot = {slot: v["loc"] for (_cls, slot), v in locs.items()}
         assert by_slot.get("title") == "uns.title"
 
+    def test_matrix_location_is_declared(self):
+        """cluster_id_mean_expr is declared in varm; the translator reports it
+        as not materialised instead of skipping it silently."""
+        locs = t.load_locations()
+        loc = locs[("CellTypeTaxonomy", "cluster_id_mean_expr")]["loc"]
+        p = t.parse_loc(loc)
+        assert p["kind"] == "path" and p["surface"] in t.MATRIX_GROUPS
+
     def test_separator_captured(self):
         """ait_separator rides along with ait_location, and is the only other
         annotation the pipeline consumes. The sheet's Notes and Source columns
