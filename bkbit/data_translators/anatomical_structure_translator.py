@@ -41,6 +41,9 @@ class AnS():
             column_names = next(reader)
             # Find corresponding 'generate' function 
             func = self.func_header_mapping.get(frozenset(column_names))
+            if func is None and frozenset(column_names) | {'version'} in self.func_header_mapping:
+                # Term and term set CSVs written before 'version' was required would otherwise be skipped silently
+                raise ValueError(f"{file_name} is missing the required 'version' column.")
             if func:
                 # Iterate through each row in the CSV file
                 for row in reader:
@@ -86,13 +89,13 @@ class AnS():
         self.parcellation_terminology.append(parcellation_terminology)
         return parcellation_terminology
     
-    def generate_parcellation_term_set(self, label, name, description, parcellation_terminology_label, parcellation_term_set_order, parcellation_parent_term_set_label):
-        parcellation_term_set = ans.ParcellationTermSet(id=label, name=name, description=description, part_of_parcellation_terminology=parcellation_terminology_label, ordinal=parcellation_term_set_order, has_parent_parcellation_term_set=parcellation_parent_term_set_label)
+    def generate_parcellation_term_set(self, label, name, description, version, parcellation_terminology_label, parcellation_term_set_order, parcellation_parent_term_set_label):
+        parcellation_term_set = ans.ParcellationTermSet(id=label, name=name, description=description, version=version, part_of_parcellation_terminology=parcellation_terminology_label, ordinal=parcellation_term_set_order, has_parent_parcellation_term_set=parcellation_parent_term_set_label)
         self.parcellation_term_set.append(parcellation_term_set)
         return parcellation_term_set
     
-    def generate_parcellation_term(self, name, symbol, description, parcellation_term_set_label, parcellation_terminology_label, parcellation_term_identifier, parcellation_term_order, parcellation_parent_term_set_label, parcellation_parent_term_identifier):
-        parcellation_term = ans.ParcellationTerm(id=parcellation_term_identifier, name=name, symbol=symbol, description=description, part_of_parcellation_term_set = parcellation_term_set_label, ordinal = parcellation_term_order, has_parent_parcellation_term = parcellation_parent_term_identifier)
+    def generate_parcellation_term(self, name, symbol, description, version, parcellation_term_set_label, parcellation_terminology_label, parcellation_term_identifier, parcellation_term_order, parcellation_parent_term_set_label, parcellation_parent_term_identifier):
+        parcellation_term = ans.ParcellationTerm(id=parcellation_term_identifier, name=name, symbol=symbol, description=description, version=version, part_of_parcellation_term_set = parcellation_term_set_label, ordinal = parcellation_term_order, has_parent_parcellation_term = parcellation_parent_term_identifier)
         self.parcellation_term.append(parcellation_term)
         return parcellation_term
     

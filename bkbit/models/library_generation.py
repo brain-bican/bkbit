@@ -14458,7 +14458,7 @@ class DigitalAsset(ProvEntity, Dataset):
     digest: Optional[List[Union[Checksum, str]]] = Field(None, description="""Stores checksum information.""", json_schema_extra = { "linkml_meta": {'alias': 'digest',
          'any_of': [{'range': 'checksum'}, {'range': 'string'}],
          'domain_of': ['DigitalAsset']} })
-    content_url: Optional[str] = Field(None, json_schema_extra = { "linkml_meta": {'alias': 'content_url', 'domain_of': ['DigitalAsset']} })
+    content_url: Optional[List[str]] = Field(None, json_schema_extra = { "linkml_meta": {'alias': 'content_url', 'domain_of': ['DigitalAsset']} })
     data_type: Optional[str] = Field(None, description="""The type of data in the file""", json_schema_extra = { "linkml_meta": {'alias': 'data_type', 'domain_of': ['DigitalAsset']} })
     was_generated_by: Optional[str] = Field(None, description="""Generation is the completion of production of a new entity by an activity. This entity did not exist before generation and becomes available for usage after this generation.""", json_schema_extra = { "linkml_meta": {'alias': 'was_generated_by',
          'domain_of': ['ProvEntity',

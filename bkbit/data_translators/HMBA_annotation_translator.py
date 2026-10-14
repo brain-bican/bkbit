@@ -1,11 +1,10 @@
-import itertools
 import click
 from bkbit.models import bke_taxonomy
 import json
-import hashlib
 import pandas as pd
-import json
 from linkml_runtime.dumpers import json_dumper
+
+from bkbit.utils.generate_bkbit_id import generate_object_id
 
 
 class BKETaxonomy:
@@ -187,8 +186,13 @@ class BKETaxonomy:
                     )
                 else:
                     attributes[model_value] = row.get(data_key)
-        if attribute_suffix == 'Group':
-            spatial_region_columns = ['spatial_regional_proportions', 'spatial_proportions_marmoset', 'spatial_proportions_macaque', 'spatial_proportions_human']
+        if attribute_suffix == "Group":
+            spatial_region_columns = [
+                "spatial_regional_proportions",
+                "spatial_proportions_marmoset",
+                "spatial_proportions_macaque",
+                "spatial_proportions_human",
+            ]
             for sr in spatial_region_columns:
                 if sr in row and pd.notna(row[sr]):
                     print(f"Parsing spatial proportions for column: {sr}")
@@ -199,16 +203,27 @@ class BKETaxonomy:
                         value = value.strip()
                         print(f"Region: {region}, Value: {value}")
                         if bke_taxonomy.Region[region] in bke_taxonomy.Region:
-                            proportions[bke_taxonomy.Region[region].value] = float(value)
+                            proportions[bke_taxonomy.Region[region].value] = float(
+                                value
+                            )
                         else:
-                            print(f"Warning: Unknown region '{region}' in spatial proportions.")
+                            print(
+                                f"Warning: Unknown region '{region}' in spatial proportions."
+                            )
                             print(row[sr])
                     print(row)
                     print(proportions)
-                    spatial_region_object = generate_object(bke_taxonomy.SpatialProportions, proportions)
-                    self.spatial_proportions[spatial_region_object.id] = spatial_region_object
+                    spatial_region_object = generate_object(
+                        bke_taxonomy.SpatialProportions, proportions
+                    )
+                    self.spatial_proportions[spatial_region_object.id] = (
+                        spatial_region_object
+                    )
                     attributes[sr] = spatial_region_object.id
-            curated_markers_columns = ['curated_markers_to_primates', 'curated_markers_to_mouse']
+            curated_markers_columns = [
+                "curated_markers_to_primates",
+                "curated_markers_to_mouse",
+            ]
             for cm in curated_markers_columns:
                 if cm in row and pd.notna(row[cm]):
                     markers = [marker.strip() for marker in row[cm].split(",")]
@@ -232,22 +247,6 @@ def generate_object(cls, attributes: dict):
     object_id = generate_object_id(attributes)
     attributes["id"] = object_id
     return cls(**attributes)
-
-
-def generate_object_id(attributes: dict):
-    """
-    Generate a unique object ID based on the provided attributes.
-    Args:
-        attributes (dict): A dictionary containing the attributes of the object.
-    Returns:
-        str: The generated object ID.
-    """
-    # Sort the attributes by keys and convert to a consistent JSON string
-    # print(attributes)
-    BKBIT_OBJECT_ID_PREFIX = "urn:bkbit:"
-    normalized_attributes = json.dumps(attributes, sort_keys=True)
-    object_id = hashlib.sha256(normalized_attributes.encode()).hexdigest()
-    return BKBIT_OBJECT_ID_PREFIX + object_id
 
 
 @click.command()
