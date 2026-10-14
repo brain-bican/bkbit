@@ -37,8 +37,8 @@ import os
 import json
 from datetime import datetime
 from collections import defaultdict
-import subprocess
 import gzip
+import io
 from tqdm import tqdm
 import click
 from linkml_runtime.dumpers import json_dumper
@@ -118,8 +118,8 @@ class Gff3:
         generate_digest(hash_values, hash_functions=DEFAULT_HASH):
             Generates checksum digests for the GFF file using the specified hash functions.
 
-        __get_line_count(file_path):
-            Returns the line count of a file.
+        cleanup():
+            Deletes the temporary GFF3 file downloaded by setup().
 
         parse(feature_filter=DEFAULT_FEATURE_FILTER):
             Parses the GFF file and extracts gene annotations based on the provided feature filter.
@@ -347,30 +347,35 @@ class Gff3:
         sha256_hash = hashlib.sha256()
         sha1_hash = hashlib.sha1()
 
-        # Create a temporary file for the gzip data
+        # Create a temporary file for the gzip data; the caller deletes it (see Gff3.cleanup)
         with tempfile.NamedTemporaryFile(suffix=".gz", delete=False) as f_gzip:
             gzip_file_path = f_gzip.name
+            try:
+                # Create a progress bar
+                progress_bar = tqdm(
+                    total=total_size,
+                    unit="iB",
+                    unit_scale=True,
+                    desc="Downloading GFF file",
+                )
 
-            # Create a progress bar
-            progress_bar = tqdm(
-                total=total_size,
-                unit="iB",
-                unit_scale=True,
-                desc="Downloading GFF file",
-            )
+                # Read the file in chunks, write to the temporary file, and update the hash
+                while True:
+                    data = response.read(block_size)
+                    if not data:
+                        break
+                    f_gzip.write(data)
+                    md5_hash.update(data)
+                    sha256_hash.update(data)
+                    sha1_hash.update(data)
+                    progress_bar.update(len(data))
 
-            # Read the file in chunks, write to the temporary file, and update the hash
-            while True:
-                data = response.read(block_size)
-                if not data:
-                    break
-                f_gzip.write(data)
-                md5_hash.update(data)
-                sha256_hash.update(data)
-                sha1_hash.update(data)
-                progress_bar.update(len(data))
-
-            progress_bar.close()
+                progress_bar.close()
+            except BaseException:
+                # Don't leave a partial download behind
+                f_gzip.close()
+                os.remove(gzip_file_path)
+                raise
 
         # Return the path to the temporary file and the md5 hash
         return gzip_file_path, {
@@ -526,25 +531,16 @@ class Gff3:
                 )
         return checksums
 
-    def __get_line_count(self, file_path):
+    def cleanup(self):
         """
-        Get the line count of a file.
+        Deletes the GFF3 file that setup() downloaded to a temporary file.
 
-        Args:
-            file_path (str): The path to the file.
-
-        Returns:
-            int: The number of lines in the file.
+        Call this when finished with the object; gff2jsonld does so even if
+        parsing fails. Safe to call more than once.
         """
-
-        result = subprocess.run(
-            ["wc", "-l", file_path], stdout=subprocess.PIPE, check=True
-        )  # If check is True and the exit code was non-zero, it raises a CalledProcessError.
-        # The CalledProcessError object will have the return code in the returncode attribute,
-        # and output & stderr attributes if those streams were captured.
-        output = result.stdout.decode().strip()
-        line_count = int(output.split()[0])  # Extract the line count from the output
-        return line_count
+        if self.gff_file is not None and os.path.exists(self.gff_file):
+            os.remove(self.gff_file)
+        self.gff_file = None
 
     def parse(self, feature_filter: tuple[str] = DEFAULT_FEATURE_FILTER):
         """
@@ -560,22 +556,24 @@ class Gff3:
             None
         """
         gff_file = self.gff_file
-        if self.gff_file.endswith(".gz"):
-            # Decompress the gzip file
-            with gzip.open(self.gff_file, "rb") as f_in:
-                # Create a temporary file to save the decompressed data
-                with tempfile.NamedTemporaryFile(delete=False) as f_out:
-                    # Copy the decompressed data to the temporary file
-                    f_out.write(f_in.read())
-                    gff_file = f_out.name
-
         if not os.path.isfile(gff_file):
             raise FileNotFoundError(f"File {gff_file} does not exist.")
 
-        with open(gff_file, "r", encoding="utf-8") as file:
+        # Stream lines straight from the (possibly gzipped) file rather than
+        # decompressing it to disk or into memory. Progress is tracked in bytes
+        # of the file on disk, which avoids a separate pass to count lines.
+        raw = open(gff_file, "rb")
+        if gff_file.endswith(".gz"):
+            file = gzip.open(raw, "rt", encoding="utf-8")
+        else:
+            file = io.TextIOWrapper(raw, encoding="utf-8")
+        with raw, file:
             curr_line_num = 1
             progress_bar = tqdm(
-                total=self.__get_line_count(gff_file), desc="Parsing GFF3 File"
+                total=os.path.getsize(gff_file),
+                unit="B",
+                unit_scale=True,
+                desc="Parsing GFF3 File",
             )
             for line_raw in file:
                 line_strip = line_raw.strip()
@@ -620,8 +618,9 @@ class Gff3:
                                 self.gene_annotations[gene_annotation.id] = (
                                     gene_annotation
                                 )
-                progress_bar.update(1)
+                progress_bar.update(raw.tell() - progress_bar.n)
                 curr_line_num += 1
+            progress_bar.update(progress_bar.total - progress_bar.n)
             progress_bar.close()
 
     def generate_ensembl_gene_annotation(self, attributes, curr_line_num):
@@ -982,9 +981,12 @@ def gff2jsonld(
     gff3 = Gff3(
         content_url, assembly_accession, assembly_strain, log_level, log_to_file
     )
-    gff3.setup()  # Initialize the Gff3 object, which downloads the GFF file and parses the URL
-    gff3.parse_gff3_file()
-    gff3.parse()
+    try:
+        gff3.setup()  # Initialize the Gff3 object, which downloads the GFF file and parses the URL
+        gff3.parse_gff3_file()
+        gff3.parse()
+    finally:
+        gff3.cleanup()  # Remove the downloaded GFF file, even if parsing failed
     jsonld_data = gff3.serialize_to_jsonld()
     if output_format == "turtle":
         print(convert_jsonld_to_ttl(jsonld_data))
