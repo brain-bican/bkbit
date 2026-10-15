@@ -29,9 +29,16 @@ Location grammar (as written in the sheet's AIT Location column):
 
 Reads only metadata groups over HTTP range requests; never materialises X.
 
+curated_markers has range GeneAnnotation, so its values must be links. The file
+stores symbols; --gene_annotation (one gff2jsonld output, Turtle or JSON-LD, of
+the taxonomy's species -- checked) supplies the GeneAnnotation IRIs. Symbols that do not
+resolve are reported and left out, never written as strings -- a bare string
+in an @id slot becomes a relative IRI against the output file's path.
+
 Usage:
     python ait2jsonld.py URL_OR_PATH [--out out.jsonld] [--report rep.json]
                                      [--species NAME] [--no-counts]
+                                     [--gene_annotation ANNOTATION.ttl|.jsonld]
 """
 
 from __future__ import annotations
@@ -359,6 +366,11 @@ def read_col(group, name):
         cats = [dec(c) for c in o["categories"][:]]
         codes = o["codes"][:]
         return [cats[c] if 0 <= c < len(cats) else None for c in codes]
+    if isinstance(o, h5py.Group) and "values" in o and "mask" in o:
+        # nullable-string-array (anndata >= 0.11 writes pandas strings so);
+        # a masked entry is missing.
+        vals, mask = o["values"][:], o["mask"][:]
+        return [None if m else dec(v) for v, m in zip(vals, mask)]
     try:
         return [dec(v) for v in o[:]]
     except Exception:
@@ -581,6 +593,256 @@ def oid(cls_name: str, attrs: dict) -> str:
 
 
 # --------------------------------------------------------------------------
+# gene annotation: curated_markers links
+# --------------------------------------------------------------------------
+#: ``CellTypeTaxon.curated_markers`` has range ``GeneAnnotation``, so the
+#: generated context types it ``"@type": "@id"``. The AIT file stores gene
+#: *symbols* ("PDGFRA, DCN"). Written as they are, a JSON-LD processor reads
+#: each symbol as a relative IRI and resolves it against the document's base --
+#: the output file's own path -- so the graph ends up with
+#: ``file:///.../ACTA2``: a node nothing else refers to. The value the model
+#: asks for is the IRI of a GeneAnnotation, which ``gff2jsonld`` mints. So
+#: symbols are looked up in the ONE gff2jsonld output the caller names for
+#: this h5ad, and a symbol that cannot be resolved is reported, never written
+#: as a string.
+GENE_ANNOTATION_CLASS = "https://identifiers.org/brain-bican/vocab/GeneAnnotation"
+GENOME_ANNOTATION_CLASS = "https://identifiers.org/brain-bican/vocab/GenomeAnnotation"
+ORGANISM_TAXON_CLASS = "https://w3id.org/biolink/vocab/OrganismTaxon"
+BIOLINK = "https://w3id.org/biolink/vocab/"
+ORGANISM_COLUMN = "organism_ontology_term_id"
+GENOME_ANNOTATION_CONTEXT = MODELS_DIR / "genome_annotation.context.jsonld"
+_TAXON_NUMBER = re.compile(r"(?:NCBITaxon[:_]|txid)(\d+)$", re.IGNORECASE)
+_JSONLD_SUFFIXES = (".jsonld", ".json")
+_TURTLE_SUFFIXES = (".ttl",)
+
+
+def ncbi_taxon_number(value) -> str | None:
+    """'9606' from NCBITaxon:9606, NCBITaxon_9606 (IRI) or NCBI:txid9606."""
+    m = _TAXON_NUMBER.search(str(value or "").strip())
+    return m.group(1) if m else None
+
+
+@dataclass
+class GeneIndex:
+    """Symbol lookup over the GeneAnnotations of one genome annotation file."""
+
+    taxon: str  # NCBI taxon number of every gene in the file
+    source: str = ""  # file name
+    label: str = ""  # GenomeAnnotation label, e.g. ENSEMBL-9606-109
+    by_symbol: dict = field(default_factory=lambda: defaultdict(set))
+    by_folded: dict = field(default_factory=lambda: defaultdict(set))
+    by_synonym: dict = field(default_factory=lambda: defaultdict(set))
+
+    def resolve(self, symbol: str) -> tuple[str | None, str]:
+        """(GeneAnnotation IRI, tier) or (None, why).
+
+        Tiers, strongest first: ``symbol`` (exact), ``symbol_case`` (the same
+        symbol in another case, e.g. mouse-style "Pou6f2" for POU6F2),
+        ``synonym`` (exact). Each tier must name exactly one gene; an
+        ambiguous tier is reported, never broken by picking one.
+        """
+        for tier, ids in (
+            ("symbol", self.by_symbol.get(symbol)),
+            ("symbol_case", self.by_folded.get(symbol.casefold())),
+            ("synonym", self.by_synonym.get(symbol)),
+        ):
+            if not ids:
+                continue
+            if len(ids) == 1:
+                return next(iter(ids)), tier
+            return None, f"ambiguous: {len(ids)} genes match by {tier}"
+        return None, "no gene with this symbol or synonym"
+
+
+def gene_annotation_format(path) -> str:
+    """'json-ld' or 'turtle', from the content, checked against the extension.
+
+    The content decides (a JSON document starts with '{' or '['); a known
+    extension that disagrees with it is an error rather than a guess, since a
+    mislabelled file is usually the wrong file.
+    """
+    with open(path, encoding="utf-8") as fh:
+        head = fh.read(4096).lstrip("\ufeff \t\r\n")
+    by_content = "json-ld" if head[:1] in ("{", "[") else "turtle"
+    name = str(path).lower()
+    by_ext = (
+        "json-ld"
+        if name.endswith(_JSONLD_SUFFIXES)
+        else "turtle" if name.endswith(_TURTLE_SUFFIXES) else None
+    )
+    if by_ext and by_ext != by_content:
+        raise click.ClickException(
+            f"{path}: the extension says {by_ext} but the content is {by_content}"
+        )
+    return by_content
+
+
+def _jsonld_with_local_context(path) -> str:
+    """The JSON-LD text, with gff2jsonld's context URL replaced by bkbit's copy.
+
+    gff2jsonld writes its context by URL (pinned to a brain-bican/models
+    commit), so parsing its output would fetch that URL. The context bundled
+    with bkbit is the same document, so it is substituted and nothing is
+    fetched. A context URL other than the one gff2jsonld pins is left alone.
+    """
+    from bkbit.data_translators.genome_annotation_translator import CONTEXT_URL
+
+    doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    if isinstance(doc, dict) and doc.get("@context") == CONTEXT_URL:
+        doc["@context"] = json.loads(
+            GENOME_ANNOTATION_CONTEXT.read_text(encoding="utf-8")
+        )["@context"]
+    return json.dumps(doc)
+
+
+def load_gene_annotation(path) -> GeneIndex:
+    """GeneIndex over one gff2jsonld output, in Turtle or JSON-LD.
+
+    The file's species is the ``NCBITaxon:<n>`` xref of the OrganismTaxon its
+    genes are ``in_taxon`` of -- the same number the AIT file stores in
+    ``organism_ontology_term_id``, which build() checks it against. A file
+    whose genes span several species is rejected: one h5ad, one annotation.
+    """
+    import rdflib
+    from rdflib import RDF, RDFS, URIRef
+
+    fmt = gene_annotation_format(path)
+    g = rdflib.Graph()
+    if fmt == "json-ld":
+        g.parse(data=_jsonld_with_local_context(path), format="json-ld")
+    else:
+        g.parse(str(path), format="turtle")
+    sym, syn = URIRef(BIOLINK + "symbol"), URIRef(BIOLINK + "synonym")
+    in_taxon, xref = URIRef(BIOLINK + "in_taxon"), URIRef(BIOLINK + "xref")
+    taxa = {}
+    for t_ in g.subjects(RDF.type, URIRef(ORGANISM_TAXON_CLASS)):
+        nums = {ncbi_taxon_number(x) for x in g.objects(t_, xref)} - {None}
+        if len(nums) == 1:
+            taxa[t_] = nums.pop()
+    genes = [
+        (gene, taxa.get(g.value(gene, in_taxon)))
+        for gene in g.subjects(RDF.type, URIRef(GENE_ANNOTATION_CLASS))
+    ]
+    species = {num for _, num in genes if num}
+    if not species:
+        raise click.ClickException(
+            f"{path}: no GeneAnnotation with an in_taxon OrganismTaxon carrying an "
+            "NCBITaxon xref. Is this gff2jsonld output?"
+        )
+    if len(species) > 1:
+        raise click.ClickException(
+            f"{path}: genes of several species ({', '.join(sorted(species))}); "
+            "give the annotation of the taxonomy's one species"
+        )
+    labels = sorted(
+        str(g.value(a, RDFS.label))
+        for a in g.subjects(RDF.type, URIRef(GENOME_ANNOTATION_CLASS))
+        if g.value(a, RDFS.label) is not None
+    )
+    idx = GeneIndex(
+        taxon=species.pop(), source=Path(str(path)).name, label=", ".join(labels)
+    )
+    for gene, num in genes:
+        if num is None:
+            continue
+        gid = str(gene)
+        for s_ in g.objects(gene, sym):
+            idx.by_symbol[str(s_)].add(gid)
+            idx.by_folded[str(s_).casefold()].add(gid)
+        for s_ in g.objects(gene, syn):
+            idx.by_synonym[str(s_)].add(gid)
+    return idx
+
+
+def resolve_markers(symbols, gene_index, tally) -> list[str]:
+    """GeneAnnotation IRIs for the symbols that resolve; the rest go to `tally`.
+
+    With no gene index nothing is emitted: a symbol is not a valid value of a
+    GeneAnnotation-ranged slot. A cell that is not a symbol list at all (e.g.
+    "Six3 and Foxp1") is not re-split -- the declared separator is the only
+    one -- so it is reported unresolved for the data to be fixed upstream.
+    """
+    if gene_index is None:
+        why = "no --gene_annotation given"
+        tally["unresolved"].update({s_: why for s_ in symbols})
+        return []
+    out = []
+    for s_ in symbols:
+        gid, how = gene_index.resolve(s_)
+        if gid:
+            out.append(gid)
+            tally["resolved"][how] += 1
+            if how != "symbol":
+                tally.setdefault("weaker", {})[s_] = how
+        else:
+            tally["unresolved"][s_] = how
+    return list(dict.fromkeys(out))
+
+
+def is_link(value, prefixes) -> bool:
+    """True for an absolute IRI or a CURIE whose prefix the context defines.
+
+    Anything else in an ``@id``-typed slot is a relative IRI reference, which a
+    JSON-LD processor silently resolves against the document base.
+    """
+    v = str(value)
+    if URI_SCHEME.match(v) or v.startswith(("urn:", "mailto:")):
+        return True
+    prefix, sep, rest = v.partition(":")
+    return bool(sep) and prefix in prefixes and " " not in rest
+
+
+def guard_links(ents, rep, context_path=None) -> int:
+    """Drop values that would become relative IRIs, and report each one.
+
+    The model is the authority on which slots hold links (the generated
+    context marks them ``"@type": "@id"``); this applies it to every class
+    and slot, so a new link slot fed a plain string fails loudly here rather
+    than quietly becoming a ``file:///`` node. Returns the number dropped.
+    """
+    ctx_file = Path(context_path) if context_path else CONTEXT
+    if not ctx_file.exists():
+        return 0
+    ctx = json.loads(ctx_file.read_text())["@context"]
+    link_slots = {
+        k for k, v in ctx.items() if isinstance(v, dict) and v.get("@type") == "@id"
+    }
+    # A prefix is a plain IRI string ("bican": "https://...") or an expanded
+    # definition carrying "@prefix": true ("CL": {"@id": ..., "@prefix": true}).
+    prefixes = {
+        k
+        for k, v in ctx.items()
+        if not k.startswith("@")
+        and (isinstance(v, str) or (isinstance(v, dict) and v.get("@prefix")))
+    }
+    dropped = 0
+    seen: set = set()
+    for cls_name, items in ents.items():
+        for a in items:
+            for k in [k for k in a if k in link_slots]:
+                vals = a[k] if isinstance(a[k], list) else [a[k]]
+                keep = [v for v in vals if is_link(v, prefixes)]
+                for v in vals:
+                    if v in keep or (cls_name, k, str(v)) in seen:
+                        continue
+                    seen.add((cls_name, k, str(v)))
+                    rep.deviate(
+                        f"{cls_name}.{k}",
+                        "(link slot)",
+                        f"value {v!r} dropped",
+                        "the slot holds links (@type @id) and this is neither an "
+                        "absolute IRI nor a CURIE with a known prefix; written "
+                        "as is it would resolve against the output file's path",
+                    )
+                dropped += len(vals) - len(keep)
+                if not keep:
+                    del a[k]
+                elif isinstance(a[k], list):
+                    a[k] = keep
+    return dropped
+
+
+# --------------------------------------------------------------------------
 # build
 # --------------------------------------------------------------------------
 LEVEL_COL = {"cluster_id": "Cluster"}  # hierarchy name -> cluster_info column
@@ -592,6 +854,7 @@ def build(
     want_counts: bool = False,
     cache_dir: str | None = None,
     abbreviations: str | None = None,
+    gene_annotation: str | None = None,
 ):
     locs = load_locations()
     MULTI = multivalued_map()
@@ -600,6 +863,9 @@ def build(
     abbrev_table, unknown_prefixes = (
         load_abbreviations(abbreviations) if abbreviations else ({}, [])
     )
+    # Same for the gene annotation, which also takes a while to parse.
+    gene_index = load_gene_annotation(gene_annotation) if gene_annotation else None
+    marker_report: dict = {"resolved": Counter(), "unresolved": {}}
     rep = Report(source_file=path, species=species)
     ents: dict[str, list] = defaultdict(list)
 
@@ -650,6 +916,41 @@ def build(
                 f"read {len(wanted)} of {len(ci_cols)} columns "
                 f"(only those the model references) x {nrows} rows",
             )
+            # The species, to pick the gene annotation curated_markers resolve
+            # against. The model declares no location for it, so it is read
+            # from the AIT schema's own column and reported as such.
+            # The gene annotation must be of the taxonomy's species: linking a
+            # human taxon to macaque genes would be a plausible, silent error.
+            # The model declares no location for the species, so it is read
+            # from the AIT schema's own column.
+            if gene_index is not None:
+                organisms = (
+                    {ncbi_taxon_number(v) for v in read_col(cig, ORGANISM_COLUMN)}
+                    if ORGANISM_COLUMN in ci_cols
+                    else set()
+                )
+                organisms.discard(None)
+                if len(organisms) != 1:
+                    raise click.ClickException(
+                        f"cannot check --gene_annotation against this taxonomy: "
+                        f"uns.cluster_info.{ORGANISM_COLUMN} gives "
+                        f"{sorted(organisms) or 'no'} NCBI taxa, not one"
+                    )
+                taxon = organisms.pop()
+                if taxon != gene_index.taxon:
+                    raise click.ClickException(
+                        f"--gene_annotation {gene_index.source} is NCBITaxon:"
+                        f"{gene_index.taxon}, but this taxonomy is NCBITaxon:{taxon} "
+                        f"({ORGANISM_COLUMN}); give the annotation of its species"
+                    )
+                rep.deviate(
+                    "CellTypeTaxon.curated_markers",
+                    f"uns.cluster_info.{ORGANISM_COLUMN}",
+                    f"species NCBITaxon:{taxon} matches --gene_annotation "
+                    f"{gene_index.source} ({gene_index.label})",
+                    "the model declares no location for the taxonomy's species; "
+                    "read from the AIT column to check the gene annotation",
+                )
         else:
             rep.empty("*", "uns.cluster_info", "cluster_info absent")
 
@@ -714,6 +1015,29 @@ def build(
                 "CellTypeTaxonomy.content_url", cu_loc or "(blank)", resolved, why
             )
             tax_attrs["content_url"] = resolved
+        # gene_annotation_version: the curated_markers point into the gene
+        # annotation that was used, so the graph says which one. The file's
+        # own value wins when it has one; the HMBA files leave it blank.
+        if gene_index is not None and gene_index.label:
+            gav_loc = locs.get(("CellTypeTaxonomy", "gene_annotation_version"), {})
+            declared = blankish(tax_attrs.get("gene_annotation_version"))
+            if declared is None:
+                tax_attrs["gene_annotation_version"] = gene_index.label
+                rep.deviate(
+                    "CellTypeTaxonomy.gene_annotation_version",
+                    gav_loc.get("loc") or "(blank)",
+                    f"{gene_index.label} (from --gene_annotation {gene_index.source})",
+                    "blank in the file; set to the annotation curated_markers "
+                    "link into",
+                )
+            elif declared != gene_index.label:
+                rep.deviate(
+                    "CellTypeTaxonomy.gene_annotation_version",
+                    gav_loc.get("loc") or "(blank)",
+                    f"kept {declared!r}",
+                    f"differs from --gene_annotation {gene_index.label}; the file's "
+                    "value is kept, but curated_markers link into the latter",
+                )
 
         tax_attrs["id"] = oid("CellTypeTaxonomy", tax_attrs)
         ents["CellTypeTaxonomy"].append(tax_attrs)
@@ -973,6 +1297,8 @@ def build(
                                 rejected,
                             )
                         ]
+                        if s == "curated_markers":
+                            parts = resolve_markers(parts, gene_index, marker_report)
                         if not parts:
                             continue
                         a[s] = parts if MULTI.get(("CellTypeTaxon", s)) else parts[0]
@@ -1165,6 +1491,30 @@ def build(
             "548k-1.9M rows). Re-enable deliberately with a cap.",
         )
 
+    # ---- curated_markers: what the gene lookup did ------------------------
+    resolved, unresolved = marker_report["resolved"], marker_report["unresolved"]
+    if resolved:
+        rep.ok(
+            "CellTypeTaxon.curated_markers",
+            "(external: gene annotation)",
+            f"{sum(resolved.values())} symbol(s) linked to GeneAnnotation "
+            f"({', '.join(f'{k}={v}' for k, v in sorted(resolved.items()))})",
+        )
+    for s_, how in sorted(marker_report.get("weaker", {}).items()):
+        rep.deviate(
+            "CellTypeTaxon.curated_markers",
+            "(external: gene annotation)",
+            f"{s_!r} linked by {how}",
+            "no exact symbol match; matched on a weaker tier, review",
+        )
+    for s_, why in sorted(unresolved.items()):
+        rep.deviate(
+            "CellTypeTaxon.curated_markers",
+            "uns.cluster_info.curated_markers",
+            f"{s_!r} not linked",
+            f"{why}; left out, since the slot holds GeneAnnotation links",
+        )
+
     # the model is the authority on cardinality, per class+slot: wrap where
     # the model says multivalued, unwrap where it does not.
     for cls_name, items in ents.items():
@@ -1189,6 +1539,17 @@ def to_jsonld(ents, context_path=None):
     if context_path and Path(context_path).exists():
         doc["@context"] = json.loads(Path(context_path).read_text())["@context"]
     return doc
+
+
+def _one_gene_annotation(ctx, param, value):
+    """Accept the option at most once: one h5ad, one genome annotation.
+
+    Click would otherwise keep the last of several silently."""
+    if len(value) > 1:
+        raise click.BadParameter(
+            f"give one genome annotation, the taxonomy's species; got {len(value)}"
+        )
+    return value[0] if value else None
 
 
 @click.command()
@@ -1220,7 +1581,20 @@ def to_jsonld(ents, context_path=None):
     show_default=False,
     help="JSON-LD context [default: the copy packaged with bkbit]",
 )
-def ait2jsonld(path, out, report, species, counts, cache, abbreviations, context):
+@click.option(
+    "--gene_annotation",
+    type=click.Path(exists=True, dir_okay=False),
+    multiple=True,
+    callback=_one_gene_annotation,
+    help="The genome annotation for this taxonomy's species: one bkbit "
+    "gff2jsonld output, Turtle or JSON-LD. curated_markers are linked to its "
+    "GeneAnnotation IRIs and gene_annotation_version is set from it. Its "
+    "species must match organism_ontology_term_id. Without it curated_markers "
+    "is left out, since the slot holds links, not symbols.",
+)
+def ait2jsonld(
+    path, out, report, species, counts, cache, abbreviations, context, gene_annotation
+):
     """Translate an AIT .h5ad taxonomy into Cell Taxonomy JSON-LD.
 
     PATH is a local path or an http(s)/s3 URL. Remote files are read over range
@@ -1232,7 +1606,9 @@ def ait2jsonld(path, out, report, species, counts, cache, abbreviations, context
         want_counts=counts,
         cache_dir=cache,
         abbreviations=abbreviations,
+        gene_annotation=gene_annotation,
     )
+    guard_links(ents, rep, context)
     click.echo(f"--- {species or path} ---")
     for k, v in rep.counts.items():
         click.echo(f"  {k:<20} {v}")

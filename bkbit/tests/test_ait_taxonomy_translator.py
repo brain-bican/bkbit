@@ -379,3 +379,276 @@ class TestAbbreviationTable:
         )
         tbl, _ = t.load_abbreviations(str(f))
         assert list(tbl) == ["X"]
+
+
+# A minimal gff2jsonld-shaped Turtle file: one taxon, three genes, one symbol
+# deliberately duplicated so the ambiguity rule is exercised.
+GENE_TTL = """
+@prefix bican: <https://identifiers.org/brain-bican/vocab/> .
+@prefix biolink: <https://w3id.org/biolink/vocab/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<urn:bkbit:taxon> a biolink:OrganismTaxon ;
+    biolink:full_name "Macaca mulatta" ;
+    biolink:xref "NCBITaxon:9544"^^xsd:anyURI .
+<urn:bkbit:annotation> a bican:GenomeAnnotation ;
+    rdfs:label "NCBI-9544-103" .
+
+<urn:bkbit:acta2> a bican:GeneAnnotation ;
+    biolink:in_taxon <urn:bkbit:taxon> ; biolink:symbol "ACTA2" .
+<urn:bkbit:pou6f2> a bican:GeneAnnotation ;
+    biolink:in_taxon <urn:bkbit:taxon> ; biolink:symbol "POU6F2" ;
+    biolink:synonym "RPF-1" .
+<urn:bkbit:dup1> a bican:GeneAnnotation ;
+    biolink:in_taxon <urn:bkbit:taxon> ; biolink:symbol "DUP" .
+<urn:bkbit:dup2> a bican:GeneAnnotation ;
+    biolink:in_taxon <urn:bkbit:taxon> ; biolink:symbol "DUP" .
+"""
+
+
+@pytest.fixture
+def gene_index(tmp_path):
+    f = tmp_path / "annotation-NCBI-9544-103.ttl"
+    f.write_text(GENE_TTL)
+    idx = t.load_gene_annotation(str(f))
+    assert (idx.taxon, idx.source, idx.label) == ("9544", f.name, "NCBI-9544-103")
+    return idx
+
+
+@pytest.fixture
+def no_network(monkeypatch):
+    """Fail any attempt to open a connection (e.g. to fetch a JSON-LD context)."""
+    import socket
+
+    def refuse(*args, **kwargs):
+        raise AssertionError("network access attempted")
+
+    monkeypatch.setattr(socket.socket, "connect", refuse)
+    monkeypatch.setattr(socket, "create_connection", refuse)
+
+
+@pytest.fixture
+def gff2jsonld_output(tmp_path, monkeypatch):
+    """The same gff2jsonld output written as JSON-LD and as Turtle.
+
+    The JSON-LD is what gff2jsonld itself serialises (context by URL); the
+    Turtle is that document converted with the bundled context. The GFF3 is
+    the offline fixture of the genome annotation tests (pig, NCBITaxon:9823).
+    """
+    import json
+
+    import rdflib
+
+    from bkbit.data_translators import genome_annotation_translator as gat
+    from bkbit.tests import test_genome_annotation_temp_files as gfx
+
+    gfx.offline.__wrapped__(tmp_path, monkeypatch)
+    gff3 = gat.Gff3(gfx.NCBI_URL)
+    gff3.setup()
+    gff3.parse_gff3_file()
+    gff3.parse()
+    gff3.cleanup()
+    jsonld = gff3.serialize_to_jsonld()
+    assert json.loads(jsonld)["@context"] == gat.CONTEXT_URL
+    out = tmp_path / "out"
+    out.mkdir()
+    jl = out / "annotation-NCBI-9823-106.jsonld"
+    jl.write_text(jsonld)
+    ttl = out / "annotation-NCBI-9823-106.ttl"
+    g = rdflib.Graph().parse(data=t._jsonld_with_local_context(jl), format="json-ld")
+    ttl.write_text(g.serialize(format="turtle"))
+    return jl, ttl
+
+
+class TestGeneAnnotationFile:
+    """One annotation file, in either format, gives the same links."""
+
+    def test_jsonld_and_turtle_agree(self, gff2jsonld_output, no_network):
+        jl, ttl = gff2jsonld_output
+        a, b = t.load_gene_annotation(str(jl)), t.load_gene_annotation(str(ttl))
+        assert a.taxon == b.taxon == "9823"
+        assert a.label == b.label == "NCBI-9823-106"
+        assert dict(a.by_symbol) == dict(b.by_symbol)
+        assert sorted(a.by_symbol) == ["ABC1", "XYZ2"]
+        gid, tier = a.resolve("ABC1")
+        assert tier == "symbol" and gid.startswith("urn:bkbit:")
+
+    def test_jsonld_context_is_not_fetched(self, gff2jsonld_output, no_network):
+        # gff2jsonld writes the context by URL; the bundled copy is used.
+        jl, _ = gff2jsonld_output
+        assert t.load_gene_annotation(str(jl)).taxon == "9823"
+
+    def test_format_comes_from_content(self, tmp_path):
+        f = tmp_path / "annotation"  # no extension
+        f.write_text(GENE_TTL)
+        assert t.gene_annotation_format(f) == "turtle"
+        f.write_text('{"@graph": []}')
+        assert t.gene_annotation_format(f) == "json-ld"
+
+    def test_mislabelled_file_is_rejected(self, tmp_path):
+        f = tmp_path / "annotation.jsonld"
+        f.write_text(GENE_TTL)
+        with pytest.raises(click.ClickException, match="extension says json-ld"):
+            t.load_gene_annotation(str(f))
+
+    def test_several_species_are_rejected(self, tmp_path):
+        f = tmp_path / "two.ttl"
+        f.write_text(GENE_TTL + """
+<urn:bkbit:taxon2> a biolink:OrganismTaxon ; biolink:xref "NCBITaxon:9606" .
+<urn:bkbit:x> a bican:GeneAnnotation ;
+    biolink:in_taxon <urn:bkbit:taxon2> ; biolink:symbol "X" .
+""")
+        with pytest.raises(click.ClickException, match="several species"):
+            t.load_gene_annotation(str(f))
+
+
+class TestCuratedMarkerLinks:
+    """curated_markers hold GeneAnnotation links, never bare symbols."""
+
+    @pytest.mark.parametrize(
+        "value,number",
+        [
+            ("NCBITaxon:9606", "9606"),
+            ("http://purl.obolibrary.org/obo/NCBITaxon_9544", "9544"),
+            # the HMBA marmoset file writes it this way
+            ("NCBI:txid9483", "9483"),
+            ("Homo sapiens", None),
+            (None, None),
+        ],
+    )
+    def test_taxon_number(self, value, number):
+        assert t.ncbi_taxon_number(value) == number
+
+    def test_tiers(self, gene_index):
+        assert gene_index.resolve("ACTA2") == ("urn:bkbit:acta2", "symbol")
+        assert gene_index.resolve("Pou6f2") == ("urn:bkbit:pou6f2", "symbol_case")
+        assert gene_index.resolve("RPF-1") == ("urn:bkbit:pou6f2", "synonym")
+
+    def test_ambiguous_and_missing_are_not_guessed(self, gene_index):
+        gid, why = gene_index.resolve("DUP")
+        assert gid is None and why.startswith("ambiguous")
+        assert gene_index.resolve("Six3 and Foxp1")[0] is None
+
+    def test_resolve_markers_reports_what_it_cannot_link(self, gene_index):
+        tally = {"resolved": t.Counter(), "unresolved": {}}
+        out = t.resolve_markers(
+            ["ACTA2", "Pou6f2", "Ctip2", "ACTA2"], gene_index, tally
+        )
+        assert out == ["urn:bkbit:acta2", "urn:bkbit:pou6f2"]
+        assert tally["unresolved"] == {"Ctip2": "no gene with this symbol or synonym"}
+        assert tally["weaker"] == {"Pou6f2": "symbol_case"}
+
+    def test_no_gene_annotation_emits_nothing(self):
+        tally = {"resolved": t.Counter(), "unresolved": {}}
+        assert t.resolve_markers(["ACTA2"], None, tally) == []
+        assert "ACTA2" in tally["unresolved"]
+
+    def test_non_gene_annotation_file_is_rejected(self, tmp_path):
+        f = tmp_path / "empty.ttl"
+        f.write_text("<urn:a> <urn:b> <urn:c> .\n")
+        with pytest.raises(click.ClickException):
+            t.load_gene_annotation(str(f))
+
+    def test_is_link(self):
+        prefixes = {"CL", "bican"}
+        assert t.is_link("urn:bkbit:abc", prefixes)
+        assert t.is_link("http://purl.obolibrary.org/obo/CL_0000128", prefixes)
+        assert t.is_link("CL:0000128", prefixes)
+        # a bare symbol is a relative IRI reference: it would resolve
+        # against the output file's path (file:///.../ACTA2)
+        assert not t.is_link("ACTA2", prefixes)
+        assert not t.is_link("Six3 and Foxp1", prefixes)
+        assert not t.is_link("NOPREFIX:1", prefixes)
+
+    def test_guard_drops_and_reports_relative_links(self):
+        ents = {
+            "CellTypeTaxon": [
+                {
+                    "id": "urn:bkbit:t1",
+                    "curated_markers": ["urn:bkbit:acta2", "DCN"],
+                    "broad_match": ["CL:0000192"],
+                },
+                {"id": "urn:bkbit:t2", "curated_markers": ["DCN"]},
+            ]
+        }
+        rep = t.Report()
+        assert t.guard_links(ents, rep) == 2
+        t1, t2 = ents["CellTypeTaxon"]
+        assert t1["curated_markers"] == ["urn:bkbit:acta2"]
+        assert t1["broad_match"] == ["CL:0000192"]  # an expanded @prefix term
+        assert "curated_markers" not in t2
+        # reported once per distinct value
+        assert [d["actually_read"] for d in rep.deviations] == ["value 'DCN' dropped"]
+
+
+def _tiny_ait(path, organism="NCBITaxon:9544"):
+    """A minimal AIT .h5ad: two Groups, one cluster each, curated markers."""
+    import anndata as ad
+    import numpy as np
+    import pandas as pd
+
+    obs = pd.DataFrame(
+        {"cluster_id": pd.Categorical(["c1", "c2"])}, index=["cell1", "cell2"]
+    )
+    adata = ad.AnnData(X=np.zeros((2, 1), dtype="float32"), obs=obs)
+    adata.uns["title"] = "tiny_AIT"
+    adata.uns["gene_annotation_version"] = ""
+    adata.uns["hierarchy"] = {"Group": 0, "cluster_id": 1}
+    adata.uns["cluster_info"] = pd.DataFrame(
+        {
+            "Group": ["SMC", "Pericyte"],
+            "Cluster": ["c1", "c2"],
+            "cluster_id": ["c1", "c2"],
+            ORGANISM: [organism, organism],
+            "curated_markers": ["ACTA2, Pou6f2", "Ctip2"],
+        }
+    )
+    adata.write_h5ad(path)
+    return str(path)
+
+
+ORGANISM = "organism_ontology_term_id"
+
+
+@needs_current_model
+class TestBuildWithGeneAnnotation:
+    def test_markers_link_and_version_is_recorded(self, tmp_path, gene_index):
+        ann = tmp_path / "annotation-NCBI-9544-103.ttl"  # written by gene_index
+        ents, rep = t.build(_tiny_ait(tmp_path / "tiny.h5ad"), gene_annotation=str(ann))
+        taxa = {a["name"]: a for a in ents["CellTypeTaxon"]}
+        assert taxa["SMC"]["curated_markers"] == ["urn:bkbit:acta2", "urn:bkbit:pou6f2"]
+        assert "curated_markers" not in taxa["Pericyte"]  # Ctip2 does not resolve
+        (tax,) = ents["CellTypeTaxonomy"]
+        assert tax["gene_annotation_version"] == "NCBI-9544-103"
+        read = " ".join(d["actually_read"] for d in rep.deviations)
+        assert "'Ctip2' not linked" in read and "'Pou6f2' linked by symbol_case" in read
+
+    def test_species_mismatch_is_an_error(self, tmp_path, gene_index):
+        ann = tmp_path / "annotation-NCBI-9544-103.ttl"
+        h5ad = _tiny_ait(tmp_path / "tiny.h5ad", organism="NCBITaxon:9606")
+        with pytest.raises(click.ClickException, match="NCBITaxon:9544, but this"):
+            t.build(h5ad, gene_annotation=str(ann))
+
+    def test_without_annotation_markers_are_left_out(self, tmp_path):
+        ents, rep = t.build(_tiny_ait(tmp_path / "tiny.h5ad"))
+        assert not any("curated_markers" in a for a in ents["CellTypeTaxon"])
+        assert "no --gene_annotation given" in " ".join(
+            d["reason"] for d in rep.deviations
+        )
+
+    def test_the_cli_takes_one_file(self, tmp_path, gene_index):
+        from click.testing import CliRunner
+
+        ann = tmp_path / "annotation-NCBI-9544-103.ttl"
+        out = tmp_path / "out.jsonld"
+        h5ad = _tiny_ait(tmp_path / "tiny.h5ad")
+        r = CliRunner().invoke(
+            t.ait2jsonld, [h5ad, "--gene_annotation", str(ann), "--out", str(out)]
+        )
+        assert r.exit_code == 0, r.output
+        r = CliRunner().invoke(
+            t.ait2jsonld,
+            [h5ad, "--gene_annotation", str(ann), "--gene_annotation", str(ann)],
+        )
+        assert r.exit_code != 0  # a second file is not accepted
