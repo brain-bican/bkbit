@@ -220,7 +220,7 @@ class Gff3:
             )
             self.assembly_version = (
                 self.assembly_id.split(".")[1]
-                if len(self.assembly_id.split(".")) >= 1
+                if len(self.assembly_id.split(".")) > 1
                 else None
             )
 
@@ -288,13 +288,20 @@ class Gff3:
                     release_version = (
                         metadata[1] if len(metadata) == 4 else metadata[1].split("-")[1]
                     )
-                    assembly_parts = re.split(r"(?<!GCF)_", metadata[2])
+                    # metadata[2] is "<accession>_<name>" (pattern 1) or
+                    # "<accession>_<name>_genomic.gff.gz" (pattern 2); the
+                    # assembly name itself may contain underscores (e.g. Mmul_10).
+                    assembly_match = re.fullmatch(
+                        r"(GC[AF]_\d+\.\d+)_(.+?)(?:_genomic\.gff\.gz)?", metadata[2]
+                    )
+                    if assembly_match is None:
+                        return None
                     return {
                         "authority": ga.AuthorityType.NCBI,
                         "taxonid": metadata[0],
                         "release_version": release_version,
-                        "assembly_accession": assembly_parts[0],
-                        "assembly_name": assembly_parts[1],
+                        "assembly_accession": assembly_match.group(1),
+                        "assembly_name": assembly_match.group(2),
                     }
             except (IndexError, ValueError):
                 return None
