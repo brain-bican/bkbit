@@ -1,0 +1,223 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spreadsheet to LinkML Schema &mdash; bkbit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="LinkML Schema Trimmer" href="linkml_trimmer.html" />
+    <link rel="prev" title="Annotated Genome Data" href="genome_annotation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            bkbit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">DATA TRANSLATORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="specimen_file_manifest.html">Specimen Digital File Manifest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_specimen_library_aliquot.html">Specimen Library Aliquot List</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specimen_metadata.html">Specimen Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genome_annotation.html">Annotated Genome Data</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL CONVERTERS</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Spreadsheet to LinkML Schema</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#command-line">Command Line</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#bkbit-schema2model"><code class="docutils literal notranslate"><span class="pre">bkbit</span> <span class="pre">schema2model</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#example-1-schema-defined-in-tsv-files">Example 1: Schema defined in tsv files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-2-schema-defined-in-google-sheets">Example 2: Schema defined in Google Sheets</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL EDITORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="linkml_trimmer.html">LinkML Schema Trimmer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">REFERENCE</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">bkbit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">bkbit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Spreadsheet to LinkML Schema</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/brain-bican/bkbit/blob/main/docs/spreadsheet_converter.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="spreadsheet-to-linkml-schema">
+<span id="spreadsheet-converter"></span><h1>Spreadsheet to LinkML Schema<a class="headerlink" href="#spreadsheet-to-linkml-schema" title="Link to this heading"></a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>Create a yaml linkml model from set of spreadsheets. It can use either tsv files or Google Sheet as an input.</p>
+<p>The default behavior is to run the converter starting with tsv files, specifying their paths as arguments, for example, model_spreadsheets/<a href="#id1"><span class="problematic" id="id2">*</span></a>tsv.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">--gsheet</span></code> option is used, the converter starts from downloading spreadsheets  from Google Sheets.
+The argument must be a YAML file that has <code class="docutils literal notranslate"><span class="pre">gsheet_id</span></code> and a list of <code class="docutils literal notranslate"><span class="pre">sheets</span></code>  with <code class="docutils literal notranslate"><span class="pre">gid</span></code> (a unique identifier for each individual sheet)
+and <code class="docutils literal notranslate"><span class="pre">name</span></code> (optionally) that will be used as a name of the downloaded TSV file (if not available <code class="docutils literal notranslate"><span class="pre">gid</span></code> will be used).</p>
+</section>
+<section id="command-line">
+<h2>Command Line<a class="headerlink" href="#command-line" title="Link to this heading"></a></h2>
+<section id="bkbit-schema2model">
+<h3><code class="docutils literal notranslate"><span class="pre">bkbit</span> <span class="pre">schema2model</span></code><a class="headerlink" href="#bkbit-schema2model" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>bkbit<span class="w"> </span>schema2model<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span>SPREADSHEETS
+</pre></div>
+</div>
+<p><strong>Options</strong></p>
+<blockquote>
+<div><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">-o,</span> <span class="pre">--output</span> <span class="pre">&lt;output&gt;</span></code></dt><dd><p>Path for the yaml output file.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">-t,</span> <span class="pre">--template</span> <span class="pre">&lt;template&gt;</span></code></dt><dd><p>Optional template yaml file with standard classes that will be added to the model.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--gsheet,</span> <span class="pre">--no-gsheet</span></code></dt><dd><p>Using Google Sheet as a source. If True, the arguments MUST be a yaml file with gsheet_id
+and gid of all the sheets.</p>
+<dl class="simple">
+<dt>Default:</dt><dd><p>False</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--gsheet-download-dir</span> <span class="pre">&lt;gsheet_download_dir&gt;</span></code></dt><dd><p>Path used to download Google Sheets. If not specified a default directory will be created.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--fix_tsv,</span> <span class="pre">--no-fix_tsv</span></code></dt><dd><p>Fixing known issues with tsv files from Google Sheets.</p>
+<dl class="simple">
+<dt>Default:</dt><dd><p>True</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--fix_tsv_save,</span> <span class="pre">--no-fix_tsv_save</span></code></dt><dd><p>Keeping the fixed files, relevant only if fix_tsv is True</p>
+<dl class="simple">
+<dt>Default:</dt><dd><p>False</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--repair,</span> <span class="pre">--no-repair</span></code></dt><dd><p>Standard Linkml auto-repair schema</p>
+<dl class="simple">
+<dt>Default:</dt><dd><p>True</p>
+</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">--fix_bican_model,</span> <span class="pre">--no-fix_bican_model</span></code></dt><dd><p>Automated repair specifically for the BICAN YAML model</p>
+<dl class="simple">
+<dt>Default:</dt><dd><p>True</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>Arguments</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">SPREADSHEETS</span></code></dt><dd><p>Required argument</p>
+</dd>
+</dl>
+</div></blockquote>
+</section>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<section id="example-1-schema-defined-in-tsv-files">
+<h3>Example 1: Schema defined in tsv files<a class="headerlink" href="#example-1-schema-defined-in-tsv-files" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run schema2model command</span>
+$<span class="w"> </span>bkbit<span class="w"> </span>schema2model<span class="w"> </span>-o<span class="w"> </span>model.yaml<span class="w"> </span>source_model/spreadsheets/*.tsv
+</pre></div>
+</div>
+</section>
+<section id="example-2-schema-defined-in-google-sheets">
+<h3>Example 2: Schema defined in Google Sheets<a class="headerlink" href="#example-2-schema-defined-in-google-sheets" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run schema2model command</span>
+$<span class="w"> </span>bkbit<span class="w"> </span>schema2model<span class="w"> </span>-o<span class="w"> </span>model.yaml<span class="w">  </span>--gsheet<span class="w"> </span>--gsheet-download-dir<span class="w"> </span>source_model/spreadsheets<span class="w">  </span>source_model/gsheet.yaml
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="genome_annotation.html" class="btn btn-neutral float-left" title="Annotated Genome Data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="linkml_trimmer.html" class="btn btn-neutral float-right" title="LinkML Schema Trimmer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, BICAN.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
