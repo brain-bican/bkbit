@@ -17,7 +17,10 @@ classifiers = [
 ]
 license = {text = "Apache 2.0"}
 dependencies = [
-    "linkml>=1.5",
+    "linkml>=1.9.4",
+    # json_dumper writes "@type": "dict" for pydantic objects before 1.9.5,
+    # so every node of a JSON-LD output gets the class bican:dict
+    "linkml-runtime>=1.9.5",
     "pandas",
     "click",
     "schemasheets",
@@ -25,6 +28,11 @@ dependencies = [
     "rdflib",
     "requests",
     "tqdm",
+    # ait2jsonld: reads .h5ad structure, remotely over range requests
+    "h5py",
+    "anndata",
+    "fsspec",
+    "aiohttp",
 ]
 dynamic = ["version"]
 
@@ -33,6 +41,10 @@ include = ["bkbit*"]
 
 [tool.setuptools.package-data]
 "bkbit.utils.ncbi_taxonomy_data" = ["*.json.gz"]
+# ait2jsonld emits JSON-LD against the generated context.
+"bkbit.models" = ["*.context.jsonld"]
+# Optional abbreviation tables for ait2jsonld --abbreviations.
+"bkbit.data" = ["*.csv"]
 
 [project.scripts]
 bkbit = "bkbit.cli:cli"
@@ -63,7 +75,9 @@ write_to = "bkbit/_version.py"
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
-skip = '.git*'
+# CSV files hold data tables (e.g. curated abbreviations); short anatomical
+# abbreviations in them are read as typos.
+skip = '.git*,*.csv'
 check-hidden = true
-ignore-regex = 'KEGG\.BRITE|https://bioregistry\.io/kegg\.brite' # codespell:ignore
+ignore-regex = 'KEGG\.BRITE|https://bioregistry\.io/kegg\.brite|https://mor\.nlm\.nih\.gov' # codespell:ignore
 ignore-words-list = 'ans'

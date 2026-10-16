@@ -44,6 +44,7 @@ The package provides a CLI tool `bkbit` with multiple subcommands:
 - `bkbit specimen2jsonld` - Generate BICAN objects from Specimen Portal data
 - `bkbit gff2jsonld` - Generate genome annotation objects from GFF3 files
 - `bkbit taxonomy2jsonld` - Generate taxonomy objects from HMBA annotations
+- `bkbit ait2jsonld` - Generate Cell Taxonomy objects from an AIT `.h5ad` (local or remote)
 - `bkbit schema2model` - Convert spreadsheets to LinkML YAML models
 - `bkbit yaml2cvs` - Convert YAML to CSV
 - `bkbit linkml-trimmer` - Trim LinkML models
@@ -62,6 +63,7 @@ The package provides a CLI tool `bkbit` with multiple subcommands:
 - `library_generation_translator.py` - Specimen Portal to BICAN objects (specimen2jsonld)
 - `genome_annotation_translator.py` - GFF3 files to genome annotation objects (gff2jsonld)
 - `HMBA_annotation_translator.py` - HMBA taxonomy annotations (taxonomy2jsonld)
+- `ait_taxonomy_translator.py` - AIT `.h5ad` taxonomies to Cell Taxonomy JSON-LD (ait2jsonld)
 - `specimen_metadata_translator.py` - Specimen metadata handling
 
 **`bkbit/model_converters/`** - Tools for converting between formats:
@@ -105,6 +107,81 @@ To regenerate the bundled subset for a newer taxonomy dump:
 ```bash
 bkbit download-ncbi-taxonomy
 python -m bkbit.utils.ncbi_taxonomy_data.build_subset   # commit the resulting .json.gz
+```
+
+### AIT taxonomy translation (`ait2jsonld`)
+
+Reads an Allen Institute Taxonomy `.h5ad` and emits Cell Taxonomy JSON-LD.
+
+Rules to preserve when touching this code:
+
+- **Field locations are never hardcoded.** Every slot in
+  `bkbit/models/cell_taxonomy.yaml` carries an `ait_location` annotation saying
+  where its value lives in the file; the translator resolves those through
+  `SchemaView`. Changing the source spreadsheet changes behaviour with no code
+  edit. Where a declared location cannot be honoured the translator may fall
+  back, but the deviation is always written to the run report, never applied
+  silently.
+- **The annotations are read from the generated pydantic model**, not from a
+  LinkML YAML. linkml's pydantic generator preserves them under each field's
+  `json_schema_extra["linkml_meta"]`, so `bkbit/models/cell_taxonomy.py` is a
+  complete source (verified against SchemaView: the same 52 (class, slot)
+  pairs, identical values, and identical cardinality on all 732 shared keys).
+  That means `ait2jsonld` needs **no extra artifact** — the model arrives by
+  the models repo's `push_model_to_bkbit.yaml` workflow like every other.
+- **It therefore depends on that model being current.** The annotations were
+  added 2026-10-01; against an older `cell_taxonomy.py` nothing resolves, so
+  `load_locations()` raises instead of silently emitting an empty graph.
+- **Splitting a packed cell is declared, not guessed.** A multivalued slot
+  whose value arrives as one string (`"PDGFRA, DCN"`, `"a|b"`) gets an
+  `ait_separator` annotation saying how to split it; `split_values()` honours
+  it and treats the cell as a single value when none is declared. Guessing a
+  delimiter would silently invent or merge entities. Where the code still
+  falls back to a historical delimiter it records a deviation in the run
+  report rather than passing it off as model-driven.
+- **`content_url` falls back to the real source location.** Several releases
+  put a placeholder in `uns.dataset_purl` (all three HMBA files say
+  `BICAN_s3_bucket`) or omit it. When the declared value is missing or is not
+  a URI, the translator substitutes the location it actually read from,
+  rewriting an https S3 URL to its `s3://` form, and records a deviation. A
+  local path yields nothing -- a filesystem location is not a permanent URL.
+  A file that declares a valid URI keeps it.
+- **ids come from `generate_object_id`,** like every other translator. The
+  class name is deliberately not hashed -- see
+  `bkbit/tests/test_ait_taxonomy_translator.py`.
+- **`h5py` and `anndata` are imported lazily.** `cli.py` imports this module to
+  register the command, so a module-scope import would make a stale environment
+  break every subcommand including `--help` -- the same failure mode recorded
+  for the NCBI taxonomy cache above. They are declared dependencies; the guard
+  exists so a partial install degrades to one failing command.
+- **A plain `cluster_info` column attaches at the level it is constant
+  within.** Slots like `curated_markers` and `literature_support` point at a
+  column stored on every cluster row but describing a coarser level. The
+  translator finds the coarsest annotation level the column does not vary
+  within and attaches it there, reporting the level, the alternatives, and the
+  row coverage. A column populated in under half the rows is flagged SPARSE,
+  because absent values constrain nothing and a coarse level may be an
+  artifact of them.
+- **Model constraints are enforced by the model's own validators.** linkml
+  compiles a `pattern` into a @field_validator, so the regex cannot be read off
+  FieldInfo; `value_validators()` pulls the validators out of
+  `__pydantic_decorators__` and `accepts()` runs them. A rejected value is
+  dropped and reported once per distinct value, never raised -- a tracking
+  placeholder in one column must not fail a whole taxonomy.
+- **Abbreviation meaning/type/xref come from an opt-in table.** The AIT files
+  carry only the bare token in `tokens_<level>`; the rest lives outside them.
+  `--abbreviations` takes a CSV path or a bundled name (`hmba-basalganglia`,
+  in `bkbit/data/`). **There is no default**: a table describes one taxonomy,
+  and the basal-ganglia terms say nothing about the tokens in another. The run
+  report gives the match counts both ways, and a long "not in the table" list
+  means the wrong table was passed.
+- **Remote files are read over HTTP range requests** (`fsspec` + `h5py`), never
+  downloaded; `X`, `raw` and `layers` are never materialised. A 332 GB file is
+  routine. `--cache DIR` keeps a local block cache across runs.
+
+```bash
+bkbit ait2jsonld https://.../Human_LGN_SMART_seq_04042025.h5ad \
+    --species Human --out Human_LGN.jsonld --report Human_LGN.report.json
 ```
 
 ### Environment Variables
