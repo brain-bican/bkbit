@@ -17,7 +17,10 @@ classifiers = [
 ]
 license = {text = "Apache 2.0"}
 dependencies = [
-    "linkml>=1.5",
+    "linkml>=1.9.4",
+    # json_dumper writes "@type": "dict" for pydantic objects before 1.9.5,
+    # so every node of a JSON-LD output gets the class bican:dict
+    "linkml-runtime>=1.9.5",
     "pandas",
     "click",
     "schemasheets",
