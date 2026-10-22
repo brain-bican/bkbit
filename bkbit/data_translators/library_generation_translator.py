@@ -358,6 +358,11 @@ class SpecimenPortal:
         for member in enum_type:
             if member.value == nimp_value:
                 return member
+        # NIMP capitalises some values the model keeps lowercase (e.g. sex "Female" vs "female")
+        if isinstance(nimp_value, str):
+            for member in enum_type:
+                if isinstance(member.value, str) and member.value.casefold() == nimp_value.casefold():
+                    return member
         return None
 
     def serialize_to_jsonld(
