@@ -55,12 +55,20 @@ def test_donor_name_and_xref():
     d = SpecimenPortal("token").generate_bican_object(DONOR_RECORD)
     assert d.name == "C57BL6J-672032"
     # xref is multivalued; a single NIMP value must not be split into characters
-    assert d.xref == ["DO-GINI5305"]
+    assert d.xref == ["NIMP:DO-GINI5305"]
 
 
 def test_nimp_variable_name_mapping():
     la = SpecimenPortal("token").generate_bican_object(ALIQUOT_RECORD)
     assert la.name == "MyAliquot-01"
+
+
+def test_xref_already_prefixed_is_kept():
+    record = {
+        **DONOR_RECORD,
+        "record": {**DONOR_RECORD["record"], "donor_nhash_id": "NIMP:DO-GINI5305"},
+    }
+    assert SpecimenPortal("token").generate_bican_object(record).xref == ["NIMP:DO-GINI5305"]
 
 
 def test_digital_asset_declared_from_library_aliquot():

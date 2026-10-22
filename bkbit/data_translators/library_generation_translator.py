@@ -122,6 +122,7 @@ def derived_classes(category):
 
 
 JWT_TOKEN_OS_VAR_NAME = "jwt_token"
+NIMP_PREFIX = "NIMP:"
 CONTEXT = [
     "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/library_generation.context.jsonld",
     "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/donor.context.jsonld",
@@ -392,6 +393,12 @@ class SpecimenPortal:
             assigned_attributes[schema_field_name] = SpecimenPortal.convert_value(
                 schema_field_metadata, data_value
             )
+            # xref holds NIMP NHash IDs; write them as NIMP: CURIEs
+            if schema_field_name == "xref" and assigned_attributes[schema_field_name]:
+                assigned_attributes[schema_field_name] = [
+                    value if value.startswith(NIMP_PREFIX) else NIMP_PREFIX + value
+                    for value in assigned_attributes[schema_field_name]
+                ]
 
             # check if the field is required; if missing raise an error
             if assigned_attributes[schema_field_name] is None and required:
