@@ -70,7 +70,7 @@ CATEGORY_TO_CLASS = {
     "Tissue": lg.TissueSample,
     # Donor is defined in its own model; library_generation only keeps a stub of it
     "Donor": donor.Donor,
-    "Specimen Dissected ROI": lg.DissectionRoiPolygon,
+    "ROI": lg.DissectionRoiPolygon,
     "Slab": lg.BrainSlab,
 }
 JWT_TOKEN_OS_VAR_NAME = "jwt_token"
