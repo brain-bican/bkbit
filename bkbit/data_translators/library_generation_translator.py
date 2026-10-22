@@ -287,12 +287,15 @@ class SpecimenPortal:
 
         assigned_attributes = {}
         for schema_field_name, schema_field_metadata in bican_class.__fields__.items():
+            local_names = schema_field_metadata.json_schema_extra.get(
+                "linkml_meta", {}
+            ).get("local_names", {})
+            # Models declare the NIMP field under NIMP_variable_name; older ones used NIMP
             nimp_field_name = (
-                schema_field_metadata.json_schema_extra.get("linkml_meta", {})
-                .get("local_names", {})
-                .get("NIMP", {})
-                .get("local_name_value", schema_field_name)
-            )
+                local_names.get("NIMP_variable_name")
+                or local_names.get("NIMP")
+                or {}
+            ).get("local_name_value", schema_field_name)
             multivalued, field_type = SpecimenPortal.get_field_type(
                 schema_field_metadata.annotation
             )
