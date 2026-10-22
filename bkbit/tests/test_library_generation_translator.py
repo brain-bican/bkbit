@@ -119,8 +119,14 @@ def test_multivalued_builtin_list():
 
 
 def test_context_includes_donor():
-    assert any(c.endswith("/donor.context.jsonld") for c in CONTEXT)
-    assert any(c.endswith("/library_generation.context.jsonld") for c in CONTEXT)
+    urls = [c for c in CONTEXT if isinstance(c, str)]
+    assert any(c.endswith("/donor.context.jsonld") for c in urls)
+    assert any(c.endswith("/library_generation.context.jsonld") for c in urls)
+
+
+def test_nimp_prefix_points_at_specimen_portal():
+    # the last definition wins, so the placeholder overrides the models' example.org
+    assert CONTEXT[-1]["NIMP"] == "https://brain-specimenportal.org/api/v1/nhash_ids/info?id="
 
 
 def test_top_down_links_use_bkbit_ids(monkeypatch):

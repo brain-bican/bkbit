@@ -126,6 +126,9 @@ NIMP_PREFIX = "NIMP:"
 CONTEXT = [
     "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/library_generation.context.jsonld",
     "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/donor.context.jsonld",
+    # TODO: placeholder until NIMP is changed in the models' Prefixes.tsv (it is
+    # http://example.org/NIMP/ there); remove this entry once that lands.
+    {"NIMP": "https://brain-specimenportal.org/api/v1/nhash_ids/info?id="},
 ]
 
 
