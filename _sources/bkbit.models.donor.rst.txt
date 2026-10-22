@@ -1,0 +1,7 @@
+bkbit.models.donor module
+=========================
+
+.. automodule:: bkbit.models.donor
+   :members:
+   :undoc-members:
+   :show-inheritance:

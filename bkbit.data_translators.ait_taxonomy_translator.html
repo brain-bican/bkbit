@@ -1,0 +1,522 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bkbit.data_translators.ait_taxonomy_translator module &mdash; bkbit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            bkbit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">DATA TRANSLATORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="specimen_file_manifest.html">Specimen Digital File Manifest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_specimen_library_aliquot.html">Specimen Library Aliquot List</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specimen_metadata.html">Specimen Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genome_annotation.html">Annotated Genome Data</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL CONVERTERS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="spreadsheet_converter.html">Spreadsheet to LinkML Schema</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL EDITORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="linkml_trimmer.html">LinkML Schema Trimmer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">REFERENCE</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">bkbit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">bkbit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">bkbit.data_translators.ait_taxonomy_translator module</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/brain-bican/bkbit/blob/main/docs/bkbit.data_translators.ait_taxonomy_translator.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-bkbit.data_translators.ait_taxonomy_translator">
+<span id="bkbit-data-translators-ait-taxonomy-translator-module"></span><h1>bkbit.data_translators.ait_taxonomy_translator module<a class="headerlink" href="#module-bkbit.data_translators.ait_taxonomy_translator" title="Link to this heading"></a></h1>
+<p>AIT .h5ad -&gt; Cell Taxonomy JSON-LD, driven by the model’s own annotations.</p>
+<p>The point of this script is that it does not hardcode where fields live. Every
+slot in the cell_taxonomy model carries an <cite>ait_location</cite> annotation saying
+where its value comes from in an AIT .h5ad. linkml’s pydantic generator keeps
+those annotations, so they are read straight off bkbit.models.cell_taxonomy –
+no LinkML YAML needs to ship alongside the generated model.</p>
+<p>Where a declared location cannot be honoured, the script may fall back to
+another source – but every such deviation is recorded in the report, never
+applied silently. That is the whole contract:</p>
+<blockquote>
+<div><p>read from where the model says; if you cannot, say so.</p>
+</div></blockquote>
+<p>Location grammar (as written in the sheet’s AIT Location column):</p>
+<blockquote>
+<div><p>obs.&lt;field&gt;                     a column of obs
+obs.index                       the obs index
+obs.&lt;annotation_level&gt;          template: one column per uns/hierarchy level
+uns.&lt;key&gt;                       a uns scalar
+uns.hierarchy (key|value)       hierarchy keys (level names) or values (order)
+uns.cluster_info                the whole cluster_info table
+uns.cluster_info.&lt;pre&gt;_&lt;level&gt;  per-level wide column, needs un-pivoting
+obsm.X_&lt;embedding&gt; (key|value)  an obsm embedding
+X / raw.X                       expression matrix groups
+(derived: &lt;rule&gt;)               not stored; computed per &lt;rule&gt;
+(synthesized)                   minted identifier, no file source
+&lt;path&gt; (data only)              present in files but NOT in the AIT schema</p>
+</div></blockquote>
+<p>Reads only metadata groups over HTTP range requests; never materialises X.</p>
+<p>curated_markers has range GeneAnnotation, so its values must be links. The file
+stores symbols; –gene_annotation (one gff2jsonld output, Turtle or JSON-LD, of
+the taxonomy’s species – checked) supplies the GeneAnnotation IRIs. Symbols that do not
+resolve are reported and left out, never written as strings – a bare string
+in an &#64;id slot becomes a relative IRI against the output file’s path.</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><dl class="simple">
+<dt>python ait2jsonld.py URL_OR_PATH [–out out.jsonld] [–report rep.json]</dt><dd><p>[–species NAME] [–no-counts]
+[–gene_annotation ANNOTATION.ttl|.jsonld]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py data">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.GENE_ANNOTATION_CLASS">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">GENE_ANNOTATION_CLASS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'https://identifiers.org/brain-bican/vocab/GeneAnnotation'</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.GENE_ANNOTATION_CLASS" title="Link to this definition"></a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">CellTypeTaxon.curated_markers</span></code> has range <code class="docutils literal notranslate"><span class="pre">GeneAnnotation</span></code>, so the
+generated context types it <code class="docutils literal notranslate"><span class="pre">&quot;&#64;type&quot;:</span> <span class="pre">&quot;&#64;id&quot;</span></code>. The AIT file stores gene
+<em>symbols</em> (“PDGFRA, DCN”). Written as they are, a JSON-LD processor reads
+each symbol as a relative IRI and resolves it against the document’s base –
+the output file’s own path – so the graph ends up with
+<code class="docutils literal notranslate"><span class="pre">file:///.../ACTA2</span></code>: a node nothing else refers to. The value the model
+asks for is the IRI of a GeneAnnotation, which <code class="docutils literal notranslate"><span class="pre">gff2jsonld</span></code> mints. So
+symbols are looked up in the ONE gff2jsonld output the caller names for
+this h5ad, and a symbol that cannot be resolved is reported, never written
+as a string.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.GeneIndex">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">GeneIndex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">taxon:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">by_symbol:</span> <span class="pre">dict</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">by_folded:</span> <span class="pre">dict</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">by_synonym:</span> <span class="pre">dict</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#GeneIndex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.GeneIndex" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Symbol lookup over the GeneAnnotations of one genome annotation file.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.GeneIndex.by_folded">
+<span class="sig-name descname"><span class="pre">by_folded</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.GeneIndex.by_folded" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.GeneIndex.by_symbol">
+<span class="sig-name descname"><span class="pre">by_symbol</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.GeneIndex.by_symbol" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.GeneIndex.by_synonym">
+<span class="sig-name descname"><span class="pre">by_synonym</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.GeneIndex.by_synonym" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.GeneIndex.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.GeneIndex.label" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.GeneIndex.resolve">
+<span class="sig-name descname"><span class="pre">resolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#GeneIndex.resolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.GeneIndex.resolve" title="Link to this definition"></a></dt>
+<dd><p>(GeneAnnotation IRI, tier) or (None, why).</p>
+<p>Tiers, strongest first: <code class="docutils literal notranslate"><span class="pre">symbol</span></code> (exact), <code class="docutils literal notranslate"><span class="pre">symbol_case</span></code> (the same
+symbol in another case, e.g. mouse-style “Pou6f2” for POU6F2),
+<code class="docutils literal notranslate"><span class="pre">synonym</span></code> (exact). Each tier must name exactly one gene; an
+ambiguous tier is reported, never broken by picking one.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.GeneIndex.source">
+<span class="sig-name descname"><span class="pre">source</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.GeneIndex.source" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.GeneIndex.taxon">
+<span class="sig-name descname"><span class="pre">taxon</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.GeneIndex.taxon" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.KNOWN_DATABASE_PREFIXES">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">KNOWN_DATABASE_PREFIXES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'ENSEMBL',</span> <span class="pre">'NCBIGene'})</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.KNOWN_DATABASE_PREFIXES" title="Link to this definition"></a></dt>
+<dd><p>Prefixes known to be database identifiers, so correctly left in <code class="docutils literal notranslate"><span class="pre">xref</span></code>.
+Anything in neither set is reported rather than silently assumed to be one.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.ONTOLOGY_PREDICATE">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">ONTOLOGY_PREDICATE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'broad_match'</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.ONTOLOGY_PREDICATE" title="Link to this definition"></a></dt>
+<dd><p>Which SKOS predicate the ontology terms are asserted with.</p>
+<p><code class="docutils literal notranslate"><span class="pre">broad_match</span></code>, not <code class="docutils literal notranslate"><span class="pre">exact_match</span></code>: the mapping is many-to-one. Measured
+across the HMBA files, up to three distinct CellTypeTaxon entries share one
+CL term (CL:0000128, CL:4042025, CL:0000192), and abbreviations reuse terms
+too. <code class="docutils literal notranslate"><span class="pre">skos:exactMatch</span></code> is symmetric <em>and</em> transitive, so asserting it
+three times against one term would entail that those three taxa are
+equivalent to each other, which is false – they are distinct taxa sharing
+a coarser class. <code class="docutils literal notranslate"><span class="pre">skos:broadMatch</span></code> says the true thing: the external
+concept is broader than ours.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.ONTOLOGY_PREFIXES">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">ONTOLOGY_PREFIXES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'CL',</span> <span class="pre">'DHBA',</span> <span class="pre">'UBERON'})</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.ONTOLOGY_PREFIXES" title="Link to this definition"></a></dt>
+<dd><p>Prefixes whose terms are concepts in a published ontology, as opposed to
+records in a database.</p>
+<p>The distinction decides which slot a value lands in. Biolink defines
+<code class="docutils literal notranslate"><span class="pre">xref</span></code> as a cross reference to a database identifier, and it serialises
+as a literal, so a CL or UBERON term sitting there joins with nothing. The
+SKOS mapping slots have a class range, so the generated context gives them
+<code class="docutils literal notranslate"><span class="pre">&quot;&#64;type&quot;:</span> <span class="pre">&quot;&#64;id&quot;</span></code> and the CURIE becomes a real node that resolves against
+the published ontology. Database identifiers stay in <code class="docutils literal notranslate"><span class="pre">xref</span></code>, which is
+what it is for.</p>
+<p>Keyed on the prefix rather than the table’s <code class="docutils literal notranslate"><span class="pre">abbreviation_type</span></code> column,
+because the two can disagree – the prefix is what decides whether a value
+is resolvable, and a row typed <code class="docutils literal notranslate"><span class="pre">gene</span></code> could still carry an ontology term.
+An unrecognised prefix is left in <code class="docutils literal notranslate"><span class="pre">xref</span></code> and reported, so a new ontology
+shows up as a deviation rather than silently becoming an unjoinable
+literal.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.Report">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">Report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_file:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolved:</span> <span class="pre">list</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deviations:</span> <span class="pre">list</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unpopulated:</span> <span class="pre">list</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">counts:</span> <span class="pre">dict</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#Report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.Report" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Records, per slot, whether the model’s declared location was honoured.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.Report.counts">
+<span class="sig-name descname"><span class="pre">counts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.Report.counts" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.Report.deviate">
+<span class="sig-name descname"><span class="pre">deviate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">declared</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">why</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#Report.deviate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.Report.deviate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.Report.deviations">
+<span class="sig-name descname"><span class="pre">deviations</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.Report.deviations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.Report.empty">
+<span class="sig-name descname"><span class="pre">empty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">declared</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">why</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#Report.empty"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.Report.empty" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.Report.ok">
+<span class="sig-name descname"><span class="pre">ok</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">note</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#Report.ok"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.Report.ok" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.Report.resolved">
+<span class="sig-name descname"><span class="pre">resolved</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.Report.resolved" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.Report.source_file">
+<span class="sig-name descname"><span class="pre">source_file</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.Report.source_file" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.Report.species">
+<span class="sig-name descname"><span class="pre">species</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.Report.species" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.Report.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#Report.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.Report.to_dict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.Report.unpopulated">
+<span class="sig-name descname"><span class="pre">unpopulated</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.Report.unpopulated" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.accepts">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">accepts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seen</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#accepts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.accepts" title="Link to this definition"></a></dt>
+<dd><p>True if the model accepts this value for this slot.</p>
+<p>A rejected value is dropped and reported once per distinct value, never
+raised: a tracking placeholder in one column should not fail a whole
+taxonomy. Deliberate – see the ASK NELSON note on CL:ID_&lt;level&gt;.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.blankish">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">blankish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#blankish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.blankish" title="Link to this definition"></a></dt>
+<dd><p>None for a cell that is empty or a stringified null, else its text.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.build">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">want_counts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abbreviations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gene_annotation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.build" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.dec">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">dec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#dec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.dec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.df_columns">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">df_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#df_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.df_columns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.gene_annotation_format">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">gene_annotation_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#gene_annotation_format"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.gene_annotation_format" title="Link to this definition"></a></dt>
+<dd><p>‘json-ld’ or ‘turtle’, from the content, checked against the extension.</p>
+<p>The content decides (a JSON document starts with ‘{’ or ‘[‘); a known
+extension that disagrees with it is an error rather than a guess, since a
+mislabelled file is usually the wrong file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.guard_links">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">guard_links</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ents</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#guard_links"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.guard_links" title="Link to this definition"></a></dt>
+<dd><p>Drop values that would become relative IRIs, and report each one.</p>
+<p>The model is the authority on which slots hold links (the generated
+context marks them <code class="docutils literal notranslate"><span class="pre">&quot;&#64;type&quot;:</span> <span class="pre">&quot;&#64;id&quot;</span></code>); this applies it to every class
+and slot, so a new link slot fed a plain string fails loudly here rather
+than quietly becoming a <code class="docutils literal notranslate"><span class="pre">file:///</span></code> node. Returns the number dropped.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.is_link">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">is_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefixes</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#is_link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.is_link" title="Link to this definition"></a></dt>
+<dd><p>True for an absolute IRI or a CURIE whose prefix the context defines.</p>
+<p>Anything else in an <code class="docutils literal notranslate"><span class="pre">&#64;id</span></code>-typed slot is a relative IRI reference, which a
+JSON-LD processor silently resolves against the document base.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.load_abbreviations">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">load_abbreviations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#load_abbreviations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.load_abbreviations" title="Link to this definition"></a></dt>
+<dd><p>{term: {meaning, entity_type, xref}} from an abbreviation table.</p>
+<p><cite>spec</cite> is a path, or the name of a table bundled with bkbit (see
+BUNDLED_ABBREVIATIONS). The table is taxonomy-specific – the HMBA
+basal-ganglia one does not describe the tokens in other taxonomies – so
+there is no default: nothing is enriched unless a table is named.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.load_gene_annotation">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">load_gene_annotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#bkbit.data_translators.ait_taxonomy_translator.GeneIndex" title="bkbit.data_translators.ait_taxonomy_translator.GeneIndex"><span class="pre">GeneIndex</span></a></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#load_gene_annotation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.load_gene_annotation" title="Link to this definition"></a></dt>
+<dd><p>GeneIndex over one gff2jsonld output, in Turtle or JSON-LD.</p>
+<p>The file’s species is the <code class="docutils literal notranslate"><span class="pre">NCBITaxon:&lt;n&gt;</span></code> xref of the OrganismTaxon its
+genes are <code class="docutils literal notranslate"><span class="pre">in_taxon</span></code> of – the same number the AIT file stores in
+<code class="docutils literal notranslate"><span class="pre">organism_ontology_term_id</span></code>, which build() checks it against. A file
+whose genes span several species is rejected: one h5ad, one annotation.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.load_locations">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">load_locations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#load_locations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.load_locations" title="Link to this definition"></a></dt>
+<dd><p>{(class, slot): {‘loc’:…, ‘sep’:…}} from the model’s annotations.</p>
+<p>These come from the <code class="docutils literal notranslate"><span class="pre">ait_location</span></code> and <code class="docutils literal notranslate"><span class="pre">ait_separator</span></code> annotations on
+the cell_taxonomy LinkML schema. linkml’s pydantic generator preserves them
+verbatim under each field’s <code class="docutils literal notranslate"><span class="pre">json_schema_extra[&quot;linkml_meta&quot;]</span></code>, so the
+generated model is a complete source and the LinkML YAML does not have to
+ship alongside it. Verified equal to reading the schema with SchemaView:
+the same (class, slot) pairs with identical values.</p>
+<p>The sheet also has Notes and Source columns, but both are deliberately
+mapped to <code class="docutils literal notranslate"><span class="pre">ignore</span></code> and so never reach the model; this used to read them
+and no longer does.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.multivalued_map">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">multivalued_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#multivalued_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.multivalued_map" title="Link to this definition"></a></dt>
+<dd><p>{(class, slot): bool} – cardinality per class, not per slot <em>name</em>.</p>
+<p>Keying by name alone is wrong: Cluster.has_parent is multivalued while
+CellTypeTaxon.has_parent is not, so a global set wraps the latter in a
+list and the model rejects it. Read straight off the generated field
+types, which encode exactly this.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.ncbi_taxon_number">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">ncbi_taxon_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#ncbi_taxon_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.ncbi_taxon_number" title="Link to this definition"></a></dt>
+<dd><p>‘9606’ from NCBITaxon:9606, NCBITaxon_9606 (IRI) or NCBI:txid9606.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.obs_counts">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">obs_counts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#obs_counts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.obs_counts" title="Link to this definition"></a></dt>
+<dd><p>Per-category row counts for an obs column, without loading all of obs.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.oid">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">oid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#oid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.oid" title="Link to this definition"></a></dt>
+<dd><p>Deterministic id, identical to every other bkbit translator.</p>
+<p>Delegates to <a class="reference internal" href="bkbit.utils.generate_bkbit_id.html#bkbit.utils.generate_bkbit_id.generate_object_id" title="bkbit.utils.generate_bkbit_id.generate_object_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">bkbit.utils.generate_bkbit_id.generate_object_id()</span></code></a>, so
+the same entity minted here and by <code class="docutils literal notranslate"><span class="pre">taxonomy2jsonld</span></code> gets the same IRI.
+<code class="docutils literal notranslate"><span class="pre">cls_name</span></code> is accepted for call-site readability but is deliberately NOT
+hashed: including it would fork this translator’s ids away from the rest
+of bkbit. Checked against all 13 released AIT files – hashing attributes
+alone produces no cross-class collisions.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.open_h5">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">open_h5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#open_h5"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.open_h5" title="Link to this definition"></a></dt>
+<dd><p>Open local or remote. Remote uses a local block cache so that repeat runs
+do not re-fetch the same HDF5 metadata blocks (the dominant cost: listing
+uns alone is ~26s cold).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.parse_loc">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">parse_loc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#parse_loc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.parse_loc" title="Link to this definition"></a></dt>
+<dd><p>Parse a declared location into something resolvable.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.read_col">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">read_col</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#read_col"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.read_col" title="Link to this definition"></a></dt>
+<dd><p>Decode ONE dataframe column (categorical or plain). Reading only the
+columns the model asks for avoids pulling all ~206 datasets of a 103-column
+table, which is what made the first version unusably slow.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.read_uns_scalar">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">read_uns_scalar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#read_uns_scalar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.read_uns_scalar" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.resolve_markers">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">resolve_markers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gene_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tally</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#resolve_markers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.resolve_markers" title="Link to this definition"></a></dt>
+<dd><p>GeneAnnotation IRIs for the symbols that resolve; the rest go to <cite>tally</cite>.</p>
+<p>With no gene index nothing is emitted: a symbol is not a valid value of a
+GeneAnnotation-ranged slot. A cell that is not a symbol list at all (e.g.
+“Six3 and Foxp1”) is not re-split – the declared separator is the only
+one – so it is reported unresolved for the data to be fixed upstream.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.source_as_uri">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">source_as_uri</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#source_as_uri"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.source_as_uri" title="Link to this definition"></a></dt>
+<dd><p>The location the file was actually read from, as a URI.</p>
+<p>An https URL pointing at S3 is rewritten to its s3:// form, so a taxonomy
+read over range requests records the same identifier the bucket owner
+would quote. Returns None for a local path – a filesystem location is not
+a permanent URL and must not be published as one.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.split_values">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">split_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#split_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.split_values" title="Link to this definition"></a></dt>
+<dd><p>Split one stored cell into the values of a multivalued slot.</p>
+<p><code class="docutils literal notranslate"><span class="pre">sep</span></code> comes from the model’s <code class="docutils literal notranslate"><span class="pre">ait_separator</span></code> annotation. With no
+separator declared the cell is a single value – guessing a delimiter
+would silently invent or merge entities.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.to_jsonld">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">to_jsonld</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ents</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#to_jsonld"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.to_jsonld" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.data_translators.ait_taxonomy_translator.value_validators">
+<span class="sig-prename descclassname"><span class="pre">bkbit.data_translators.ait_taxonomy_translator.</span></span><span class="sig-name descname"><span class="pre">value_validators</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/bkbit/data_translators/ait_taxonomy_translator.html#value_validators"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.data_translators.ait_taxonomy_translator.value_validators" title="Link to this definition"></a></dt>
+<dd><p>{slot: callable} for slots the model constrains, e.g. with a <cite>pattern</cite>.</p>
+<p>linkml’s pydantic generator compiles a <cite>pattern</cite> into a &#64;field_validator
+rather than leaving it on the field, so it cannot be read off FieldInfo or
+the JSON schema. Pulling the validators out of __pydantic_decorators__ and
+calling them keeps the model the single authority – no regex is restated
+here.</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, BICAN.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

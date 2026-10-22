@@ -1,0 +1,305 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bkbit.utils.ncbi_taxonomy_cache module &mdash; bkbit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bkbit.utils.nimp_api_endpoints module" href="bkbit.utils.nimp_api_endpoints.html" />
+    <link rel="prev" title="bkbit.utils.load_json module" href="bkbit.utils.load_json.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            bkbit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">GETTING STARTED</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">DATA TRANSLATORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="specimen_file_manifest.html">Specimen Digital File Manifest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_specimen_library_aliquot.html">Specimen Library Aliquot List</a></li>
+<li class="toctree-l1"><a class="reference internal" href="specimen_metadata.html">Specimen Metadata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genome_annotation.html">Annotated Genome Data</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL CONVERTERS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="spreadsheet_converter.html">Spreadsheet to LinkML Schema</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MODEL EDITORS</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="linkml_trimmer.html">LinkML Schema Trimmer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">REFERENCE</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">bkbit</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="bkbit.html">bkbit package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="bkbit.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="bkbit.data_translators.html">bkbit.data_translators package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.model_converters.html">bkbit.model_converters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.model_editors.html">bkbit.model_editors package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bkbit.models.html">bkbit.models package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="bkbit.utils.html">bkbit.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bkbit.html#module-bkbit">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">bkbit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">bkbit</a></li>
+          <li class="breadcrumb-item"><a href="bkbit.html">bkbit package</a></li>
+          <li class="breadcrumb-item"><a href="bkbit.utils.html">bkbit.utils package</a></li>
+      <li class="breadcrumb-item active">bkbit.utils.ncbi_taxonomy_cache module</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/brain-bican/bkbit/blob/main/docs/bkbit.utils.ncbi_taxonomy_cache.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-bkbit.utils.ncbi_taxonomy_cache">
+<span id="bkbit-utils-ncbi-taxonomy-cache-module"></span><h1>bkbit.utils.ncbi_taxonomy_cache module<a class="headerlink" href="#module-bkbit.utils.ncbi_taxonomy_cache" title="Link to this heading"></a></h1>
+<p>Lazy, self-provisioning access to NCBI taxonomy names.</p>
+<p>bkbit needs three lookups from the NCBI taxonomy: scientific name -&gt; taxon id,
+taxon id -&gt; scientific name, and taxon id -&gt; common name. This module serves
+those lookups from two layers, in order:</p>
+<ol class="arabic simple">
+<li><p>A subset bundled inside the wheel (<cite>ncbi_taxonomy_data/taxonomy_subset.json.gz</cite>,
+~600KB, every taxon that has a GenBank common name). No network, no setup,
+loads in milliseconds. This covers effectively every organism a genome
+annotation pipeline is run against.</p></li>
+<li><p>The full NCBI taxonomy dump, downloaded and cached on first use for taxa that
+are not in the subset. The cache lives in a per-user cache directory - never
+inside <cite>site-packages</cite>, which may be read-only and is wiped on upgrade.</p></li>
+</ol>
+<p>Nothing here runs at import time: the bundled subset is loaded on first lookup
+and the full dump is only fetched if a lookup actually misses the subset.</p>
+<dl>
+<dt>Environment variables:</dt><dd><p>BKBIT_DATA_DIR: Overrides the cache directory used for the full taxonomy.
+BKBIT_NO_DOWNLOAD: If set to a truthy value, a lookup that misses the</p>
+<blockquote>
+<div><p>bundled subset raises instead of downloading the full taxonomy.</p>
+</div></blockquote>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.utils.ncbi_taxonomy_cache.build_full_cache">
+<span class="sig-prename descclassname"><span class="pre">bkbit.utils.ncbi_taxonomy_cache.</span></span><span class="sig-name descname"><span class="pre">build_full_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'https://ftp.ncbi.nih.gov/pub/taxonomy/taxdmp.zip'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Path</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/bkbit/utils/ncbi_taxonomy_cache.html#build_full_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.utils.ncbi_taxonomy_cache.build_full_cache" title="Link to this definition"></a></dt>
+<dd><p>Downloads the NCBI taxdump and writes the full cache to disk.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>url</strong> – The URL of the taxdump zip to download and process.</p></li>
+<li><p><strong>cache_dir</strong> – Destination directory. Defaults to <a class="reference internal" href="#bkbit.utils.ncbi_taxonomy_cache.data_dir" title="bkbit.utils.ncbi_taxonomy_cache.data_dir"><code class="xref py py-func docutils literal notranslate"><span class="pre">data_dir()</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The written cache paths, as returned by <a class="reference internal" href="#bkbit.utils.ncbi_taxonomy_cache.full_cache_paths" title="bkbit.utils.ncbi_taxonomy_cache.full_cache_paths"><code class="xref py py-func docutils literal notranslate"><span class="pre">full_cache_paths()</span></code></a>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.utils.ncbi_taxonomy_cache.data_dir">
+<span class="sig-prename descclassname"><span class="pre">bkbit.utils.ncbi_taxonomy_cache.</span></span><span class="sig-name descname"><span class="pre">data_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span></span></span><a class="reference internal" href="_modules/bkbit/utils/ncbi_taxonomy_cache.html#data_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.utils.ncbi_taxonomy_cache.data_dir" title="Link to this definition"></a></dt>
+<dd><p>Returns the directory bkbit uses for the downloaded NCBI taxonomy cache.</p>
+<p>Honours <code class="docutils literal notranslate"><span class="pre">BKBIT_DATA_DIR</span></code> if set, otherwise falls back to the platform’s
+per-user cache directory (which respects <code class="docutils literal notranslate"><span class="pre">XDG_CACHE_HOME</span></code> on Linux).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.utils.ncbi_taxonomy_cache.download_and_extract_zip_in_memory">
+<span class="sig-prename descclassname"><span class="pre">bkbit.utils.ncbi_taxonomy_cache.</span></span><span class="sig-name descname"><span class="pre">download_and_extract_zip_in_memory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'https://ftp.ncbi.nih.gov/pub/taxonomy/taxdmp.zip'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/bkbit/utils/ncbi_taxonomy_cache.html#download_and_extract_zip_in_memory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.utils.ncbi_taxonomy_cache.download_and_extract_zip_in_memory" title="Link to this definition"></a></dt>
+<dd><p>Downloads the taxdump zip from the given URL and returns ‘names.dmp’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>url</strong> – The URL of the zip file to download.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The content of the ‘names.dmp’ file as a string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>requests.exceptions.HTTPError</strong> – If the download fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.utils.ncbi_taxonomy_cache.ensure_full_cache">
+<span class="sig-prename descclassname"><span class="pre">bkbit.utils.ncbi_taxonomy_cache.</span></span><span class="sig-name descname"><span class="pre">ensure_full_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reload</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span></span></span><a class="reference internal" href="_modules/bkbit/utils/ncbi_taxonomy_cache.html#ensure_full_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.utils.ncbi_taxonomy_cache.ensure_full_cache" title="Link to this definition"></a></dt>
+<dd><p>Makes sure the full taxonomy cache exists on disk, downloading if needed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reload</strong> – Re-download even if a complete cache is already present.</p></li>
+<li><p><strong>cache_dir</strong> – Destination directory. Defaults to <a class="reference internal" href="#bkbit.utils.ncbi_taxonomy_cache.data_dir" title="bkbit.utils.ncbi_taxonomy_cache.data_dir"><code class="xref py py-func docutils literal notranslate"><span class="pre">data_dir()</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The directory containing the cache.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.utils.ncbi_taxonomy_cache.full_cache_paths">
+<span class="sig-prename descclassname"><span class="pre">bkbit.utils.ncbi_taxonomy_cache.</span></span><span class="sig-name descname"><span class="pre">full_cache_paths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cache_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Path</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/bkbit/utils/ncbi_taxonomy_cache.html#full_cache_paths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.utils.ncbi_taxonomy_cache.full_cache_paths" title="Link to this definition"></a></dt>
+<dd><p>Returns the paths of the three JSON files that make up the full cache.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cache_dir</strong> – Directory to resolve against. Defaults to <a class="reference internal" href="#bkbit.utils.ncbi_taxonomy_cache.data_dir" title="bkbit.utils.ncbi_taxonomy_cache.data_dir"><code class="xref py py-func docutils literal notranslate"><span class="pre">data_dir()</span></code></a>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Keys <code class="docutils literal notranslate"><span class="pre">scientific</span></code>, <code class="docutils literal notranslate"><span class="pre">common</span></code>, and <code class="docutils literal notranslate"><span class="pre">scientific_to_taxid</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.utils.ncbi_taxonomy_cache.lookup_common_name">
+<span class="sig-prename descclassname"><span class="pre">bkbit.utils.ncbi_taxonomy_cache.</span></span><span class="sig-name descname"><span class="pre">lookup_common_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">taxid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/bkbit/utils/ncbi_taxonomy_cache.html#lookup_common_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.utils.ncbi_taxonomy_cache.lookup_common_name" title="Link to this definition"></a></dt>
+<dd><p>Returns the GenBank common name for a taxon id, or None if it has none.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>taxid</strong> – NCBI taxon id, as a string, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;9606&quot;</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.utils.ncbi_taxonomy_cache.lookup_scientific_name">
+<span class="sig-prename descclassname"><span class="pre">bkbit.utils.ncbi_taxonomy_cache.</span></span><span class="sig-name descname"><span class="pre">lookup_scientific_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">taxid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/bkbit/utils/ncbi_taxonomy_cache.html#lookup_scientific_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.utils.ncbi_taxonomy_cache.lookup_scientific_name" title="Link to this definition"></a></dt>
+<dd><p>Returns the scientific name for a taxon id, or None if it is unknown.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>taxid</strong> – NCBI taxon id, as a string, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;9606&quot;</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.utils.ncbi_taxonomy_cache.lookup_taxid">
+<span class="sig-prename descclassname"><span class="pre">bkbit.utils.ncbi_taxonomy_cache.</span></span><span class="sig-name descname"><span class="pre">lookup_taxid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scientific_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/bkbit/utils/ncbi_taxonomy_cache.html#lookup_taxid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.utils.ncbi_taxonomy_cache.lookup_taxid" title="Link to this definition"></a></dt>
+<dd><p>Returns the taxon id for a scientific name, or None if it is unknown.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scientific_name</strong> – Scientific name, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;Homo</span> <span class="pre">sapiens&quot;</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bkbit.utils.ncbi_taxonomy_cache.parse_dmp_content">
+<span class="sig-prename descclassname"><span class="pre">bkbit.utils.ncbi_taxonomy_cache.</span></span><span class="sig-name descname"><span class="pre">parse_dmp_content</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dmp_content</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/bkbit/utils/ncbi_taxonomy_cache.html#parse_dmp_content"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bkbit.utils.ncbi_taxonomy_cache.parse_dmp_content" title="Link to this definition"></a></dt>
+<dd><p>Parses the content of a names.dmp file into taxonomy name lookups.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dmp_content</strong> – The content of the DMP file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(taxid_to_scientific_name,</span> <span class="pre">taxid_to_common_name,</span>
+<span class="pre">scientific_name_to_taxid)</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="bkbit.utils.load_json.html" class="btn btn-neutral float-left" title="bkbit.utils.load_json module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="bkbit.utils.nimp_api_endpoints.html" class="btn btn-neutral float-right" title="bkbit.utils.nimp_api_endpoints module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, BICAN.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
