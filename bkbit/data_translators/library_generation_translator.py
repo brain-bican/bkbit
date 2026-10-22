@@ -148,6 +148,9 @@ class SpecimenPortal:
         parse_nhash_id_top_down(nhash_id):
             Parses descendants of the provided nhash_id, starting from the node and moving downwards to the leaves (Library Pool).
 
+        resolve_parent_references():
+            Replaces parent NHash IDs in was_derived_from with the generated parents' ids.
+
         generate_bican_object(data, was_derived_from=None):
             Generates a BICAN object based on the provided data and parent relationships.
 
@@ -257,19 +260,30 @@ class SpecimenPortal:
             except Exception as e:
                 print(f"Unexpected error generating object for '{curr_nhash_id}': {e}")
                 continue
+        self.resolve_parent_references()
+
+    def resolve_parent_references(self):
+        """
+        Replace the parent NHash IDs in was_derived_from with the ids of the
+        generated parent objects, so the output never references raw NIMP IDs.
+
+        A parent that was not generated in this run (e.g. the parent of the
+        starting node when parsing descendants) has no object to point to and
+        is dropped.
+        """
         for obj in self.generated_objects.values():
-            if hasattr(obj, "was_derived_from") and obj.was_derived_from is not None:
-                if type(obj.was_derived_from) is str:
-                    if obj.was_derived_from not in self.generated_objects:
-                        obj.was_derived_from = None
-                    else:
-                        obj.was_derived_from = self.generated_objects[obj.was_derived_from].id
-                else:    
-                    updated_parents = []
-                    for parent in obj.was_derived_from:
-                        if parent in self.generated_objects:
-                            updated_parents.append(self.generated_objects[parent].id)
-                    obj.was_derived_from = updated_parents
+            if getattr(obj, "was_derived_from", None) is None:
+                continue
+            if isinstance(obj.was_derived_from, str):
+                parent = self.generated_objects.get(obj.was_derived_from)
+                obj.was_derived_from = parent.id if parent is not None else None
+            else:
+                updated_parents = [
+                    self.generated_objects[parent].id
+                    for parent in obj.was_derived_from
+                    if parent in self.generated_objects
+                ]
+                obj.was_derived_from = updated_parents or None
 
     def parse_nhash_id_top_down(self, nhash_id: str):
         """
@@ -320,6 +334,7 @@ class SpecimenPortal:
             except Exception as e:
                 print(f"Unexpected error generating object for '{curr_nhash_id}': {e}")
                 continue
+        self.resolve_parent_references()
 
     #@classmethod
     def generate_bican_object(self, data, was_derived_from: list[str] = None):

@@ -113,3 +113,36 @@ def test_multivalued_builtin_list():
 def test_context_includes_donor():
     assert any(c.endswith("/donor.context.jsonld") for c in CONTEXT)
     assert any(c.endswith("/library_generation.context.jsonld") for c in CONTEXT)
+
+
+def test_top_down_links_use_bkbit_ids(monkeypatch):
+    """Descendant parsing must not leave NHash IDs in was_derived_from."""
+    from bkbit.data_translators import library_generation_translator as t
+
+    records = {
+        "LI-1": {"id": "LI-1", "category": "Library", "record": {}},
+        "LA-1": ALIQUOT_RECORD,
+    }
+    parents = {"LI-1": ["AC-OUTSIDE"], "LA-1": ["LI-1"]}
+    monkeypatch.setattr(
+        t, "get_descendants", lambda nhash_id, token: {"data": {"LI-1": {}, "LA-1": {}}}
+    )
+    monkeypatch.setattr(t, "get_data", lambda nhash_id, token: {"data": records[nhash_id]})
+    monkeypatch.setattr(
+        t,
+        "get_ancestors",
+        lambda nhash_id, token: {
+            "data": {nhash_id: {"edges": {"has_parent": parents[nhash_id]}}}
+        },
+    )
+    sp = SpecimenPortal("token")
+    sp.parse_nhash_id_top_down("LI-1")
+    objs = sp.generated_objects
+    assert objs["LA-1"].was_derived_from == objs["LI-1"].id
+    assert objs["LA-1/DigitalAsset"].was_derived_from == objs["LA-1"].id
+    # the starting node's parent was not generated, so there is nothing to link to
+    assert objs["LI-1"].was_derived_from is None
+    assert all(
+        o.was_derived_from is None or o.was_derived_from.startswith("urn:bkbit:")
+        for o in objs.values()
+    )
