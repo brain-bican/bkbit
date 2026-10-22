@@ -40,17 +40,20 @@ Dependencies:
     - tqdm
     - multiprocessing.Pool
     - bkbit.models.library_generation
+    - bkbit.models.donor
     - bkbit.utils.nimp_api_endpoints (get_data, get_ancestors, get_descendants)
 """
 
 import json
 from enum import Enum
+from typing import get_origin
 import os
 from multiprocessing import Pool
 from tqdm import tqdm
 import click
 from linkml_runtime.dumpers import json_dumper
 from bkbit.models import library_generation as lg
+from bkbit.models import donor
 from bkbit.utils.nimp_api_endpoints import get_data, get_ancestors, get_descendants
 from bkbit.utils.generate_bkbit_id import generate_object_id
 from bkbit.utils.serialize_to_ttl import convert_jsonld_to_ttl
@@ -65,12 +68,16 @@ CATEGORY_TO_CLASS = {
     "Enriched Cell Sample": lg.EnrichedCellSample,
     "Dissociated Cell Sample": lg.DissociatedCellSample,
     "Tissue": lg.TissueSample,
-    "Donor": lg.Donor,
+    # Donor is defined in its own model; library_generation only keeps a stub of it
+    "Donor": donor.Donor,
     "Specimen Dissected ROI": lg.DissectionRoiPolygon,
     "Slab": lg.BrainSlab,
 }
 JWT_TOKEN_OS_VAR_NAME = "jwt_token"
-CONTEXT = "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/library_generation.context.jsonld"
+CONTEXT = [
+    "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/library_generation.context.jsonld",
+    "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/donor.context.jsonld",
+]
 
 
 class SpecimenPortal:
@@ -145,7 +152,8 @@ class SpecimenPortal:
                         selected_type = nested_annotations
 
             # Check if the original annotation is a List or other multivalued type
-            if getattr(annotation, "_name", None) in {"List", "Set", "Tuple"}:
+            # (typing.List as well as builtin list[...], which the models now use)
+            if get_origin(annotation) in {list, set, tuple}:
                 is_multivalued = True
         else:
             return False, annotation
@@ -306,6 +314,9 @@ class SpecimenPortal:
                     assigned_attributes[schema_field_name] = was_derived_from[0]
                 continue
             data_value = data.get("record", {}).get(nimp_field_name)
+            # NIMP may return a single value for a multivalued slot (e.g. Donor.xref)
+            if multivalued and data_value is not None and not isinstance(data_value, list):
+                data_value = [data_value]
             if data_value is None:
                 assigned_attributes[schema_field_name] = schema_field_metadata.default
             elif field_type is str:
