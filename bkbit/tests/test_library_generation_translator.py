@@ -1,11 +1,10 @@
 """Tests for the Donor / library_generation model split in specimen2jsonld."""
 
-import pytest
-
 from bkbit.data_translators.library_generation_translator import (
     CATEGORY_TO_CLASS,
     CONTEXT,
     SpecimenPortal,
+    derived_classes,
 )
 from bkbit.models import donor
 from bkbit.models import library_generation as lg
@@ -25,11 +24,16 @@ DONOR_RECORD = {
     },
 }
 
-# donor.Donor's name and xref have NIMP_resource_type and NIMP_variable_name
-# swapped (variable name "Donor"), so the translator cannot find their values.
-DONOR_MAPPING_SWAPPED = pytest.mark.xfail(
-    strict=True, reason="donor model swaps NIMP_resource_type/NIMP_variable_name"
-)
+FASTQ_URL = "https://data.nemoarchive.org/biccn/grant/u01_lein/lein/transcriptome/sncell/10x_v3/mouse/raw/LA-1/"
+
+ALIQUOT_RECORD = {
+    "id": "LA-1",
+    "category": "Library Aliquot",
+    "record": {
+        "library_aliquot_local_name": "MyAliquot-01",
+        "nemo_aliquot_fastq_public_url": FASTQ_URL,
+    },
+}
 
 
 def test_donor_uses_donor_model():
@@ -47,7 +51,6 @@ def test_donor_fields():
     assert d.post_mortem_interval == 12.5
 
 
-@DONOR_MAPPING_SWAPPED
 def test_donor_name_and_xref():
     d = SpecimenPortal("token").generate_bican_object(DONOR_RECORD)
     assert d.name == "C57BL6J-672032"
@@ -56,14 +59,44 @@ def test_donor_name_and_xref():
 
 
 def test_nimp_variable_name_mapping():
-    la = SpecimenPortal("token").generate_bican_object(
-        {
-            "id": "LA-1",
-            "category": "Library Aliquot",
-            "record": {"library_aliquot_local_name": "MyAliquot-01"},
-        }
-    )
+    la = SpecimenPortal("token").generate_bican_object(ALIQUOT_RECORD)
     assert la.name == "MyAliquot-01"
+
+
+def test_digital_asset_declared_from_library_aliquot():
+    assert [cls for cls, _ in derived_classes("Library Aliquot")] == [lg.DigitalAsset]
+    assert derived_classes("Donor") == ()
+
+
+def test_digital_asset_from_library_aliquot():
+    derived = SpecimenPortal("token").generate_derived_objects(ALIQUOT_RECORD, "LA-1")
+    assert list(derived) == ["LA-1/DigitalAsset"]
+    asset = derived["LA-1/DigitalAsset"]
+    assert isinstance(asset, lg.DigitalAsset)
+    assert asset.content_url == [FASTQ_URL]
+    assert asset.was_derived_from == "LA-1"
+    # nothing else is read off the aliquot record
+    assert asset.name is None
+
+
+def test_no_digital_asset_without_url():
+    record = {**ALIQUOT_RECORD, "record": {"library_aliquot_local_name": "MyAliquot-01"}}
+    assert SpecimenPortal("token").generate_derived_objects(record, "LA-1") == {}
+
+
+def test_digital_asset_links_to_aliquot_id(monkeypatch):
+    """Bottom-up parsing rewrites was_derived_from from the NHash ID to the aliquot's id."""
+    from bkbit.data_translators import library_generation_translator as t
+
+    monkeypatch.setattr(
+        t, "get_ancestors", lambda nhash_id, token: {"data": {"LA-1": {"edges": {}}}}
+    )
+    monkeypatch.setattr(t, "get_data", lambda nhash_id, token: {"data": ALIQUOT_RECORD})
+    sp = SpecimenPortal("token")
+    sp.parse_nhash_id_bottom_up("LA-1")
+    assert sp.generated_objects["LA-1/DigitalAsset"].was_derived_from == (
+        sp.generated_objects["LA-1"].id
+    )
 
 
 def test_enum_match_is_case_insensitive():

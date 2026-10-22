@@ -46,6 +46,8 @@ Dependencies:
 
 import json
 from enum import Enum
+from functools import lru_cache
+import inspect
 from typing import get_origin
 import os
 from multiprocessing import Pool
@@ -73,6 +75,52 @@ CATEGORY_TO_CLASS = {
     "ROI": lg.DissectionRoiPolygon,
     "Slab": lg.BrainSlab,
 }
+
+
+def _normalize_resource_type(resource_type):
+    """NIMP resource types are spelled both "Library Aliquot" and "LibraryAliquot"."""
+    return resource_type.replace(" ", "").casefold()
+
+
+@lru_cache(maxsize=None)
+def derived_classes(category):
+    """
+    Classes with no NIMP record of their own whose slots declare (via
+    NIMP_resource_type) that their values come from a record of `category`,
+    e.g. DigitalAsset.content_url <- Library Aliquot.nemo_aliquot_fastq_public_url.
+
+    Returns:
+        A tuple of (class, {slot name: NIMP field name}) pairs.
+    """
+    wanted = _normalize_resource_type(category)
+    nimp_classes = set(CATEGORY_TO_CLASS.values())
+    found = []
+    for module in (lg, donor):
+        for _, cls in inspect.getmembers(module, inspect.isclass):
+            if cls.__module__ != module.__name__ or cls in nimp_classes:
+                continue
+            if not hasattr(cls, "model_fields"):
+                continue
+            slots = {}
+            for slot_name, field in cls.model_fields.items():
+                local_names = (field.json_schema_extra or {}).get(
+                    "linkml_meta", {}
+                ).get("local_names", {})
+                resource_type = local_names.get("NIMP_resource_type", {}).get(
+                    "local_name_value"
+                )
+                variable_name = local_names.get("NIMP_variable_name", {}).get(
+                    "local_name_value"
+                )
+                if resource_type and variable_name and (
+                    _normalize_resource_type(resource_type) == wanted
+                ):
+                    slots[slot_name] = variable_name
+            if slots:
+                found.append((cls, slots))
+    return tuple(found)
+
+
 JWT_TOKEN_OS_VAR_NAME = "jwt_token"
 CONTEXT = [
     "https://raw.githubusercontent.com/brain-bican/models/main/jsonld-context-autogen/library_generation.context.jsonld",
@@ -102,6 +150,9 @@ class SpecimenPortal:
 
         generate_bican_object(data, was_derived_from=None):
             Generates a BICAN object based on the provided data and parent relationships.
+
+        generate_derived_objects(data, nhash_id):
+            Generates the objects NIMP has no record for (e.g. DigitalAsset) from the record they derive from.
 
         serialize_to_jsonld(exclude_none=True, exclude_unset=False):
             Serializes the generated objects into JSON-LD format for further use or storage.
@@ -197,6 +248,9 @@ class SpecimenPortal:
                 generated_object = self.generate_bican_object(curr_data, parents)
                 if generated_object is not None:
                     self.generated_objects[curr_nhash_id] = generated_object
+                    self.generated_objects.update(
+                        self.generate_derived_objects(curr_data, curr_nhash_id)
+                    )
             except ValueError as e:
                 print(f"ValueError generating object for '{curr_nhash_id}': {e}")
                 continue
@@ -257,6 +311,9 @@ class SpecimenPortal:
                 generated_object = self.generate_bican_object(curr_data, parents)
                 if generated_object is not None:
                     self.generated_objects[curr_nhash_id] = generated_object
+                    self.generated_objects.update(
+                        self.generate_derived_objects(curr_data, curr_nhash_id)
+                    )
             except ValueError as e:
                 print(f"ValueError generating object for '{curr_nhash_id}': {e}")
                 continue
@@ -317,34 +374,83 @@ class SpecimenPortal:
                     assigned_attributes[schema_field_name] = was_derived_from[0]
                 continue
             data_value = data.get("record", {}).get(nimp_field_name)
-            # NIMP may return a single value for a multivalued slot (e.g. Donor.xref)
-            if multivalued and data_value is not None and not isinstance(data_value, list):
-                data_value = [data_value]
-            if data_value is None:
-                assigned_attributes[schema_field_name] = schema_field_metadata.default
-            elif field_type is str:
-                if multivalued:
-                    assigned_attributes[schema_field_name] = [
-                        str(item) for item in data_value
-                    ]
-                else:
-                    assigned_attributes[schema_field_name] = str(data_value)
-            elif field_type is int:
-                assigned_attributes[schema_field_name] = int(float(data_value))
-            elif field_type is float:
-                assigned_attributes[schema_field_name] = float(data_value)
-            elif field_type is bool:
-                assigned_attributes[schema_field_name] = bool(data_value)
-            elif type(field_type) is type(Enum):
-                assigned_attributes[schema_field_name] = (
-                    SpecimenPortal.__check_valueset_membership(field_type, data_value)
-                )
+            assigned_attributes[schema_field_name] = SpecimenPortal.convert_value(
+                schema_field_metadata, data_value
+            )
 
             # check if the field is required; if missing raise an error
             if assigned_attributes[schema_field_name] is None and required:
                 raise ValueError(f"Missing required field: {schema_field_name}")
         assigned_attributes["id"] = generate_object_id(assigned_attributes)
         return bican_class(**assigned_attributes)
+
+    def generate_derived_objects(self, data, nhash_id):
+        """
+        Generate the objects that NIMP has no record for but that the model
+        declares are filled from this record (see `derived_classes`).
+
+        An object is only generated if at least one of its declared values is
+        present, so an aliquot without a FASTQ URL yields no DigitalAsset.
+
+        Parameters:
+            data (dict): The NIMP record the values are read from.
+            nhash_id (str): NHash ID of that record; recorded as was_derived_from.
+
+        Returns:
+            A dict of the generated objects, keyed "<nhash_id>/<class name>".
+        """
+        derived = {}
+        record = data.get("record", {})
+        for bican_class, slots in derived_classes(data.get("category")):
+            assigned_attributes = {
+                slot_name: SpecimenPortal.convert_value(
+                    bican_class.model_fields[slot_name], record.get(nimp_field_name)
+                )
+                for slot_name, nimp_field_name in slots.items()
+            }
+            if all(value is None for value in assigned_attributes.values()):
+                continue
+            if "was_derived_from" in bican_class.model_fields:
+                assigned_attributes["was_derived_from"] = nhash_id
+            assigned_attributes["id"] = generate_object_id(assigned_attributes)
+            derived[f"{nhash_id}/{bican_class.__name__}"] = bican_class(
+                **assigned_attributes
+            )
+        return derived
+
+    @staticmethod
+    def convert_value(field_metadata, data_value):
+        """
+        Convert a NIMP value to the type of the given model field.
+
+        Parameters:
+            field_metadata (FieldInfo): The pydantic field the value is for.
+            data_value: The value from the NIMP record.
+
+        Returns:
+            The converted value, or the field's default if the value is missing.
+        """
+        multivalued, field_type = SpecimenPortal.get_field_type(
+            field_metadata.annotation
+        )
+        # NIMP may return a single value for a multivalued slot (e.g. Donor.xref)
+        if multivalued and data_value is not None and not isinstance(data_value, list):
+            data_value = [data_value]
+        if data_value is None:
+            return field_metadata.default
+        if field_type is str:
+            if multivalued:
+                return [str(item) for item in data_value]
+            return str(data_value)
+        if field_type is int:
+            return int(float(data_value))
+        if field_type is float:
+            return float(data_value)
+        if field_type is bool:
+            return bool(data_value)
+        if type(field_type) is type(Enum):
+            return SpecimenPortal.__check_valueset_membership(field_type, data_value)
+        return None
 
     @staticmethod
     def __check_valueset_membership(enum_type, nimp_value):
